@@ -10,6 +10,7 @@ from ..models import models
 from ..schemas import defaults as schemas
 
 from ..core.collector import global_collector
+from ..core.docker_monitor import docker_monitor
 
 router = APIRouter()
 
@@ -137,9 +138,30 @@ async def events_websocket(websocket: WebSocket):
     except Exception:
         manager.disconnect(websocket)
 
-@router.get("/alerts", response_model=List[schemas.SecurityAlert])
-def get_alerts(db: Session = Depends(get_db)):
+@router.get("/alerts")
+async def get_alerts(db: Session = Depends(get_db)):
+    """Fetches security alerts."""
     return db.query(models.SecurityAlert).order_by(models.SecurityAlert.timestamp.desc()).limit(50).all()
+
+@router.get("/docker/containers")
+async def get_docker_containers():
+    """Returns real-time Docker container stats."""
+    return docker_monitor.get_stats()
+
+@router.get("/docker/containers/{container_id}/logs")
+async def get_container_logs(container_id: str, tail: int = 100):
+    """Returns recent logs for a specific container."""
+    return {"logs": docker_monitor.get_logs(container_id, tail)}
+
+@router.post("/docker/containers/{container_id}/action")
+async def container_action(container_id: str, payload: dict):
+    """Performs an action (start, stop, restart) on a container."""
+    action = payload.get("action")
+    if action not in ["start", "stop", "restart"]:
+        return {"success": False, "error": "Invalid action"}
+    
+    success = docker_monitor.perform_action(container_id, action)
+    return {"success": success}
 
 @router.patch("/alerts/{alert_id}/resolve")
 def resolve_alert(alert_id: int, db: Session = Depends(get_db)):

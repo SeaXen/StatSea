@@ -39,7 +39,16 @@ export const ConnectionGlobe = () => {
         return () => clearInterval(interval);
     }, []);
 
-    const arcData = connections.map(conn => ({
+    // Sample data for initial 'Wow' factor if no real connections yet
+    const sampleConnections: Connection[] = [
+        { ip: '8.8.8.8', city: 'Mountain View', country: 'USA', lat: 37.386, lon: -122.0838, bytes: 1024, hits: 10 },
+        { ip: '1.1.1.1', city: 'Sydney', country: 'Australia', lat: -33.8688, lon: 151.2093, bytes: 2048, hits: 5 },
+        { ip: '142.250.72.110', city: 'Frankfurt', country: 'Germany', lat: 50.1109, lon: 8.6821, bytes: 512, hits: 2 },
+    ];
+
+    const displayConnections = connections.length > 0 ? connections : sampleConnections;
+
+    const arcData = displayConnections.map(conn => ({
         startLat: homeLocation.lat,
         startLon: homeLocation.lon,
         endLat: conn.lat,
@@ -64,7 +73,7 @@ export const ConnectionGlobe = () => {
                 <div className="px-3 py-1 bg-slate-800/80 rounded-full border border-slate-700 flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                     <span className="text-[10px] text-slate-300 font-medium">
-                        {connections.length} Active Nodes
+                        {displayConnections.length} Active Nodes
                     </span>
                 </div>
             </div>
@@ -107,7 +116,7 @@ export const ConnectionGlobe = () => {
                     </div>
                     <div className="flex flex-col">
                         <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Top Node</span>
-                        <span className="text-sm text-slate-200 font-mono">{connections[0]?.city || 'N/A'}</span>
+                        <span className="text-sm text-slate-200 font-mono">{displayConnections[0]?.city || 'N/A'}</span>
                     </div>
                 </div>
 

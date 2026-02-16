@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, LayoutDashboard, Server, Settings, Shield, Network, Search, Globe as GlobeIcon } from 'lucide-react';
+import { Activity, LayoutDashboard, Server, Settings, Shield, Network, Search, Globe as GlobeIcon, Box } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Toaster, toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,6 +10,7 @@ import { DevicesPage } from './components/DevicesPage';
 import { NetworkMap } from './components/NetworkMap';
 import { SecurityAlertsWidget } from './components/SecurityAlertsWidget';
 import { ConnectionGlobe } from './components/ConnectionGlobe';
+import DockerManager from './components/DockerManager';
 
 // Navigation Item Component
 const NavItem = ({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) => (
@@ -233,6 +234,7 @@ function App() {
                     <NavItem icon={Network} label="Network Map" active={activeTab === 'network'} onClick={() => setActiveTab('network')} />
                     <NavItem icon={GlobeIcon} label="Global Traffic" active={activeTab === 'geo'} onClick={() => setActiveTab('geo')} />
                     <NavItem icon={Shield} label="Security" active={activeTab === 'security'} onClick={() => setActiveTab('security')} />
+                    <NavItem icon={Box} label="Containers" active={activeTab === 'containers'} onClick={() => setActiveTab('containers')} />
                     <NavItem icon={Activity} label="Analytics" active={activeTab === 'analytics'} onClick={() => setActiveTab('analytics')} />
                 </nav>
 
@@ -287,6 +289,7 @@ function App() {
                             <p className="text-gray-400 max-w-md">Detailed behavioral insights and historical trends are being processed.</p>
                         </motion.div>
                     )}
+                    {activeTab === 'containers' && <DockerManager key="containers" />}
                 </AnimatePresence>
             </main>
         </div>

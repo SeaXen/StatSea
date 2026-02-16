@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from .api import endpoints
 from .core.collector import global_collector
+from .core.docker_monitor import docker_monitor
 from .db.database import engine, Base
 from .models import models
 
@@ -12,11 +13,13 @@ Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Start the packet collector
+    # Start services
     global_collector.start()
+    docker_monitor.start()
     yield
-    # Stop the packet collector
+    # Stop services
     global_collector.stop()
+    docker_monitor.stop()
 
 app = FastAPI(
     title="Statsea API",
