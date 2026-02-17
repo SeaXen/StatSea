@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class DeviceBase(BaseModel):
@@ -14,10 +14,21 @@ class DeviceCreate(DeviceBase):
 
 class Device(DeviceBase):
     id: int
-    first_seen: Optional[datetime] = None
-    last_seen: Optional[datetime] = None
-    is_online: bool = False
+    first_seen: datetime
+    last_seen: Optional[datetime]
+    is_online: bool
+    traffic_logs: List['TrafficLog'] = []
 
+    class Config:
+        from_attributes = True
+
+class SystemSettingBase(BaseModel):
+    key: str
+    value: str
+    type: str = "string"
+    description: Optional[str] = None
+
+class SystemSetting(SystemSettingBase):
     class Config:
         from_attributes = True
 

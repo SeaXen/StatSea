@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Cpu, Globe, Shield, HardDrive, Smartphone, Monitor, Wifi, Clock, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { AreaChart, Area, Tooltip, ResponsiveContainer } from 'recharts';
@@ -64,6 +64,7 @@ export function DeviceDetail({ device, isOpen, onClose }: DeviceDetailProps) {
                     >
                         <div className="p-8">
                             {/* Header */}
+                            {loading && <div className="absolute top-4 right-16 text-xs text-blue-400 animate-pulse">Updating...</div>}
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex items-center gap-4">
                                     <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400">

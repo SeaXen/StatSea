@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Command } from 'cmdk';
 import { Search, LayoutDashboard, Server, Shield, Settings, Activity, Network } from 'lucide-react';
-import { useNavigate } from 'react-router-dom'; // Assuming we will use router later, but for now just function calls
 
-export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, setOpen: (open: boolean) => void, changeTab: (tab: string) => void }) {
+
+export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, setOpen: (open: boolean | ((prev: boolean) => boolean)) => void, changeTab: (tab: string) => void }) {
 
     useEffect(() => {
         const down = (e: KeyboardEvent) => {
             if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
-                setOpen((open) => !open);
+                setOpen(!open);
             }
         };
 

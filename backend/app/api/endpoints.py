@@ -11,6 +11,8 @@ from ..schemas import defaults as schemas
 
 from ..core.collector import global_collector
 from ..core.docker_monitor import docker_monitor
+from ..core.monitor import monitor
+from ..core.security import security_engine
 
 router = APIRouter()
 
@@ -175,3 +177,56 @@ def resolve_alert(alert_id: int, db: Session = Depends(get_db)):
 def get_external_connections():
     """Returns geo-located external connections for the 3D globe."""
     return global_collector.get_external_connections()
+
+@router.get("/network/history")
+async def get_network_history(timeframe: str = "1h", db: Session = Depends(get_db)):
+    """Returns bandwidth and latency history."""
+    # TODO: Filter by timeframe
+    bandwidth = db.query(models.BandwidthHistory).order_by(models.BandwidthHistory.timestamp.desc()).limit(100).all()
+    latency = db.query(models.LatencyLog).order_by(models.LatencyLog.timestamp.desc()).limit(100).all()
+    return {"bandwidth": bandwidth, "latency": latency}
+
+@router.get("/network/health")
+async def get_network_health(db: Session = Depends(get_db)):
+    """Returns a computed network health score (0-100)."""
+    # Simple logic: High latency or recent outages lower the score
+    recent_latency = db.query(models.LatencyLog).order_by(models.LatencyLog.timestamp.desc()).limit(10).all()
+    
+    score = 100
+    if recent_latency:
+        avg_latency = sum(l.latency_ms for l in recent_latency) / len(recent_latency)
+        if avg_latency > 100: score -= 20
+        if avg_latency > 500: score -= 40
+    
+    return {"score": max(0, score), "status": "Excellent" if score > 80 else "Good" if score > 50 else "Poor"}
+
+@router.get("/security/events")
+async def get_security_events(db: Session = Depends(get_db)):
+    """Returns all security events."""
+    return db.query(models.SecurityEvent).order_by(models.SecurityEvent.timestamp.desc()).limit(50).all()
+
+@router.get("/analytics/summary")
+async def get_analytics_summary():
+    """Returns comprehensive traffic analytics data."""
+    return global_collector.get_analytics_summary()
+
+@router.get("/settings", response_model=List[schemas.SystemSetting])
+def get_settings(db: Session = Depends(get_db)):
+    """Returns all system settings."""
+    return db.query(models.SystemSettings).all()
+
+@router.post("/settings", response_model=schemas.SystemSetting)
+def update_setting(setting: schemas.SystemSettingBase, db: Session = Depends(get_db)):
+    """Updates or creates a system setting."""
+    db_setting = db.query(models.SystemSettings).filter(models.SystemSettings.key == setting.key).first()
+    if db_setting:
+        db_setting.value = setting.value
+        db_setting.type = setting.type
+        db_setting.description = setting.description
+    else:
+        db_setting = models.SystemSettings(**setting.dict())
+        db.add(db_setting)
+    
+    db.commit()
+    db.refresh(db_setting)
+    return db_setting

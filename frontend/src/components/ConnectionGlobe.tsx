@@ -1,8 +1,7 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Globe from 'react-globe.gl';
-import { Globe as GlobeIcon, Zap, MapPin } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Globe as GlobeIcon, MapPin } from 'lucide-react';
 
 interface Connection {
     ip: string;
@@ -16,7 +15,6 @@ interface Connection {
 
 export const ConnectionGlobe = () => {
     const [connections, setConnections] = useState<Connection[]>([]);
-    const [loading, setLoading] = useState(true);
     const globeRef = useRef<any>();
 
     // Mock home location (Center of Map for demo, or detected)
@@ -28,7 +26,6 @@ export const ConnectionGlobe = () => {
                 const response = await fetch('http://localhost:21081/api/network/connections');
                 const data = await response.json();
                 setConnections(data);
-                setLoading(false);
             } catch (error) {
                 console.error("Failed to fetch connections:", error);
             }
@@ -81,7 +78,6 @@ export const ConnectionGlobe = () => {
             <div className="w-full h-full flex items-center justify-center pt-8">
                 <Globe
                     ref={globeRef}
-                    glowColor="rgba(59, 130, 246, 0.3)"
                     backgroundColor="rgba(0,0,0,0)"
                     width={800}
                     height={600}
@@ -103,7 +99,7 @@ export const ConnectionGlobe = () => {
                     labelResolution={2}
                     atmosphereColor="#3b82f6"
                     atmosphereAltitude={0.15}
-                    hexByPolygonColor={() => 'rgba(255,255,255, 0.05)'}
+
                 />
             </div>
 

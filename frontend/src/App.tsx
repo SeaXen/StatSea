@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Activity, LayoutDashboard, Server, Settings, Shield, Network, Search, Globe as GlobeIcon, Box } from 'lucide-react';
+import { Activity, LayoutDashboard, Server, Settings as SettingsIcon, Shield, Network, Search, Globe as GlobeIcon, Box } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Toaster, toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { TopDevicesWidget } from './components/TopDevicesWidget';
 import { ActiveConnectionsWidget } from './components/ActiveConnectionsWidget';
 import { CommandPalette } from './components/CommandPalette';
@@ -11,6 +11,9 @@ import { NetworkMap } from './components/NetworkMap';
 import { SecurityAlertsWidget } from './components/SecurityAlertsWidget';
 import { ConnectionGlobe } from './components/ConnectionGlobe';
 import DockerManager from './components/DockerManager';
+import NetworkHealth from './components/NetworkHealth';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
+import Settings from './components/Settings';
 
 // Navigation Item Component
 const NavItem = ({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) => (
@@ -39,6 +42,8 @@ const Dashboard = ({ wsData, loading }: { wsData: any[], setWsData: any, loading
                 <p className="text-gray-400 mt-1">Real-time network overview</p>
             </div>
             <div className="flex items-center gap-4">
+                <NetworkHealth />
+                {/* 
                 <div className="glass-card px-3 py-1.5 rounded-full flex items-center gap-2 border border-green-500/20 bg-green-500/5">
                     <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -46,6 +51,7 @@ const Dashboard = ({ wsData, loading }: { wsData: any[], setWsData: any, loading
                     </span>
                     <span className="text-sm font-medium text-green-400">Online</span>
                 </div>
+                */}
             </div>
         </header>
 
@@ -160,6 +166,14 @@ function App() {
     const [wsData, setWsData] = useState<any[]>([]);
     const [commandOpen, setCommandOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set(['dashboard']));
+
+    useEffect(() => {
+        setVisitedTabs(prev => {
+            if (prev.has(activeTab)) return prev;
+            return new Set(prev).add(activeTab);
+        });
+    }, [activeTab]);
 
     useEffect(() => {
         // Simulate initial data fetch/load
@@ -218,8 +232,8 @@ function App() {
             <Toaster richColors position="top-right" theme="dark" />
             <CommandPalette open={commandOpen} setOpen={setCommandOpen} changeTab={setActiveTab} />
 
-            {/* Sidebar */}
-            <aside className="w-64 border-r border-white/5 glass-card flex flex-col p-4 fixed h-full left-0 top-0 z-20">
+            {/* Sidebar (Desktop) */}
+            <aside className="hidden md:flex w-64 border-r border-white/5 glass-card flex-col p-4 fixed h-full left-0 top-0 z-20">
                 <div className="flex items-center gap-2 mb-8 px-2 py-2">
                     <div className="relative group cursor-pointer" onClick={() => toast.info("Statsea v0.1.0-alpha")}>
                         <div className="absolute inset-0 bg-blue-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
@@ -231,20 +245,46 @@ function App() {
                 <nav className="space-y-2 flex-1">
                     <NavItem icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
                     <NavItem icon={Server} label="Devices" active={activeTab === 'devices'} onClick={() => setActiveTab('devices')} />
-                    <NavItem icon={Network} label="Network Map" active={activeTab === 'network'} onClick={() => setActiveTab('network')} />
-                    <NavItem icon={GlobeIcon} label="Global Traffic" active={activeTab === 'geo'} onClick={() => setActiveTab('geo')} />
+                    <NavItem icon={Network} label="Map" active={activeTab === 'network'} onClick={() => setActiveTab('network')} />
+                    <NavItem icon={GlobeIcon} label="Global" active={activeTab === 'geo'} onClick={() => setActiveTab('geo')} />
                     <NavItem icon={Shield} label="Security" active={activeTab === 'security'} onClick={() => setActiveTab('security')} />
                     <NavItem icon={Box} label="Containers" active={activeTab === 'containers'} onClick={() => setActiveTab('containers')} />
                     <NavItem icon={Activity} label="Analytics" active={activeTab === 'analytics'} onClick={() => setActiveTab('analytics')} />
                 </nav>
 
                 <div className="mt-auto pt-4 border-t border-white/5">
-                    <NavItem icon={Settings} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+                    <NavItem icon={SettingsIcon} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
                 </div>
             </aside>
 
+            {/* Mobile Bottom Navigation */}
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-white/10 bg-black/80 backdrop-blur-xl pb-safe">
+                <div className="flex justify-around items-center p-2">
+                    <button onClick={() => setActiveTab('dashboard')} className={`p-3 rounded-xl flex flex-col items-center gap-1 ${activeTab === 'dashboard' ? 'text-blue-400' : 'text-gray-500'}`}>
+                        <LayoutDashboard className="w-6 h-6" />
+                        <span className="text-[10px] font-medium">Home</span>
+                    </button>
+                    <button onClick={() => setActiveTab('network')} className={`p-3 rounded-xl flex flex-col items-center gap-1 ${activeTab === 'network' ? 'text-blue-400' : 'text-gray-500'}`}>
+                        <Network className="w-6 h-6" />
+                        <span className="text-[10px] font-medium">Map</span>
+                    </button>
+                    <button onClick={() => setActiveTab('analytics')} className={`p-3 rounded-xl flex flex-col items-center gap-1 ${activeTab === 'analytics' ? 'text-blue-400' : 'text-gray-500'}`}>
+                        <Activity className="w-6 h-6" />
+                        <span className="text-[10px] font-medium">Stats</span>
+                    </button>
+                    <button onClick={() => setCommandOpen(true)} className={`p-3 rounded-xl flex flex-col items-center gap-1 text-gray-500`}>
+                        <Search className="w-6 h-6" />
+                        <span className="text-[10px] font-medium">Search</span>
+                    </button>
+                    <button onClick={() => setActiveTab('settings')} className={`p-3 rounded-xl flex flex-col items-center gap-1 ${activeTab === 'settings' ? 'text-blue-400' : 'text-gray-500'}`}>
+                        <SettingsIcon className="w-6 h-6" />
+                        <span className="text-[10px] font-medium">Settings</span>
+                    </button>
+                </div>
+            </div>
+
             {/* Main Content */}
-            <main className="flex-1 ml-64 p-8 min-h-screen bg-[#0f1014] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-background to-background">
+            <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 min-h-screen pb-24 md:pb-8 bg-[#0f1014] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-background to-background">
                 <header className={`flex justify-end items-center mb-0 ${activeTab === 'dashboard' ? 'hidden md:flex absolute top-8 right-8 z-10' : 'mb-8'}`}>
                     <div className="flex items-center gap-4">
                         <button
@@ -260,37 +300,61 @@ function App() {
                     </div>
                 </header>
 
-                <AnimatePresence mode="wait">
-                    {activeTab === 'dashboard' && <Dashboard key="dashboard" wsData={wsData} setWsData={setWsData} loading={loading} />}
-                    {activeTab === 'devices' && <DevicesPage key="devices" />}
-                    {activeTab === 'network' && <NetworkMap key="network" />}
-                    {activeTab === 'geo' && <ConnectionGlobe key="geo" />}
-                    {activeTab === 'security' && (
-                        <div className="space-y-6">
-                            <header className="mb-8">
-                                <h1 className="text-3xl font-bold text-white tracking-tight">Security Center</h1>
-                                <p className="text-gray-400 mt-1">Real-time threat monitoring and alerts</p>
-                            </header>
-                            <SecurityAlertsWidget />
+                <div className="relative h-full">
+                    {/* Dashboard - Always rendered for immediate access */}
+                    <div className={`${activeTab === 'dashboard' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
+                        <Dashboard wsData={wsData} setWsData={setWsData} loading={loading} />
+                    </div>
+
+                    {/* Lazy Loaded Components with Keep-Alive */}
+                    {(activeTab === 'devices' || visitedTabs.has('devices')) && (
+                        <div className={`${activeTab === 'devices' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
+                            <DevicesPage />
                         </div>
                     )}
-                    {activeTab === 'analytics' && (
-                        <motion.div
-                            key="empty"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="flex flex-col items-center justify-center h-[60vh] text-center"
-                        >
-                            <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                                <Activity className="w-10 h-10 text-gray-500" />
-                            </div>
-                            <h2 className="text-2xl font-bold text-white mb-2">Analytics Engine</h2>
-                            <p className="text-gray-400 max-w-md">Detailed behavioral insights and historical trends are being processed.</p>
-                        </motion.div>
+
+                    {(activeTab === 'network' || visitedTabs.has('network')) && (
+                        <div className={`${activeTab === 'network' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
+                            <NetworkMap />
+                        </div>
                     )}
-                    {activeTab === 'containers' && <DockerManager key="containers" />}
-                </AnimatePresence>
+
+                    {(activeTab === 'geo' || visitedTabs.has('geo')) && (
+                        <div className={`${activeTab === 'geo' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
+                            <ConnectionGlobe />
+                        </div>
+                    )}
+
+                    {(activeTab === 'security' || visitedTabs.has('security')) && (
+                        <div className={`${activeTab === 'security' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
+                            <div className="space-y-6">
+                                <header className="mb-8">
+                                    <h1 className="text-3xl font-bold text-white tracking-tight">Security Center</h1>
+                                    <p className="text-gray-400 mt-1">Real-time threat monitoring and alerts</p>
+                                </header>
+                                <SecurityAlertsWidget />
+                            </div>
+                        </div>
+                    )}
+
+                    {(activeTab === 'analytics' || visitedTabs.has('analytics')) && (
+                        <div className={`${activeTab === 'analytics' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
+                            <AnalyticsDashboard />
+                        </div>
+                    )}
+
+                    {(activeTab === 'containers' || visitedTabs.has('containers')) && (
+                        <div className={`${activeTab === 'containers' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
+                            <DockerManager />
+                        </div>
+                    )}
+
+                    {(activeTab === 'settings' || visitedTabs.has('settings')) && (
+                        <div className={`${activeTab === 'settings' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
+                            <Settings />
+                        </div>
+                    )}
+                </div>
             </main>
         </div>
     );

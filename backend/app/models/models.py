@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, BigInteger
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, BigInteger, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..db.database import Base
@@ -17,6 +17,35 @@ class Device(Base):
     is_online = Column(Boolean, default=False)
 
     traffic_logs = relationship("TrafficLog", back_populates="device")
+
+
+class BandwidthHistory(Base):
+    __tablename__ = "bandwidth_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    upload_bytes = Column(BigInteger, default=0)
+    download_bytes = Column(BigInteger, default=0)
+
+class LatencyLog(Base):
+    __tablename__ = "latency_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    target = Column(String, index=True)
+    latency_ms = Column(Float, nullable=True)
+
+class SecurityEvent(Base):
+    __tablename__ = "security_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    event_type = Column(String, index=True)  # PORT_SCAN, ROGUE_DHCP, NEW_DEVICE
+    severity = Column(String)  # LOW, MEDIUM, HIGH, CRITICAL
+    description = Column(String)
+    source_ip = Column(String, nullable=True)
+    mac_address = Column(String, nullable=True)
+    resolved = Column(Boolean, default=False)
 
 
 class TrafficLog(Base):
@@ -52,3 +81,12 @@ class SecurityAlert(Base):
     is_resolved = Column(Boolean, default=False)
 
     device = relationship("Device")
+
+
+class SystemSettings(Base):
+    __tablename__ = "system_settings"
+
+    key = Column(String, primary_key=True, index=True)
+    value = Column(String)
+    type = Column(String, default="string") # string, int, float, bool, json
+    description = Column(String, nullable=True)

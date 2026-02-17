@@ -18,10 +18,18 @@ export function SecurityAlertsWidget() {
     useEffect(() => {
         const fetchAlerts = async () => {
             try {
-                const response = await fetch('/api/alerts');
+                const response = await fetch('http://localhost:21081/security/events');
                 if (response.ok) {
                     const data = await response.json();
-                    setAlerts(data);
+                    const mapped = data.map((e: any) => ({
+                        id: e.id,
+                        timestamp: String(e.timestamp),
+                        severity: e.severity.toLowerCase(),
+                        title: e.event_type,
+                        description: e.description,
+                        is_resolved: e.resolved
+                    }));
+                    setAlerts(mapped);
                 }
             } catch (error) {
                 console.error("Error fetching alerts:", error);

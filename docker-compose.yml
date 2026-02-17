@@ -8,6 +8,9 @@ services:
     restart: unless-stopped
     environment:
       - PORT=21081
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
 
   frontend:
     build: ./frontend

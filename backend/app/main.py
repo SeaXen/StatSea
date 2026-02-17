@@ -5,6 +5,7 @@ import uvicorn
 from .api import endpoints
 from .core.collector import global_collector
 from .core.docker_monitor import docker_monitor
+from .core.monitor import monitor
 from .db.database import engine, Base
 from .models import models
 
@@ -16,10 +17,12 @@ async def lifespan(app: FastAPI):
     # Start services
     global_collector.start()
     docker_monitor.start()
+    monitor.start()
     yield
     # Stop services
     global_collector.stop()
     docker_monitor.stop()
+    monitor.stop()
 
 app = FastAPI(
     title="Statsea API",

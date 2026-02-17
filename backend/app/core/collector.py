@@ -38,6 +38,32 @@ class PacketCollector:
         self.flush_interval = 30 # seconds
         self.event_callback = None
         self._loop = None
+        # --- Advanced Analytics ---
+        self.protocol_counts: Dict[str, int] = {}  # protocol -> count
+        self.device_traffic: Dict[str, Dict] = {}  # MAC -> {upload, download, hostname}
+        self.total_packets = 0
+        self.total_bytes = 0
+        self.packets_per_sec = 0.0
+        self.suspicious_count = 0
+        self._last_pps_time = time.time()
+        self._pps_packet_count = 0
+        self.packet_log: List[Dict] = []  # ring buffer for live stream
+        self.PACKET_LOG_SIZE = 200
+        # --- Extended Analytics ---
+        self.bandwidth_history: List[Dict] = []  # ring buffer of {time, up, down}
+        self.BANDWIDTH_HISTORY_SIZE = 60  # 60 snapshots = ~2 minutes at 2s interval
+        self._bw_snapshot_up = 0
+        self._bw_snapshot_down = 0
+        self._last_bw_snapshot = time.time()
+        self.packet_size_buckets: Dict[str, int] = {
+            "tiny (<128B)": 0, "small (128-512B)": 0, "medium (512-1024B)": 0, "large (1024B+)": 0
+        }
+        self.dns_queries = 0
+        self.http_requests = 0
+        self.active_sessions: Dict[str, float] = {}  # session_key -> last_seen
+        self.SESSION_TIMEOUT = 30  # seconds
+        self.connection_types: Dict[str, int] = {"internal": 0, "external": 0}
+        self.bytes_per_protocol: Dict[str, int] = {}  # protocol -> total bytes
 
     def set_event_callback(self, callback):
         """Sets the callback for broadcasting events."""
@@ -76,23 +102,77 @@ class PacketCollector:
                 return
 
             packet_len = len(packet)
-            
-            # Simple aggregation logic for now
+            src_ip = packet[IP].src
+            dst_ip = packet[IP].dst
+
+            # Determine protocol
+            proto = "OTHER"
+            src_port = 0
+            dst_port = 0
+            if packet.haslayer(TCP):
+                proto = "TCP"
+                src_port = packet[TCP].sport
+                dst_port = packet[TCP].dport
+                # Refine by well-known ports
+                if dst_port == 443 or src_port == 443:
+                    proto = "HTTPS"
+                elif dst_port == 80 or src_port == 80:
+                    proto = "HTTP"
+                elif dst_port == 22 or src_port == 22:
+                    proto = "SSH"
+                elif dst_port == 21 or src_port == 21:
+                    proto = "FTP"
+            elif packet.haslayer(UDP):
+                proto = "UDP"
+                src_port = packet[UDP].sport
+                dst_port = packet[UDP].dport
+                if dst_port == 53 or src_port == 53:
+                    proto = "DNS"
+            elif packet[IP].proto == 1:
+                proto = "ICMP"
+
             with self.stats_lock:
-                # In a real environment, we'd check against host IP to determine upload/download
-                # For now, we'll assume traffic is roughly split or just track totals
-                # In Phase 1.1 we'll refine this with local IP detection
                 self.download_acc += packet_len
-                
-                # Check for MAC to update device activity
+                self.total_packets += 1
+                self.total_bytes += packet_len
+                self._pps_packet_count += 1
+
+                # Protocol tracking
+                self.protocol_counts[proto] = self.protocol_counts.get(proto, 0) + 1
+
+                # Per-device traffic
                 if packet.src:
-                    self.active_devices[packet.src] = {
+                    mac = packet.src
+                    self.active_devices[mac] = {
                         "last_seen": time.time(),
-                        "ip": packet[IP].src
+                        "ip": src_ip
                     }
+                    if mac not in self.device_traffic:
+                        self.device_traffic[mac] = {"upload": 0, "download": 0, "ip": src_ip}
+                    self.device_traffic[mac]["download"] += packet_len
+                    self.device_traffic[mac]["ip"] = src_ip
+
+                # Packet log for live stream
+                log_entry = {
+                    "time": datetime.now().strftime("%H:%M:%S.%f")[:-3],
+                    "proto": proto,
+                    "src": f"{src_ip}:{src_port}" if src_port else src_ip,
+                    "dst": f"{dst_ip}:{dst_port}" if dst_port else dst_ip,
+                    "size": packet_len
+                }
+                self.packet_log.append(log_entry)
+                if len(self.packet_log) > self.PACKET_LOG_SIZE:
+                    self.packet_log.pop(0)
+
+                # Compute packets/sec every second
+                now = time.time()
+                elapsed = now - self._last_pps_time
+                if elapsed >= 1.0:
+                    self.packets_per_sec = self._pps_packet_count / elapsed
+                    self._pps_packet_count = 0
+                    self._last_pps_time = now
 
                 # External Traffic Tracking (Outgoing)
-                dst_ip = packet[IP].dst
                 if not self._is_private_ip(dst_ip):
                     self._track_external_connection(dst_ip, packet_len)
 
@@ -123,19 +203,133 @@ class PacketCollector:
     def _run_mock(self):
         """Mock traffic generator for development."""
         import random
-        mock_macs = ["00:15:5D:01:02:03", "00:15:5D:04:05:06", "74:AC:5F:E1:D2:C3"]
+        mock_macs = ["00:15:5D:01:02:03", "00:15:5D:04:05:06", "74:AC:5F:E1:D2:C3",
+                     "AA:BB:CC:DD:EE:01", "AA:BB:CC:DD:EE:02", "AA:BB:CC:DD:EE:03"]
+        mock_hostnames = {"AA:BB:CC:DD:EE:01": "iPhone-13", "AA:BB:CC:DD:EE:02": "Galaxy-S24",
+                          "AA:BB:CC:DD:EE:03": "Desktop-PC", "00:15:5D:01:02:03": "NAS-Server",
+                          "00:15:5D:04:05:06": "Smart-TV", "74:AC:5F:E1:D2:C3": "Laptop-Air"}
+        protocols = ["TCP", "UDP", "HTTP", "HTTPS", "DNS", "ICMP", "SSH", "FTP"]
+        proto_weights = [30, 20, 15, 25, 8, 5, 3, 2]  # weighted distribution
+        mock_ext_ips = ["142.250.72.14", "104.16.132.229", "166.34.161.67", "151.101.1.140",
+                        "13.107.42.14", "31.13.65.36", "52.94.236.248", "185.199.108.153"]
+
         while self.running:
             with self.stats_lock:
-                self.upload_acc += random.randint(100, 2000)
-                self.download_acc += random.randint(1000, 10000)
-                
-                # Randomly "see" a device
+                up = random.randint(100, 2000)
+                down = random.randint(1000, 10000)
+                self.upload_acc += up
+                self.download_acc += down
+
+                # Pick a random device and protocol
                 mac = random.choice(mock_macs)
+                proto = random.choices(protocols, weights=proto_weights, k=1)[0]
+                device_ip = f"192.168.1.{10 + mock_macs.index(mac)}"
+                ext_ip = random.choice(mock_ext_ips)
+                src_port = random.randint(1024, 65535)
+                dst_port = {"HTTP": 80, "HTTPS": 443, "DNS": 53, "SSH": 22, "FTP": 21}.get(proto, random.randint(1024, 65535))
+                pkt_size = random.randint(64, 1500)
+
                 self.active_devices[mac] = {
                     "last_seen": time.time(),
-                    "ip": f"192.168.1.{random.randint(50, 100)}"
+                    "ip": device_ip
                 }
-            time.sleep(1)
+
+                # Track per-device traffic
+                if mac not in self.device_traffic:
+                    self.device_traffic[mac] = {"upload": 0, "download": 0, "ip": device_ip, "hostname": mock_hostnames.get(mac, mac[-5:])}
+                self.device_traffic[mac]["download"] += down
+                self.device_traffic[mac]["upload"] += up
+
+                # Track protocol
+                self.protocol_counts[proto] = self.protocol_counts.get(proto, 0) + 1
+                self.total_packets += 1
+                self.total_bytes += pkt_size
+                self._pps_packet_count += 1
+                self.bytes_per_protocol[proto] = self.bytes_per_protocol.get(proto, 0) + pkt_size
+
+                # Packet size distribution
+                if pkt_size < 128:
+                    self.packet_size_buckets["tiny (<128B)"] += 1
+                elif pkt_size < 512:
+                    self.packet_size_buckets["small (128-512B)"] += 1
+                elif pkt_size < 1024:
+                    self.packet_size_buckets["medium (512-1024B)"] += 1
+                else:
+                    self.packet_size_buckets["large (1024B+)"] += 1
+
+                # DNS/HTTP counters
+                if proto == "DNS":
+                    self.dns_queries += 1
+                if proto in ("HTTP", "HTTPS"):
+                    self.http_requests += 1
+
+                # Active sessions tracking
+                session_key = f"{device_ip}:{src_port}->{ext_ip}:{dst_port}"
+                self.active_sessions[session_key] = time.time()
+                # Prune stale sessions
+                cutoff = time.time() - self.SESSION_TIMEOUT
+                self.active_sessions = {k: v for k, v in self.active_sessions.items() if v > cutoff}
+
+                # Connection type
+                self.connection_types["external"] += 1
+                if random.random() < 0.3:  # 30% chance internal
+                    self.connection_types["internal"] += 1
+
+                # Suspicious detection (random small chance)
+                is_suspicious = random.random() < 0.02
+                if is_suspicious:
+                    self.suspicious_count += 1
+
+                # Compute packets/sec
+                now = time.time()
+                elapsed = now - self._last_pps_time
+                if elapsed >= 1.0:
+                    self.packets_per_sec = self._pps_packet_count / elapsed
+                    self._pps_packet_count = 0
+                    self._last_pps_time = now
+
+                # Bandwidth history snapshot (every 2 seconds)
+                self._bw_snapshot_up += up
+                self._bw_snapshot_down += down
+                bw_elapsed = now - self._last_bw_snapshot
+                if bw_elapsed >= 2.0:
+                    self.bandwidth_history.append({
+                        "time": datetime.now().strftime("%H:%M:%S"),
+                        "up": self._bw_snapshot_up,
+                        "down": self._bw_snapshot_down
+                    })
+                    if len(self.bandwidth_history) > self.BANDWIDTH_HISTORY_SIZE:
+                        self.bandwidth_history.pop(0)
+                    self._bw_snapshot_up = 0
+                    self._bw_snapshot_down = 0
+                    self._last_bw_snapshot = now
+
+                # Packet log entry
+                log_entry = {
+                    "time": datetime.now().strftime("%H:%M:%S.%f")[:-3],
+                    "proto": proto,
+                    "src": f"{device_ip}:{src_port}",
+                    "dst": f"{ext_ip}:{dst_port}",
+                    "size": pkt_size,
+                    "suspicious": is_suspicious
+                }
+                self.packet_log.append(log_entry)
+                if len(self.packet_log) > self.PACKET_LOG_SIZE:
+                    self.packet_log.pop(0)
+
+                # External connection tracking
+                if ext_ip not in self.external_connections:
+                    threading.Thread(target=self._resolve_geoip, args=(ext_ip,), daemon=True).start()
+                    self.external_connections[ext_ip] = {
+                        "bytes": 0, "hits": 0, "last_seen": 0,
+                        "city": "Resolving...", "country": "", "lat": 0, "lon": 0
+                    }
+                conn = self.external_connections[ext_ip]
+                conn["bytes"] += pkt_size
+                conn["hits"] += 1
+                conn["last_seen"] = time.time()
+
+            time.sleep(random.uniform(0.3, 1.0))
 
     def get_current_stats(self):
         """Returns and resets the accumulated bitrates."""
@@ -284,6 +478,40 @@ class PacketCollector:
                 for ip, data in self.external_connections.items() 
                 if data.get("lat") != 0
             ]
+
+    def get_analytics_summary(self) -> Dict:
+        """Returns comprehensive analytics data for the Traffic Analyzer page."""
+        with self.stats_lock:
+            # Top devices by total traffic
+            top_devices = sorted(
+                [
+                    {"mac": mac, **data, "total": data.get("upload", 0) + data.get("download", 0)}
+                    for mac, data in self.device_traffic.items()
+                ],
+                key=lambda x: x["total"],
+                reverse=True
+            )[:6]
+
+            return {
+                "total_packets": self.total_packets,
+                "total_bytes": self.total_bytes,
+                "packets_per_sec": round(self.packets_per_sec, 1),
+                "suspicious": self.suspicious_count,
+                "upload_rate": self.upload_acc,
+                "download_rate": self.download_acc,
+                "protocols": dict(self.protocol_counts),
+                "top_devices": top_devices,
+                "packet_log": list(self.packet_log[-50:]),  # last 50 packets
+                "active_device_count": len(self.active_devices),
+                # Extended analytics
+                "bandwidth_history": list(self.bandwidth_history),
+                "packet_size_distribution": dict(self.packet_size_buckets),
+                "dns_queries": self.dns_queries,
+                "http_requests": self.http_requests,
+                "active_sessions": len(self.active_sessions),
+                "connection_types": dict(self.connection_types),
+                "bytes_per_protocol": dict(self.bytes_per_protocol)
+            }
 
 # Global collector instance
 global_collector = PacketCollector()
