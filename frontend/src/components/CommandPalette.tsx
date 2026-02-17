@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Command } from 'cmdk';
 import { Search, LayoutDashboard, Server, Shield, Settings, Activity, Network } from 'lucide-react';
+import { API_CONFIG } from '../config/apiConfig';
 
 
 export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, setOpen: (open: boolean | ((prev: boolean) => boolean)) => void, changeTab: (tab: string) => void }) {
@@ -77,7 +78,17 @@ export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, se
                 <Command.Group heading="Actions" className="text-xs text-gray-500 font-medium mb-2 px-2 mt-2">
                     <Command.Item
                         className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 rounded-lg aria-selected:bg-blue-600/20 aria-selected:text-blue-400 cursor-pointer transition-colors"
-                        onSelect={() => { console.log('Run Speedtest'); setOpen(false); }}
+                        onSelect={async () => {
+                            setOpen(false);
+                            console.log('Starting speedtest...');
+                            try {
+                                await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SPEEDTEST}`, { method: 'POST' });
+                                console.log('Speedtest complete');
+                                window.dispatchEvent(new Event('speedtest-update'));
+                            } catch (e) {
+                                console.error('Speedtest failed', e);
+                            }
+                        }}
                     >
                         <Activity className="w-4 h-4" />
                         <span>Run Speedtest</span>

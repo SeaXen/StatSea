@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Activity } from 'lucide-react';
 
+import { API_CONFIG } from '../config/apiConfig';
+
 interface NetworkHealthData {
     score: number;
     status: 'Excellent' | 'Good' | 'Poor';
@@ -13,7 +15,7 @@ const NetworkHealth = () => {
     useEffect(() => {
         const fetchHealth = async () => {
             try {
-                const response = await fetch('http://localhost:21081/network/health');
+                const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.HEALTH}`);
                 if (response.ok) {
                     const result = await response.json();
                     setData(result);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, LayoutDashboard, Server, Settings as SettingsIcon, Shield, Network, Search, Globe as GlobeIcon, Box } from 'lucide-react';
+import { Activity, LayoutDashboard, Server, Settings as SettingsIcon, Network, Search, Globe as GlobeIcon, Box } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Toaster, toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -13,7 +13,9 @@ import { ConnectionGlobe } from './components/ConnectionGlobe';
 import DockerManager from './components/DockerManager';
 import NetworkHealth from './components/NetworkHealth';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
-import Settings from './components/Settings';
+import SpeedtestPage from './components/SpeedtestPage';
+import SettingsPage from './components/SettingsPage';
+import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
 
 // Navigation Item Component
 const NavItem = ({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) => (
@@ -29,141 +31,150 @@ const NavItem = ({ icon: Icon, label, active, onClick }: { icon: any, label: str
     </button>
 );
 
-const Dashboard = ({ wsData, loading }: { wsData: any[], setWsData: any, loading: boolean }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.3 }}
-    >
-        <header className="flex justify-between items-center mb-8">
-            <div>
-                <h1 className="text-3xl font-bold text-white tracking-tight">Dashboard</h1>
-                <p className="text-gray-400 mt-1">Real-time network overview</p>
-            </div>
-            <div className="flex items-center gap-4">
-                <NetworkHealth />
-                {/* 
-                <div className="glass-card px-3 py-1.5 rounded-full flex items-center gap-2 border border-green-500/20 bg-green-500/5">
-                    <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
-                    <span className="text-sm font-medium text-green-400">Online</span>
-                </div>
-                */}
-            </div>
-        </header>
+const Dashboard = ({ loading }: { loading: boolean }) => {
+    const { wsData, isConnected } = useWebSocket();
 
-        {/* Live Traffic Widget */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <div className="col-span-2 glass-card rounded-xl p-6 h-[400px] border border-white/5 bg-black/40 backdrop-blur-xl shadow-xl overflow-hidden relative">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-blue-400" />
-                        Live Network Traffic
-                    </h3>
-                    <div className="flex gap-4 text-sm">
-                        <span className="flex items-center gap-1.5 text-gray-400">
-                            <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div> Download
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+        >
+            <header className="flex justify-between items-center mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold text-white tracking-tight">Dashboard</h1>
+                    <p className="text-gray-400 mt-1">Real-time network overview</p>
+                </div>
+                <div className="flex items-center gap-4">
+                    <NetworkHealth />
+                    <div className={`px-3 py-1.5 rounded-full flex items-center gap-2 border ${isConnected ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
+                        <span className="relative flex h-2 w-2">
+                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></span>
+                            <span className={`relative inline-flex rounded-full h-2 w-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
                         </span>
-                        <span className="flex items-center gap-1.5 text-gray-400">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div> Upload
-                        </span>
+                        <span className={`text-sm font-medium ${isConnected ? 'text-green-400' : 'text-red-400'}`}>{isConnected ? 'Live' : 'Offline'}</span>
                     </div>
                 </div>
-                {wsData.length === 0 ? (
-                    <div className="absolute inset-0 top-20 flex flex-col items-center justify-center space-y-4 px-12">
-                        <div className="w-full h-full max-h-[250px] bg-white/5 animate-pulse rounded-lg" />
-                        <p className="text-xs text-gray-500 animate-pulse">Waiting for network telemetry...</p>
-                    </div>
-                ) : (
-                    <ResponsiveContainer width="100%" height={300}>
-                        <AreaChart data={wsData}>
-                            <defs>
-                                <linearGradient id="colorDownload" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                </linearGradient>
-                                <linearGradient id="colorUpload" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.2} />
-                            <XAxis dataKey="time" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} dy={10} />
-                            <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(value) => `${value.toFixed(0)} KB/s`} dx={-10} />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)' }}
-                                itemStyle={{ color: '#e2e8f0' }}
-                                labelStyle={{ color: '#94a3b8' }}
-                            />
-                            <Area type="monotone" dataKey="download" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorDownload)" isAnimationActive={false} />
-                            <Area type="monotone" dataKey="upload" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorUpload)" isAnimationActive={false} />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                )}
-            </div>
+            </header>
 
-            {/* Top Stats Widget */}
-            <div className="glass-card rounded-xl p-6 flex flex-col border border-white/5 bg-black/40 backdrop-blur-xl shadow-xl">
-                <h3 className="text-lg font-semibold mb-6 text-gray-200">Network Status</h3>
-                <div className="space-y-4 flex-1">
-                    {loading ? (
-                        <>
-                            <div className="h-16 w-full bg-white/5 animate-pulse rounded-xl" />
-                            <div className="h-16 w-full bg-white/5 animate-pulse rounded-xl" />
-                            <div className="h-16 w-full bg-white/5 animate-pulse rounded-xl" />
-                        </>
+            {/* Live Traffic Widget */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div className="col-span-2 glass-card rounded-xl p-6 h-[400px] border border-white/5 bg-black/40 backdrop-blur-xl shadow-xl overflow-hidden relative">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
+                            <Activity className="w-4 h-4 text-blue-400" />
+                            Live Network Traffic
+                        </h3>
+                        <div className="flex gap-4 text-sm">
+                            <span className="flex items-center gap-1.5 text-gray-400">
+                                <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div> Download
+                            </span>
+                            <span className="flex items-center gap-1.5 text-gray-400">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div> Upload
+                            </span>
+                        </div>
+                    </div>
+                    {wsData.length === 0 ? (
+                        <div className="absolute inset-0 top-20 flex flex-col items-center justify-center space-y-4 px-12">
+                            <div className="w-full h-full max-h-[250px] bg-white/5 animate-pulse rounded-lg" />
+                            <p className="text-xs text-gray-500 animate-pulse">Waiting for network telemetry...</p>
+                        </div>
                     ) : (
-                        <>
-                            <div className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group">
-                                <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Total Download</span>
-                                <span className="text-xl font-mono text-blue-400 font-bold group-hover:text-blue-300 transition-colors shadow-blue-500/20 drop-shadow-lg">1.2 TB</span>
-                            </div>
-                            <div className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group">
-                                <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Total Upload</span>
-                                <span className="text-xl font-mono text-emerald-400 font-bold group-hover:text-emerald-300 transition-colors shadow-emerald-500/20 drop-shadow-lg">230 GB</span>
-                            </div>
-                            <div className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group">
-                                <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Active Devices</span>
-                                <span className="text-xl font-mono text-purple-400 font-bold group-hover:text-purple-300 transition-colors shadow-purple-500/20 drop-shadow-lg">14</span>
-                            </div>
-                        </>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <AreaChart data={wsData}>
+                                <defs>
+                                    <linearGradient id="colorDownload" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                    </linearGradient>
+                                    <linearGradient id="colorUpload" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.2} />
+                                <XAxis dataKey="time" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                                <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(value) => `${value.toFixed(0)} KB/s`} dx={-10} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)' }}
+                                    itemStyle={{ color: '#e2e8f0' }}
+                                    labelStyle={{ color: '#94a3b8' }}
+                                />
+                                <Area type="monotone" dataKey="download" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorDownload)" isAnimationActive={false} />
+                                <Area type="monotone" dataKey="upload" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorUpload)" isAnimationActive={false} />
+                            </AreaChart>
+                        </ResponsiveContainer>
                     )}
                 </div>
-                <div className="mt-6 pt-6 border-t border-white/5">
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Quick Actions</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                        <button onClick={() => toast.error("Device Blocking Simulated")} className="p-2 text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                            Block Device
-                        </button>
-                        <button onClick={() => toast.info("Speedtest Started...")} className="p-2 text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                            Run Speedtest
-                        </button>
+
+                {/* Top Stats Widget */}
+                <div className="glass-card rounded-xl p-6 flex flex-col border border-white/5 bg-black/40 backdrop-blur-xl shadow-xl">
+                    <h3 className="text-lg font-semibold mb-6 text-gray-200">Network Status</h3>
+                    <div className="space-y-4 flex-1">
+                        {loading ? (
+                            <>
+                                <div className="h-16 w-full bg-white/5 animate-pulse rounded-xl" />
+                                <div className="h-16 w-full bg-white/5 animate-pulse rounded-xl" />
+                                <div className="h-16 w-full bg-white/5 animate-pulse rounded-xl" />
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group">
+                                    <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Total Download</span>
+                                    <span className="text-xl font-mono text-blue-400 font-bold group-hover:text-blue-300 transition-colors shadow-blue-500/20 drop-shadow-lg">1.2 TB</span>
+                                </div>
+                                <div className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group">
+                                    <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Total Upload</span>
+                                    <span className="text-xl font-mono text-emerald-400 font-bold group-hover:text-emerald-300 transition-colors shadow-emerald-500/20 drop-shadow-lg">230 GB</span>
+                                </div>
+                                <div className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group">
+                                    <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Active Devices</span>
+                                    <span className="text-xl font-mono text-purple-400 font-bold group-hover:text-purple-300 transition-colors shadow-purple-500/20 drop-shadow-lg">14</span>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    <div className="mt-6 pt-6 border-t border-white/5">
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Quick Actions</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => toast.error("Device Blocking Simulated")} className="p-2 text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                                Block Device
+                            </button>
+                            <button onClick={() => toast.info("Speedtest Started...")} className="p-2 text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                                Run Speedtest
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        {/* Bottom Widgets Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-                <TopDevicesWidget />
+            {/* Bottom Widgets Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1">
+                    <TopDevicesWidget />
+                </div>
+                <div className="lg:col-span-1">
+                    <ActiveConnectionsWidget />
+                </div>
+                <div className="lg:col-span-1">
+                    <SecurityAlertsWidget />
+                </div>
             </div>
-            <div className="lg:col-span-1">
-                <ActiveConnectionsWidget />
-            </div>
-            <div className="lg:col-span-1">
-                <SecurityAlertsWidget />
-            </div>
-        </div>
-    </motion.div>
-);
+        </motion.div>
+    );
+};
 
-function App() {
+export default function App() {
+    return (
+        <WebSocketProvider>
+            <AppContent />
+        </WebSocketProvider>
+    );
+}
+
+function AppContent() {
     const [activeTab, setActiveTab] = useState('dashboard');
-    const [wsData, setWsData] = useState<any[]>([]);
     const [commandOpen, setCommandOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set(['dashboard']));
@@ -179,52 +190,6 @@ function App() {
         // Simulate initial data fetch/load
         const timer = setTimeout(() => setLoading(false), 2000);
         return () => clearTimeout(timer);
-    }, []);
-
-    useEffect(() => {
-        // Connect to WebSocket
-        const ws = new WebSocket(`ws://${window.location.hostname}:21081/api/ws/live`);
-
-        ws.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                setWsData(prev => {
-                    const newData = [...prev, {
-                        time: new Date(data.timestamp * 1000).toLocaleTimeString(),
-                        upload: data.u / 1024, // KB
-                        download: data.d / 1024, // KB
-                    }];
-                    if (newData.length > 20) newData.shift();
-                    return newData;
-                });
-            } catch (e) {
-                console.error("Failed to parse WS message", e);
-            }
-        };
-
-        ws.onopen = () => toast.success('Connected to Live Server');
-        ws.onclose = () => toast.error('Disconnected from Server');
-
-        // Connect to Events WebSocket
-        const eventWs = new WebSocket(`ws://${window.location.hostname}:21081/api/ws/events`);
-        eventWs.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                if (data.type === 'NEW_DEVICE') {
-                    toast.warning(data.title, {
-                        description: data.description,
-                        duration: 5000,
-                    });
-                }
-            } catch (e) {
-                console.error("Failed to parse event message", e);
-            }
-        };
-
-        return () => {
-            ws.close();
-            eventWs.close();
-        };
     }, []);
 
     return (
@@ -247,9 +212,10 @@ function App() {
                     <NavItem icon={Server} label="Devices" active={activeTab === 'devices'} onClick={() => setActiveTab('devices')} />
                     <NavItem icon={Network} label="Map" active={activeTab === 'network'} onClick={() => setActiveTab('network')} />
                     <NavItem icon={GlobeIcon} label="Global" active={activeTab === 'geo'} onClick={() => setActiveTab('geo')} />
-                    <NavItem icon={Shield} label="Security" active={activeTab === 'security'} onClick={() => setActiveTab('security')} />
+
                     <NavItem icon={Box} label="Containers" active={activeTab === 'containers'} onClick={() => setActiveTab('containers')} />
                     <NavItem icon={Activity} label="Analytics" active={activeTab === 'analytics'} onClick={() => setActiveTab('analytics')} />
+                    <NavItem icon={Activity} label="Speedtest" active={activeTab === 'speedtest'} onClick={() => setActiveTab('speedtest')} />
                 </nav>
 
                 <div className="mt-auto pt-4 border-t border-white/5">
@@ -303,7 +269,7 @@ function App() {
                 <div className="relative h-full">
                     {/* Dashboard - Always rendered for immediate access */}
                     <div className={`${activeTab === 'dashboard' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
-                        <Dashboard wsData={wsData} setWsData={setWsData} loading={loading} />
+                        <Dashboard loading={loading} />
                     </div>
 
                     {/* Lazy Loaded Components with Keep-Alive */}
@@ -325,17 +291,7 @@ function App() {
                         </div>
                     )}
 
-                    {(activeTab === 'security' || visitedTabs.has('security')) && (
-                        <div className={`${activeTab === 'security' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
-                            <div className="space-y-6">
-                                <header className="mb-8">
-                                    <h1 className="text-3xl font-bold text-white tracking-tight">Security Center</h1>
-                                    <p className="text-gray-400 mt-1">Real-time threat monitoring and alerts</p>
-                                </header>
-                                <SecurityAlertsWidget />
-                            </div>
-                        </div>
-                    )}
+
 
                     {(activeTab === 'analytics' || visitedTabs.has('analytics')) && (
                         <div className={`${activeTab === 'analytics' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
@@ -349,9 +305,15 @@ function App() {
                         </div>
                     )}
 
+                    {(activeTab === 'speedtest' || visitedTabs.has('speedtest')) && (
+                        <div className={`${activeTab === 'speedtest' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
+                            <SpeedtestPage />
+                        </div>
+                    )}
+
                     {(activeTab === 'settings' || visitedTabs.has('settings')) && (
                         <div className={`${activeTab === 'settings' ? 'block animate-in fade-in zoom-in-95 duration-300' : 'hidden'}`}>
-                            <Settings />
+                            <SettingsPage />
                         </div>
                     )}
                 </div>
@@ -360,4 +322,3 @@ function App() {
     );
 }
 
-export default App;

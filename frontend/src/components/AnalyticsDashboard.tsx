@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, RadarChart, Radar,
-    PolarGrid, PolarAngleAxis, PolarRadiusAxis
+    LineChart, Line, BarChart, Bar, PieChart, Pie, Cell
 } from 'recharts';
 import {
-    Shield, AlertTriangle, Activity, Zap, Eye, Pause, Play, Trash2,
-    Download, Upload, Search, ChevronRight, Globe, Wifi, Server,
-    Database, Radio, Layers, BarChart3, TrendingUp, Clock, Monitor, Network
+    Shield, AlertTriangle, Activity, Zap, Pause, Play, Search, Globe, Wifi, Server,
+    Database, Radio, Layers, BarChart3, TrendingUp, Monitor, Network
 } from 'lucide-react';
+import { API_CONFIG } from '../config/apiConfig';
+
 
 // ─── Protocol Color Map ───
 const PROTO_COLORS: Record<string, string> = {
@@ -96,6 +96,13 @@ interface ExternalConnection {
     country: string;
 }
 
+interface SystemHistoryPoint {
+    timestamp: string;
+    interface: string;
+    bytes_sent: number;
+    bytes_recv: number;
+}
+
 // ─── Helper ───
 function formatBytes(bytes: number): string {
     if (bytes === 0) return '0 B';
@@ -134,20 +141,7 @@ const StatCard = ({ label, value, icon: Icon, color, sub, trend }: {
     </div>
 );
 
-// ─── Mini Sparkline ───
-const MiniSparkline = ({ data, dataKey, color, height = 40 }: { data: any[]; dataKey: string; color: string; height?: number }) => (
-    <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
-            <defs>
-                <linearGradient id={`spark-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={color} stopOpacity={0} />
-                </linearGradient>
-            </defs>
-            <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={1.5} fill={`url(#spark-${dataKey})`} dot={false} />
-        </AreaChart>
-    </ResponsiveContainer>
-);
+
 
 // ─── Circular Gauge ───
 const CircularGauge = ({ percentage, rate, label, color, dotColor }: {
@@ -198,13 +192,15 @@ const ProtocolBadge = ({ proto, active, onClick }: { proto: string; active: bool
 
 // ─── MAIN COMPONENT ───
 const AnalyticsDashboard = () => {
-    const [activeView, setActiveView] = useState<'live' | 'statistics' | 'connections' | 'security'>('live');
+    const [activeView, setActiveView] = useState<'live' | 'statistics' | 'connections' | 'security' | 'history'>('live');
     const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
     const [bandwidthData, setBandwidthData] = useState<BandwidthPoint[]>([]);
     const [latencyData, setLatencyData] = useState<LatencyPoint[]>([]);
     const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
     const [externalConnections, setExternalConnections] = useState<ExternalConnection[]>([]);
+    const [systemHistory, setSystemHistory] = useState<SystemHistoryPoint[]>([]); // New state
     const [loading, setLoading] = useState(true);
+    const [historyLoading, setHistoryLoading] = useState(false);
     const [paused, setPaused] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeProtocols, setActiveProtocols] = useState<Set<string>>(new Set(['TCP', 'UDP', 'HTTP', 'HTTPS', 'DNS', 'ICMP', 'SSH', 'FTP']));
@@ -224,10 +220,10 @@ const AnalyticsDashboard = () => {
             if (paused) return;
             try {
                 const [analyticsRes, netRes, secRes, connRes] = await Promise.all([
-                    fetch('http://localhost:21081/analytics/summary'),
-                    fetch('http://localhost:21081/network/history'),
-                    fetch('http://localhost:21081/security/events'),
-                    fetch('http://localhost:21081/network/connections')
+                    fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ANALYTICS.SUMMARY}`),
+                    fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY}`),
+                    fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SECURITY.EVENTS}`),
+                    fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.NETWORK.CONNECTIONS}`)
                 ]);
 
                 if (analyticsRes.ok) setAnalyticsData(await analyticsRes.json());
@@ -253,6 +249,27 @@ const AnalyticsDashboard = () => {
         const interval = setInterval(fetchData, 2000);
         return () => clearInterval(interval);
     }, [paused]);
+
+    // Fetch history when view changes to history
+    useEffect(() => {
+        if (activeView === 'history') {
+            const fetchHistory = async () => {
+                setHistoryLoading(true);
+                try {
+                    const res = await fetch(`${API_CONFIG.BASE_URL}/system/network/history?hours=24`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setSystemHistory(data);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch system history", e);
+                } finally {
+                    setHistoryLoading(false);
+                }
+            };
+            fetchHistory();
+        }
+    }, [activeView]);
 
     // Auto-scroll live stream
     useEffect(() => {
@@ -425,11 +442,13 @@ const AnalyticsDashboard = () => {
                         </div>
                     </div>
                 </div>
+
+
             </div>
 
             {/* ─── Tab Navigation ─── */}
             <div className="flex gap-1 border-b border-gray-800">
-                {(['live', 'statistics', 'connections', 'security'] as const).map(tab => (
+                {(['live', 'statistics', 'connections', 'security', 'history'] as const).map(tab => (
                     <button key={tab} onClick={() => setActiveView(tab)}
                         className={`px-5 py-2.5 text-sm font-medium capitalize transition-all rounded-t-lg ${activeView === tab
                             ? 'text-cyan-400 bg-gray-900/60 border border-gray-800 border-b-transparent -mb-px'
@@ -747,6 +766,58 @@ const AnalyticsDashboard = () => {
                             </div>
                         )}
                     </div>
+                </div>
+            )}
+            {/* ═══════════════════ HISTORY ═══════════════════ */}
+            {activeView === 'history' && (
+                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5">
+                    <div className="flex items-center gap-2 mb-6">
+                        <Activity className="h-5 w-5 text-emerald-400" />
+                        <h3 className="text-lg font-semibold text-white">System Network History (24 Hours)</h3>
+                    </div>
+
+                    {historyLoading ? (
+                        <div className="h-[400px] flex items-center justify-center text-gray-500 animate-pulse">
+                            Loading history data...
+                        </div>
+                    ) : systemHistory.length === 0 ? (
+                        <div className="h-[400px] flex items-center justify-center text-gray-500">
+                            No history data available yet.
+                        </div>
+                    ) : (
+                        <div className="h-[400px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={systemHistory}>
+                                    <defs>
+                                        <linearGradient id="histDown" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.4} />
+                                            <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="histUp" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#34d399" stopOpacity={0.4} />
+                                            <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                                    <XAxis
+                                        dataKey="timestamp"
+                                        stroke="#4b5563"
+                                        fontSize={10}
+                                        tickFormatter={(t) => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    />
+                                    <YAxis stroke="#4b5563" fontSize={10} tickFormatter={(v) => formatBytes(v)} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }}
+                                        itemStyle={{ color: '#e5e7eb' }}
+                                        labelFormatter={(l) => new Date(l).toLocaleString()}
+                                        formatter={(value: number) => formatBytes(value)}
+                                    />
+                                    <Area type="monotone" dataKey="bytes_recv" name="Download" stroke="#22d3ee" strokeWidth={2} fillOpacity={1} fill="url(#histDown)" />
+                                    <Area type="monotone" dataKey="bytes_sent" name="Upload" stroke="#34d399" strokeWidth={2} fillOpacity={1} fill="url(#histUp)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

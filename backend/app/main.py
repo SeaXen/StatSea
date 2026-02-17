@@ -6,6 +6,8 @@ from .api import endpoints
 from .core.collector import global_collector
 from .core.docker_monitor import docker_monitor
 from .core.monitor import monitor
+from .core.scheduler import scheduler
+from .core.system_monitor import system_monitor
 from .db.database import engine, Base
 from .models import models
 
@@ -18,11 +20,15 @@ async def lifespan(app: FastAPI):
     global_collector.start()
     docker_monitor.start()
     monitor.start()
+    system_monitor.start()
+    scheduler.update_scheduler_from_db()
     yield
     # Stop services
     global_collector.stop()
     docker_monitor.stop()
     monitor.stop()
+    system_monitor.stop()
+    scheduler.scheduler.shutdown()
 
 app = FastAPI(
     title="Statsea API",
@@ -32,9 +38,19 @@ app = FastAPI(
 )
 
 # CORS (Allow all for local dev)
+# CORS (Allow specific origins for local dev)
+origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Globe from 'react-globe.gl';
 import { Globe as GlobeIcon, MapPin } from 'lucide-react';
+import { API_CONFIG } from '../config/apiConfig';
 
 interface Connection {
     ip: string;
@@ -23,7 +24,7 @@ export const ConnectionGlobe = () => {
     useEffect(() => {
         const fetchConnections = async () => {
             try {
-                const response = await fetch('http://localhost:21081/api/network/connections');
+                const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.NETWORK.CONNECTIONS}`);
                 const data = await response.json();
                 setConnections(data);
             } catch (error) {

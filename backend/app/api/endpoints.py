@@ -11,8 +11,13 @@ from ..schemas import defaults as schemas
 
 from ..core.collector import global_collector
 from ..core.docker_monitor import docker_monitor
+from ..core.docker_monitor import docker_monitor
 from ..core.monitor import monitor
+from ..core.system_monitor import system_monitor # Import system_monitor
 from ..core.security import security_engine
+from ..core.scheduler import scheduler
+from ..core.speedtest_service import speedtest_service
+from fastapi import WebSocketDisconnect
 
 router = APIRouter()
 
@@ -46,19 +51,33 @@ def get_device(device_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Device not found")
     return device
 
+@router.get("/devices/{device_id}/history")
+def get_device_history(device_id: int, days: int = 7, db: Session = Depends(get_db)):
+    """Returns daily traffic history for the past N days."""
+    from datetime import datetime, timedelta
+    since = datetime.now().date() - timedelta(days=days)
+    
+    summaries = db.query(models.DeviceDailySummary).filter(
+        models.DeviceDailySummary.device_id == device_id,
+        models.DeviceDailySummary.date >= since
+    ).order_by(models.DeviceDailySummary.date.asc()).all()
+    
+    return [
+        {
+            "date": s.date.isoformat(),
+            "upload": s.upload_bytes,
+            "download": s.download_bytes
+        }
+        for s in summaries
+    ]
+
 @router.get("/devices/{device_id}/stats")
 def get_device_stats(device_id: int, db: Session = Depends(get_db)):
-    # Mock historical data for the chart
-    import time
-    now = time.time()
-    stats = []
-    for i in range(20):
-        stats.append({
-            "timestamp": now - (20 - i) * 60,
-            "u": random.randint(10, 1000),
-            "d": random.randint(100, 10000)
-        })
-    return stats
+    # Legacy endpoint compatibility, or just redirect to history?
+    # Let's keep it but return similar structure or aggregate for charts
+    # For now, let's just return the history as "stats"
+    return get_device_history(device_id, days=30, db=db)
+
 
 @router.get("/devices", response_model=List[schemas.Device])
 def get_devices(db: Session = Depends(get_db)):
@@ -92,6 +111,9 @@ async def websocket_endpoint(websocket: WebSocket):
             }
             await websocket.send_json(data)
             await asyncio.sleep(1)
+    except WebSocketDisconnect:
+        # print("Client disconnected from live stats")
+        pass
     except Exception as e:
         print(f"WebSocket error: {e}")
         pass
@@ -137,6 +159,8 @@ async def events_websocket(websocket: WebSocket):
         while True:
             # Keep alive
             await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
     except Exception:
         manager.disconnect(websocket)
 
@@ -146,9 +170,54 @@ async def get_alerts(db: Session = Depends(get_db)):
     return db.query(models.SecurityAlert).order_by(models.SecurityAlert.timestamp.desc()).limit(50).all()
 
 @router.get("/docker/containers")
-async def get_docker_containers():
-    """Returns real-time Docker container stats."""
+def get_docker_containers():
+    """Returns list of running containers and their current stats."""
     return docker_monitor.get_stats()
+
+@router.get("/docker/{container_id}/history")
+def get_docker_container_history(container_id: str, minutes: int = 60, db: Session = Depends(get_db)):
+    """Returns historical stats for a container."""
+    from datetime import datetime, timedelta
+    since = datetime.now() - timedelta(minutes=minutes)
+    
+    metrics = db.query(models.DockerContainerMetric).filter(
+        models.DockerContainerMetric.container_id.like(f"{container_id}%"), # match short or long id
+        models.DockerContainerMetric.timestamp >= since
+    ).order_by(models.DockerContainerMetric.timestamp.asc()).all()
+    
+    return [
+        {
+            "timestamp": m.timestamp.isoformat(),
+            "cpu_pct": m.cpu_pct,
+            "mem_usage": m.mem_usage,
+            "net_rx": m.net_rx,
+            "net_tx": m.net_tx
+        }
+        for m in metrics
+    ]
+
+@router.get("/system/network/history")
+def get_system_network_history(hours: int = 24, db: Session = Depends(get_db)):
+    """Returns total system network usage history (vnstat-like)."""
+    from datetime import datetime, timedelta
+    since = datetime.now() - timedelta(hours=hours)
+
+    # We might want to aggregate by hour if the data is too dense
+    # For now, return all data points
+    history = db.query(models.SystemNetworkHistory).filter(
+        models.SystemNetworkHistory.timestamp >= since
+    ).order_by(models.SystemNetworkHistory.timestamp.asc()).all()
+
+    return [
+        {
+            "timestamp": h.timestamp.isoformat(),
+            "interface": h.interface,
+            "bytes_sent": h.bytes_sent,
+            "bytes_recv": h.bytes_recv
+        }
+        for h in history
+    ]
+
 
 @router.get("/docker/containers/{container_id}/logs")
 async def get_container_logs(container_id: str, tail: int = 100):
@@ -215,7 +284,7 @@ def get_settings(db: Session = Depends(get_db)):
     """Returns all system settings."""
     return db.query(models.SystemSettings).all()
 
-@router.post("/settings", response_model=schemas.SystemSetting)
+@router.post("/settings")
 def update_setting(setting: schemas.SystemSettingBase, db: Session = Depends(get_db)):
     """Updates or creates a system setting."""
     db_setting = db.query(models.SystemSettings).filter(models.SystemSettings.key == setting.key).first()
@@ -229,4 +298,28 @@ def update_setting(setting: schemas.SystemSettingBase, db: Session = Depends(get
     
     db.commit()
     db.refresh(db_setting)
+
+    # Trigger scheduler update if interval changed
+    if setting.key == "speedtest_interval":
+        try:
+            val = float(setting.value)
+            scheduler.schedule_speedtest(val)
+        except ValueError:
+            pass
+
     return db_setting
+
+@router.get("/speedtest/servers")
+def get_speedtest_servers():
+    """Returns a list of available speedtest servers."""
+    return speedtest_service.get_servers()
+
+@router.post("/speedtest")
+async def run_speedtest(server_id: int = None, provider: str = "ookla", db: Session = Depends(get_db)):
+    """Triggers a new speedtest."""
+    return await speedtest_service.run_speedtest(db, server_id, provider)
+
+@router.get("/speedtest")
+def get_speedtest_history(limit: int = 50, db: Session = Depends(get_db)):
+    """Returns speedtest history."""
+    return db.query(models.SpeedtestResult).order_by(models.SpeedtestResult.timestamp.desc()).limit(limit).all()

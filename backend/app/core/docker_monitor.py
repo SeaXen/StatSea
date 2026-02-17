@@ -11,6 +11,11 @@ try:
 except ImportError:
     DOCKER_AVAILABLE = False
 
+from ..db.database import SessionLocal
+from ..models.models import DockerContainerMetric
+from datetime import datetime
+from sqlalchemy import func
+
 logger = logging.getLogger("DockerMonitor")
 
 class DockerMonitor:
@@ -61,7 +66,42 @@ class DockerMonitor:
                     self._update_real_stats()
             except Exception as e:
                 logger.error(f"Error in Docker monitor loop: {e}")
+            
+            # Persist stats every ~60 seconds (approx 30 loops)
+            if int(time.time()) % 60 < 2: 
+                self._persist_stats()
+
             time.sleep(2) # Update every 2 seconds
+
+    def _persist_stats(self):
+        """Writes current container stats to DB."""
+        if not self.containers_stats:
+            return
+
+        db = SessionLocal()
+        try:
+            timestamp = datetime.now()
+            with self.lock:
+                stats_copy = list(self.containers_stats.values())
+
+            for stats in stats_copy:
+                metric = DockerContainerMetric(
+                    container_id=stats.get("id"),
+                    container_name=stats.get("name"),
+                    timestamp=timestamp,
+                    cpu_pct=stats.get("cpu_pct", 0),
+                    mem_usage=stats.get("mem_usage", 0),
+                    net_rx=stats.get("net_rx", 0),
+                    net_tx=stats.get("net_tx", 0)
+                )
+                db.add(metric)
+            db.commit()
+            # logger.info(f"Persisted metrics for {len(stats_copy)} containers")
+        except Exception as e:
+            logger.error(f"Error persisting Docker stats: {e}")
+        finally:
+            db.close()
+
 
     def _update_mock_stats(self):
         """Generates mock container data."""

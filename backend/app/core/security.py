@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from ..models import models
+from ..core.notifications import notification_service
 import datetime
 import psutil
 import socket

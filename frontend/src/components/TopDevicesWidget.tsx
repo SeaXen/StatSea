@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Laptop, Smartphone, Tv } from 'lucide-react';
+import { API_CONFIG } from '../config/apiConfig';
 
 export function TopDevicesWidget() {
     const [devices, setDevices] = useState<any[]>([]);
@@ -7,7 +8,7 @@ export function TopDevicesWidget() {
 
     useEffect(() => {
         const fetchDevices = () => {
-            fetch('/api/devices')
+            fetch(API_CONFIG.ENDPOINTS.DEVICES)
                 .then(res => res.json())
                 .then(data => {
                     if (Array.isArray(data)) setDevices(data);

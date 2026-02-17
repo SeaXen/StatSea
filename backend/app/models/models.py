@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, BigInteger, Float
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, BigInteger, Float, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..db.database import Base
@@ -17,7 +17,18 @@ class Device(Base):
     is_online = Column(Boolean, default=False)
 
     traffic_logs = relationship("TrafficLog", back_populates="device")
+    daily_summaries = relationship("DeviceDailySummary", back_populates="device")
 
+class DeviceDailySummary(Base):
+    __tablename__ = "device_daily_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(Integer, ForeignKey("devices.id"))
+    date = Column(Date, index=True)
+    upload_bytes = Column(BigInteger, default=0)
+    download_bytes = Column(BigInteger, default=0)
+    
+    device = relationship("Device", back_populates="daily_summaries")
 
 class BandwidthHistory(Base):
     __tablename__ = "bandwidth_history"
@@ -90,3 +101,41 @@ class SystemSettings(Base):
     value = Column(String)
     type = Column(String, default="string") # string, int, float, bool, json
     description = Column(String, nullable=True)
+
+class SpeedtestResult(Base):
+    __tablename__ = "speedtest_results"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    ping = Column(Float) # ms
+    download = Column(Float) # bits per second
+    upload = Column(Float) # bits per second
+    server_id = Column(Integer, nullable=True)
+    server_name = Column(String, nullable=True)
+    server_country = Column(String, nullable=True)
+    provider = Column(String, default="ookla") # ookla, cloudflare
+
+class DockerContainerMetric(Base):
+    __tablename__ = "docker_metrics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    container_id = Column(String, index=True)
+    container_name = Column(String)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    cpu_pct = Column(Float)
+    mem_usage = Column(Float) # MB
+    net_rx = Column(BigInteger)
+    net_tx = Column(BigInteger)
+
+class SystemNetworkHistory(Base):
+    """vnstat-like total interface usage history"""
+    __tablename__ = "system_network_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    interface = Column(String, index=True) # e.g., eth0, wlan0
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    bytes_sent = Column(BigInteger)
+    bytes_recv = Column(BigInteger)
+    packets_sent = Column(BigInteger)
+    packets_recv = Column(BigInteger)
+

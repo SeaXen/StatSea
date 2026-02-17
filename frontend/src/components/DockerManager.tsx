@@ -17,12 +17,22 @@ import {
     Shield,
     MoreVertical
 } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
 import { toast } from 'sonner';
+import { API_CONFIG } from '../config/apiConfig';
+
+interface ContainerHistoryPoint {
+    timestamp: string;
+    cpu_pct: number;
+    mem_usage: number;
+    net_rx: number;
+    net_tx: number;
+}
 
 interface ContainerHistory {
     cpu: number[];
-    mem: number[];
+    memory?: number[];
+    network?: { rx: number[], tx: number[] };
 }
 
 interface DockerContainer {
@@ -34,7 +44,8 @@ interface DockerContainer {
     mem_usage: number;
     net_rx: number;
     net_tx: number;
-    history: ContainerHistory;
+    // History is now fetched separately, but we might keep this for sparklines in list view if available
+    history?: ContainerHistory;
     state?: {
         Running: boolean;
         Paused: boolean;
@@ -92,11 +103,30 @@ const ContainerInspector = React.memo(({
 }: InspectorProps) => {
     if (!container) return null;
 
-    // Safety checks for nested data
-    const cpuHistory = container.history?.cpu || [];
-    const memHistory = container.history?.mem || [];
+    const [history, setHistory] = useState<ContainerHistoryPoint[]>([]);
+
+    // Fetch detailed history when inspector opens
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                const res = await fetch(`${API_CONFIG.BASE_URL}/docker/${container.id}/history?minutes=60`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setHistory(data);
+                }
+            } catch (e) {
+                console.error("Failed to fetch container history", e);
+            }
+        };
+        fetchHistory();
+        // Poll for history updates every 10s
+        const interval = setInterval(fetchHistory, 10000);
+        return () => clearInterval(interval);
+    }, [container.id]);
+
     const ports = container.ports || {};
     const mounts = container.mounts || [];
+
     const state = container.state || {
         Running: false,
         Paused: false,
@@ -200,9 +230,15 @@ const ContainerInspector = React.memo(({
                             <div className="text-3xl font-mono font-bold text-white mb-2">{container.cpu_pct.toFixed(2)}%</div>
                             <div className="h-32 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={cpuHistory.map(val => ({ val }))}>
+                                    <AreaChart data={history}>
                                         <YAxis domain={[0, 100]} hide />
-                                        <Area type="monotone" dataKey="val" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }}
+                                            itemStyle={{ color: '#e5e7eb' }}
+                                            labelStyle={{ color: '#9ca3af' }}
+                                            labelFormatter={(label) => new Date(label).toLocaleTimeString()}
+                                        />
+                                        <Area type="monotone" dataKey="cpu_pct" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
@@ -214,9 +250,15 @@ const ContainerInspector = React.memo(({
                             <div className="text-3xl font-mono font-bold text-white mb-2">{container.mem_usage}MB</div>
                             <div className="h-32 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={memHistory.map(val => ({ val }))}>
+                                    <AreaChart data={history}>
                                         <YAxis domain={[0, 'auto']} hide />
-                                        <Area type="monotone" dataKey="val" stroke="#a855f7" fill="#a855f7" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }}
+                                            itemStyle={{ color: '#e5e7eb' }}
+                                            labelStyle={{ color: '#9ca3af' }}
+                                            labelFormatter={(label) => new Date(label).toLocaleTimeString()}
+                                        />
+                                        <Area type="monotone" dataKey="mem_usage" stroke="#a855f7" fill="#a855f7" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
@@ -344,7 +386,7 @@ const DockerManager: React.FC = () => {
 
     const fetchContainers = useCallback(async () => {
         try {
-            const response = await fetch('http://localhost:21081/api/docker/containers');
+            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.CONTAINERS}`);
             const data = await response.json();
             setContainers(data);
             setLastUpdated(new Date());
@@ -358,7 +400,7 @@ const DockerManager: React.FC = () => {
         if (!containerId) return;
         setLogsLoading(true);
         try {
-            const response = await fetch(`http://localhost:21081/api/docker/containers/${containerId}/logs?tail=100`);
+            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.LOGS(containerId)}?tail=100`);
             const data = await response.json();
             setLogs(data.logs || []);
         } catch (error) {
@@ -371,7 +413,7 @@ const DockerManager: React.FC = () => {
     const handleAction = useCallback(async (containerId: string, action: string) => {
         setActionLoading(`${containerId}-${action}`);
         try {
-            const response = await fetch(`http://localhost:21081/api/docker/containers/${containerId}/action`, {
+            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.CONTAINERS}/${containerId}/action`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action })
@@ -518,7 +560,10 @@ const DockerManager: React.FC = () => {
                                         </div>
                                         <div className="h-10 w-full">
                                             <ResponsiveContainer width="100%" height="100%">
-                                                <AreaChart data={(container.history?.cpu || []).map(val => ({ val }))}>
+                                                { /* Sparklines in list view still use the real-time mock/simulated history from parent or empty */}
+                                                <AreaChart data={(container.history?.cpu || []).map((val: number) => ({ val }))}>
+
+
                                                     <defs>
                                                         <linearGradient id={`grad-cpu-${container.id}`} x1="0" y1="0" x2="0" y2="1">
                                                             <stop offset="5%" stopColor={container.cpu_pct > 80 ? "#f43f5e" : "#3b82f6"} stopOpacity={0.3} />
@@ -550,7 +595,7 @@ const DockerManager: React.FC = () => {
                                         </div>
                                         <div className="h-10 w-full">
                                             <ResponsiveContainer width="100%" height="100%">
-                                                <AreaChart data={(container.history?.mem || []).map(val => ({ val }))}>
+                                                <AreaChart data={(container.history?.memory || []).map((val: number) => ({ val }))}>
                                                     <defs>
                                                         <linearGradient id={`grad-mem-${container.id}`} x1="0" y1="0" x2="0" y2="1">
                                                             <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />

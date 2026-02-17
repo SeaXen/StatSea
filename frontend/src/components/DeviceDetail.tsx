@@ -1,8 +1,23 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Cpu, Globe, Shield, HardDrive, Smartphone, Monitor, Wifi, Clock, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
-import { AreaChart, Area, Tooltip, ResponsiveContainer } from 'recharts';
+import { X, Cpu, Globe, Shield, HardDrive, Smartphone, Monitor, Wifi, Clock, ArrowUpRight, ArrowDownLeft, Calendar } from 'lucide-react';
+import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Device } from '../types';
+
+interface DailyUsage {
+    date: string;
+    upload: number;
+    download: number;
+}
+
+// Helper to format bytes
+const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 interface DeviceDetailProps {
     device: Device | null;
@@ -11,16 +26,17 @@ interface DeviceDetailProps {
 }
 
 export function DeviceDetail({ device, isOpen, onClose }: DeviceDetailProps) {
-    const [stats, setStats] = useState<any[]>([]);
+    const [stats, setStats] = useState<DailyUsage[]>([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (device && isOpen) {
             setLoading(true);
-            fetch(`/api/devices/${device.id}/stats`)
+            setLoading(true);
+            fetch(`/api/devices/${device.id}/history?days=30`)
                 .then(res => res.json())
                 .then(data => {
-                    setStats(data);
+                    setStats(data); // data is DailyUsage[]
                     setLoading(false);
                 })
                 .catch(err => {
@@ -99,15 +115,18 @@ export function DeviceDetail({ device, isOpen, onClose }: DeviceDetailProps) {
                             {/* Traffic Insights */}
                             <div className="glass-card rounded-2xl p-6 border border-white/5 bg-white/5 mb-8">
                                 <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-lg font-semibold text-white">Throughput History</h3>
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="w-5 h-5 text-blue-400" />
+                                        <h3 className="text-lg font-semibold text-white">Daily Data Usage (30 Days)</h3>
+                                    </div>
                                     <div className="flex items-center gap-4">
                                         <div className="flex items-center gap-1.5">
                                             <div className="w-2 h-2 rounded-full bg-blue-500" />
-                                            <span className="text-xs text-gray-400">Down</span>
+                                            <span className="text-xs text-gray-400">Downloads</span>
                                         </div>
                                         <div className="flex items-center gap-1.5">
                                             <div className="w-2 h-2 rounded-full bg-purple-500" />
-                                            <span className="text-xs text-gray-400">Up</span>
+                                            <span className="text-xs text-gray-400">Uploads</span>
                                         </div>
                                     </div>
                                 </div>
@@ -125,6 +144,20 @@ export function DeviceDetail({ device, isOpen, onClose }: DeviceDetailProps) {
                                                     <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                            <XAxis
+                                                dataKey="date"
+                                                stroke="#6b7280"
+                                                fontSize={10}
+                                                tickFormatter={(value) => new Date(value).toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}
+                                                minTickGap={30}
+                                            />
+                                            <YAxis
+                                                stroke="#6b7280"
+                                                fontSize={10}
+                                                tickFormatter={(value) => formatBytes(value)}
+                                                width={60}
+                                            />
                                             <Tooltip
                                                 contentStyle={{
                                                     backgroundColor: 'rgba(10, 10, 12, 0.95)',
@@ -132,22 +165,43 @@ export function DeviceDetail({ device, isOpen, onClose }: DeviceDetailProps) {
                                                     borderRadius: '12px',
                                                     backdropFilter: 'blur(10px)'
                                                 }}
-                                                itemStyle={{ fontSize: '12px' }}
-                                                labelStyle={{ display: 'none' }}
+                                                itemStyle={{ fontSize: '12px', color: '#e5e7eb' }}
+                                                formatter={(value: number) => formatBytes(value)}
+                                                labelFormatter={(label) => new Date(label).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                             />
-                                            <Area type="monotone" dataKey="d" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorD)" />
-                                            <Area type="monotone" dataKey="u" stroke="#a855f7" strokeWidth={2} fillOpacity={1} fill="url(#colorU)" />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="download"
+                                                name="Downloaded"
+                                                stroke="#3b82f6"
+                                                strokeWidth={2}
+                                                fillOpacity={1}
+                                                fill="url(#colorD)"
+                                            />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="upload"
+                                                name="Uploaded"
+                                                stroke="#a855f7"
+                                                strokeWidth={2}
+                                                fillOpacity={1}
+                                                fill="url(#colorU)"
+                                            />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </div>
                                 <div className="flex justify-between items-center mt-4">
                                     <div className="flex items-center gap-2">
                                         <ArrowDownLeft className="w-4 h-4 text-blue-400" />
-                                        <span className="text-sm font-mono text-gray-300">Peak Down: 12.4 Mbps</span>
+                                        <span className="text-sm font-mono text-gray-300">
+                                            Total Down: {formatBytes(stats.reduce((acc, curr) => acc + (curr.download || 0), 0))}
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <ArrowUpRight className="w-4 h-4 text-purple-400" />
-                                        <span className="text-sm font-mono text-gray-300">Peak Up: 2.1 Mbps</span>
+                                        <span className="text-sm font-mono text-gray-300">
+                                            Total Up: {formatBytes(stats.reduce((acc, curr) => acc + (curr.upload || 0), 0))}
+                                        </span>
                                     </div>
                                 </div>
                             </div>

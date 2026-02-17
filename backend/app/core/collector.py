@@ -10,8 +10,9 @@ except ImportError:
     SCAPY_AVAILABLE = False
 
 from ..db.database import SessionLocal
-from ..models.models import Device, SecurityAlert
+from ..models.models import Device, SecurityAlert, DeviceDailySummary
 from datetime import datetime
+from sqlalchemy import func, Date
 import asyncio
 import requests
 import ipaddress
@@ -63,7 +64,14 @@ class PacketCollector:
         self.active_sessions: Dict[str, float] = {}  # session_key -> last_seen
         self.SESSION_TIMEOUT = 30  # seconds
         self.connection_types: Dict[str, int] = {"internal": 0, "external": 0}
+        self.SESSION_TIMEOUT = 30  # seconds
+        self.connection_types: Dict[str, int] = {"internal": 0, "external": 0}
         self.bytes_per_protocol: Dict[str, int] = {}  # protocol -> total bytes
+        
+        # Buffer for DB persistence (MAC -> {upload, download})
+        # This resets after every flush to DB
+        self.daily_traffic_buffer: Dict[str, Dict] = {} 
+
 
     def set_event_callback(self, callback):
         """Sets the callback for broadcasting events."""
@@ -152,6 +160,12 @@ class PacketCollector:
                     self.device_traffic[mac]["download"] += packet_len
                     self.device_traffic[mac]["ip"] = src_ip
 
+                    # Update persistence buffer
+                    if mac not in self.daily_traffic_buffer:
+                        self.daily_traffic_buffer[mac] = {"upload": 0, "download": 0}
+                    self.daily_traffic_buffer[mac]["download"] += packet_len
+
+
                 # Packet log for live stream
                 log_entry = {
                     "time": datetime.now().strftime("%H:%M:%S.%f")[:-3],
@@ -239,6 +253,13 @@ class PacketCollector:
                     self.device_traffic[mac] = {"upload": 0, "download": 0, "ip": device_ip, "hostname": mock_hostnames.get(mac, mac[-5:])}
                 self.device_traffic[mac]["download"] += down
                 self.device_traffic[mac]["upload"] += up
+
+                # Update persistence buffer
+                if mac not in self.daily_traffic_buffer:
+                    self.daily_traffic_buffer[mac] = {"upload": 0, "download": 0}
+                self.daily_traffic_buffer[mac]["download"] += down
+                self.daily_traffic_buffer[mac]["upload"] += up
+
 
                 # Track protocol
                 self.protocol_counts[proto] = self.protocol_counts.get(proto, 0) + 1
@@ -348,6 +369,9 @@ class PacketCollector:
         while self.running:
             try:
                 self._flush_devices()
+                # Persist daily stats every ~5 minutes or so (controlled by flush_interval for now)
+                # In production you might want a separate schedule, but this is fine for now
+                self._persist_daily_stats()
             except Exception as e:
                 logger.error(f"Error in persistence loop: {e}")
             time.sleep(self.flush_interval)
@@ -380,6 +404,50 @@ class PacketCollector:
             db.commit()
         finally:
             db.close()
+
+    def _persist_daily_stats(self):
+        """Aggregates and persists traffic stats to DeviceDailySummary."""
+        with self.stats_lock:
+            if not self.daily_traffic_buffer:
+                return
+            buffer_copy = self.daily_traffic_buffer.copy()
+            self.daily_traffic_buffer.clear()
+
+        db = SessionLocal()
+        try:
+            today = datetime.now().date()
+            
+            for mac, traffic in buffer_copy.items():
+                device = db.query(Device).filter(Device.mac_address == mac).first()
+                if not device:
+                    continue # Should have been created by _flush_devices already
+
+                # Check for existing summary for today
+                summary = db.query(DeviceDailySummary).filter(
+                    DeviceDailySummary.device_id == device.id,
+                    DeviceDailySummary.date == today
+                ).first()
+
+                if not summary:
+                    summary = DeviceDailySummary(
+                        device_id=device.id,
+                        date=today,
+                        upload_bytes=0,
+                        download_bytes=0
+                    )
+                    db.add(summary)
+                
+                summary.upload_bytes += traffic["upload"]
+                summary.download_bytes += traffic["download"]
+            
+            db.commit()
+            # logger.info(f"Persisted daily stats for {len(buffer_copy)} devices")
+        except Exception as e:
+            logger.error(f"Error persisting daily stats: {e}")
+            # Restore buffer on error? Naah, simpler to drop data than complex recovery for now.
+        finally:
+            db.close()
+
 
     def _trigger_new_device_alert(self, mac, ip):
         """Triggers a security alert for a new device."""

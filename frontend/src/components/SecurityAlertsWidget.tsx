@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, AlertTriangle, Info, CheckCircle, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_CONFIG } from '../config/apiConfig';
 
 interface SecurityAlert {
     id: number;
@@ -18,7 +19,7 @@ export function SecurityAlertsWidget() {
     useEffect(() => {
         const fetchAlerts = async () => {
             try {
-                const response = await fetch('http://localhost:21081/security/events');
+                const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SECURITY.EVENTS}`);
                 if (response.ok) {
                     const data = await response.json();
                     const mapped = data.map((e: any) => ({
