@@ -77,7 +77,8 @@ class NetworkMonitor:
                 db, 
                 event_type="NETWORK_LAG", 
                 severity="LOW", 
-                description=desc
+                description=desc,
+                commit=False
             )
             print(f"ANOMALY: {desc}")
 
@@ -130,7 +131,7 @@ class NetworkMonitor:
             db.close()
             print("Network Monitor: Loop ended.")
 
-    def start(self):
+    async def start(self):
         if self.running: return
         self.running = True
         asyncio.create_task(self._monitor_loop())

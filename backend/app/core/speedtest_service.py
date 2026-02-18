@@ -69,14 +69,14 @@ class SpeedtestService:
 
             logger.info("Cloudflare Speedtest complete.")
             return {
-                "download": download_bps,
-                "upload": upload_bps,
+                "download": download_bps / 1_000_000, # Convert to Mbps
+                "upload": upload_bps / 1_000_000,     # Convert to Mbps
                 "ping": avg_ping,
                 "server": {
                     "id": 0,
                     "name": "Cloudflare",
                     "country": "Anycast",
-                    "cc": "CL"
+                    "cc": "Unknown" # Was hardcoded to CL
                 },
                 "timestamp": datetime.now(),
                 "provider": "cloudflare"
@@ -102,8 +102,8 @@ class SpeedtestService:
             logger.info("Ookla Speedtest complete.")
             
             return {
-                "download": download,
-                "upload": upload,
+                "download": download / 1_000_000, # Convert to Mbps
+                "upload": upload / 1_000_000,     # Convert to Mbps
                 "ping": st.results.ping,
                 "server": st.results.server,
                 "timestamp": datetime.now(),

@@ -41,6 +41,8 @@ class DockerMonitor:
 
         if self.use_mock:
             logger.info("Docker monitor running in MOCK mode")
+        
+        self.last_persist_time = 0
 
     def start(self):
         """Starts the monitoring thread."""
@@ -67,9 +69,10 @@ class DockerMonitor:
             except Exception as e:
                 logger.error(f"Error in Docker monitor loop: {e}")
             
-            # Persist stats every ~60 seconds (approx 30 loops)
-            if int(time.time()) % 60 < 2: 
+            # Persist stats every 60 seconds
+            if time.time() - self.last_persist_time >= 60: 
                 self._persist_stats()
+                self.last_persist_time = time.time()
 
             time.sleep(2) # Update every 2 seconds
 
@@ -198,7 +201,7 @@ class DockerMonitor:
                     stats.update({
                         "id": cid,
                         "name": container.name,
-                        "image": container.image.tags[0] if container.image.tags else "unknown",
+                        "image": (container.image.tags[0] if container.image and container.image.tags else "unknown"),
                         "status": container.status,
                         "cpu_pct": round(cpu_pct, 2),
                         "mem_usage": int(mem_usage),

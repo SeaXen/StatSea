@@ -66,7 +66,7 @@ class SecurityEngine:
         """
         pass
 
-    def log_security_event(self, db: Session, event_type: str, severity: str, description: str, source_ip: str = None, mac_address: str = None):
+    def log_security_event(self, db: Session, event_type: str, severity: str, description: str, source_ip: str = None, mac_address: str = None, commit: bool = True):
         """
         Logs a security event to the database.
         """
@@ -79,9 +79,13 @@ class SecurityEngine:
                 mac_address=mac_address
             )
             db.add(event)
-            db.commit()
+            if commit:
+                db.commit()
+            else:
+                db.flush()
         except Exception as e:
             print(f"Security logging error: {e}")
-            db.rollback()
+            if commit:
+                db.rollback()
 
 security_engine = SecurityEngine()

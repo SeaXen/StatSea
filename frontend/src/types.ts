@@ -9,6 +9,8 @@ export interface Device {
     download?: string;
     upload?: string;
     last_seen: string;
+    nickname?: string;
+    notes?: string;
 }
 
 export interface DeviceStats {

@@ -1,7 +1,13 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import os
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from .core.limiter import limiter
 from .api import endpoints
 from .core.collector import global_collector
 from .core.docker_monitor import docker_monitor
@@ -19,7 +25,7 @@ async def lifespan(app: FastAPI):
     # Start services
     global_collector.start()
     docker_monitor.start()
-    monitor.start()
+    await monitor.start()
     system_monitor.start()
     scheduler.update_scheduler_from_db()
     yield
@@ -37,16 +43,22 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import logging
+    logger = logging.getLogger("uvicorn.error")
+    logger.error(f"Global exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"},
+    )
 # CORS (Allow all for local dev)
 # CORS (Allow specific origins for local dev)
-origins = [
-    "http://localhost",
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-]
+# CORS (Allow specific origins for local dev)
+origins = os.getenv("CORS_ORIGINS", "http://localhost,http://localhost:5173,http://localhost:5174,http://127.0.0.1,http://127.0.0.1:5173,http://127.0.0.1:5174").split(",")
 
 app.add_middleware(
     CORSMiddleware,

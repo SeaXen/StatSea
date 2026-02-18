@@ -4,6 +4,7 @@ from ..db.database import SessionLocal
 from ..models import models
 from .speedtest_service import speedtest_service
 from .notifications import notification_service
+from .cleanup import run_cleanup_job
 import logging
 import json
 
@@ -14,6 +15,10 @@ class SchedulerService:
         self.scheduler = BackgroundScheduler()
         self.scheduler.start()
         self.job_id = "auto_speedtest"
+        self.cleanup_job_id = "data_cleanup"
+        
+        # Schedule cleanup daily
+        self.schedule_cleanup()
 
     def schedule_speedtest(self, interval_hours: int = 0):
         """Schedules the speedtest job. If interval_hours is 0, removes the job."""
@@ -30,6 +35,18 @@ class SchedulerService:
             logger.info(f"Speedtest scheduled every {interval_hours} hours.")
         else:
             logger.info("Speedtest automation disabled.")
+
+    def schedule_cleanup(self):
+        """Schedules the daily data cleanup job."""
+        if not self.scheduler.get_job(self.cleanup_job_id):
+            self.scheduler.add_job(
+                run_cleanup_job,
+                'interval',
+                days=1,
+                id=self.cleanup_job_id,
+                replace_existing=True
+            )
+            logger.info("Data cleanup job scheduled (Daily).")
 
     def run_scheduled_speedtest(self):
         """Runs the speedtest and sends notifications."""
@@ -85,8 +102,8 @@ class SchedulerService:
 
                 # Send Notification
                 result_dict = {
-                    "download": result_data['download'] / 1_000_000, 
-                    "upload": result_data['upload'] / 1_000_000,
+                    "download": result_data['download'], 
+                    "upload": result_data['upload'],
                     "ping": result_data['ping'],
                     "provider": provider,
                     "server_name": result_data['server']['name']

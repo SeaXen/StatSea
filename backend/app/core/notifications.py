@@ -37,8 +37,7 @@ class NotificationService:
 
         # Send to Discord if configured
         if config.get('discord_webhook_url'):
-            self.discord_webhook_url = config['discord_webhook_url'] # Temporarily override or use directly
-            self._send_discord("Speedtest Completed", description, "INFO", fields)
+            self._send_discord("Speedtest Completed", description, "INFO", fields, webhook_url=config['discord_webhook_url'])
 
         # Send to Telegram if configured
         if config.get('telegram_token') and config.get('telegram_chat_id'):
@@ -61,7 +60,7 @@ class NotificationService:
         message = f"🛡️ *{title}* ({severity})\n\n{description}"
         self._send_telegram_direct(self.telegram_bot_token, self.telegram_chat_id, message)
 
-    def _send_discord(self, title: str, description: str, severity: str, fields: list = None):
+    def _send_discord(self, title: str, description: str, severity: str, fields: list = None, webhook_url: str = None):
         color_map = {
             "INFO": 3447003,      # Blue
             "LOW": 3447003,       # Blue
@@ -85,8 +84,12 @@ class NotificationService:
             "embeds": [embed]
         }
 
+        target_url = webhook_url or self.discord_webhook_url
+        if not target_url:
+            return
+
         try:
-            requests.post(self.discord_webhook_url, json=payload, timeout=5)
+            requests.post(target_url, json=payload, timeout=5)
         except Exception as e:
             print(f"Failed to send Discord alert: {e}")
 

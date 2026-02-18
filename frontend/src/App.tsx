@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Activity, LayoutDashboard, Server, Settings as SettingsIcon, Network, Search, Globe as GlobeIcon, Box } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Toaster, toast } from 'sonner';
+import { Toaster } from 'sonner';
 import { motion } from 'framer-motion';
 import { TopDevicesWidget } from './components/TopDevicesWidget';
 import { ActiveConnectionsWidget } from './components/ActiveConnectionsWidget';
@@ -11,11 +11,11 @@ import { NetworkMap } from './components/NetworkMap';
 import { SecurityAlertsWidget } from './components/SecurityAlertsWidget';
 import { ConnectionGlobe } from './components/ConnectionGlobe';
 import DockerManager from './components/DockerManager';
-import NetworkHealth from './components/NetworkHealth';
+
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import SpeedtestPage from './components/SpeedtestPage';
 import SettingsPage from './components/SettingsPage';
-import { TopStatsRow } from './components/TopStatsRow';
+import TopStatsRow from './components/TopStatsRow';
 import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
 import { TopNav } from './components/TopNav';
 import ServerStatusCard from './components/ServerStatusCard';
@@ -144,14 +144,9 @@ function AppContent() {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [commandOpen, setCommandOpen] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set(['dashboard']));
 
-    useEffect(() => {
-        setVisitedTabs(prev => {
-            if (prev.has(activeTab)) return prev;
-            return new Set(prev).add(activeTab);
-        });
-    }, [activeTab]);
+
+
 
     useEffect(() => {
         // Simulate initial data fetch/load
@@ -179,43 +174,43 @@ function AppContent() {
                     </div>
 
                     {/* Lazy Loaded Components with Keep-Alive */}
-                    {(activeTab === 'devices' || visitedTabs.has('devices')) && (
+                    {activeTab === 'devices' && (
                         <div className={`${activeTab === 'devices' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
                             <DevicesPage />
                         </div>
                     )}
 
-                    {(activeTab === 'network' || visitedTabs.has('network')) && (
+                    {activeTab === 'network' && (
                         <div className={`${activeTab === 'network' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
                             <NetworkMap />
                         </div>
                     )}
 
-                    {(activeTab === 'geo' || visitedTabs.has('geo')) && (
+                    {activeTab === 'geo' && (
                         <div className={`${activeTab === 'geo' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
                             <ConnectionGlobe />
                         </div>
                     )}
 
-                    {(activeTab === 'analytics' || visitedTabs.has('analytics')) && (
+                    {activeTab === 'analytics' && (
                         <div className={`${activeTab === 'analytics' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
                             <AnalyticsDashboard />
                         </div>
                     )}
 
-                    {(activeTab === 'containers' || visitedTabs.has('containers')) && (
+                    {activeTab === 'containers' && (
                         <div className={`${activeTab === 'containers' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
                             <DockerManager />
                         </div>
                     )}
 
-                    {(activeTab === 'speedtest' || visitedTabs.has('speedtest')) && (
+                    {activeTab === 'speedtest' && (
                         <div className={`${activeTab === 'speedtest' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
                             <SpeedtestPage />
                         </div>
                     )}
 
-                    {(activeTab === 'settings' || visitedTabs.has('settings')) && (
+                    {activeTab === 'settings' && (
                         <div className={`${activeTab === 'settings' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
                             <SettingsPage />
                         </div>

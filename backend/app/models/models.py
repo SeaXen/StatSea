@@ -13,8 +13,10 @@ class Device(Base):
     vendor = Column(String, nullable=True)
     type = Column(String, default="Unknown")  # IoT, Mobile, PC
     first_seen = Column(DateTime(timezone=True), server_default=func.now())
-    last_seen = Column(DateTime(timezone=True), onupdate=func.now())
+    last_seen = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     is_online = Column(Boolean, default=False)
+    nickname = Column(String, nullable=True)
+    notes = Column(String, nullable=True)
 
     traffic_logs = relationship("TrafficLog", back_populates="device")
     daily_summaries = relationship("DeviceDailySummary", back_populates="device")
@@ -108,8 +110,8 @@ class SpeedtestResult(Base):
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     ping = Column(Float) # ms
-    download = Column(Float) # bits per second
-    upload = Column(Float) # bits per second
+    download = Column(Float) # Mbps
+    upload = Column(Float) # Mbps
     server_id = Column(Integer, nullable=True)
     server_name = Column(String, nullable=True)
     server_country = Column(String, nullable=True)

@@ -1,7 +1,8 @@
 // Basic API Configuration
+const API_PORT = import.meta.env.VITE_API_PORT || '21081';
 export const API_CONFIG = {
-    BASE_URL: `http://${window.location.hostname}:21081/api`,
-    WS_URL: `ws://${window.location.hostname}:21081/api`,
+    BASE_URL: `http://${window.location.hostname}:${API_PORT}/api`,
+    WS_URL: `ws://${window.location.hostname}:${API_PORT}/api`,
     ENDPOINTS: {
         HEALTH: '/network/health',
         ANALYTICS: {
@@ -10,6 +11,8 @@ export const API_CONFIG = {
         },
         SECURITY: {
             EVENTS: '/security/events',
+            ALERTS: '/alerts',
+            RESOLVE: (id: number) => `/alerts/${id}/resolve`,
         },
         NETWORK: {
             CONNECTIONS: '/network/connections',

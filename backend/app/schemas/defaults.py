@@ -8,9 +8,16 @@ class DeviceBase(BaseModel):
     hostname: Optional[str] = None
     vendor: Optional[str] = None
     type: Optional[str] = "Unknown"  # IoT, Mobile, PC
+    nickname: Optional[str] = None
+    notes: Optional[str] = None
 
 class DeviceCreate(DeviceBase):
     pass
+
+class DeviceUpdate(BaseModel):
+    nickname: Optional[str] = None
+    notes: Optional[str] = None
+    type: Optional[str] = None
 
 class Device(DeviceBase):
     id: int

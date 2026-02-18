@@ -10,7 +10,7 @@ except ImportError:
     SCAPY_AVAILABLE = False
 
 from ..db.database import SessionLocal
-from ..models.models import Device, SecurityAlert, DeviceDailySummary
+from ..models.models import Device, SecurityAlert, DeviceDailySummary, BandwidthHistory
 from datetime import datetime
 from sqlalchemy import func, Date
 import asyncio
@@ -34,6 +34,8 @@ class PacketCollector:
         self.interface = None
         self.upload_acc = 0
         self.download_acc = 0
+        self._last_persist_upload = 0
+        self._last_persist_download = 0
         self._thread = None
         self._persistence_thread = None
         self.flush_interval = 30 # seconds
@@ -140,31 +142,47 @@ class PacketCollector:
                 proto = "ICMP"
 
             with self.stats_lock:
-                self.download_acc += packet_len
+                # 1. Track Source (Upload from device)
+                if packet.src:
+                    src_mac = packet.src
+                    # Ensure device is tracked
+                    if src_mac not in self.active_devices:
+                        self.active_devices[src_mac] = {"last_seen": time.time(), "ip": src_ip}
+                    else:
+                        self.active_devices[src_mac]["last_seen"] = time.time()
+                        self.active_devices[src_mac]["ip"] = src_ip # Update IP if changed
+
+                    if src_mac not in self.device_traffic:
+                        self.device_traffic[src_mac] = {"upload": 0, "download": 0, "ip": src_ip}
+                    
+                    self.device_traffic[src_mac]["upload"] += packet_len
+                    self.upload_acc += packet_len
+                    
+                    # Buffer for persistence
+                    if src_mac not in self.daily_traffic_buffer:
+                        self.daily_traffic_buffer[src_mac] = {"upload": 0, "download": 0}
+                    self.daily_traffic_buffer[src_mac]["upload"] += packet_len
+
+                # 2. Track Destination (Download to device)
+                if packet.dst:
+                    dst_mac = packet.dst
+                    # We only track download for devices we've seen (or should we add them?)
+                    # Let's add them if they look like local devices, but promiscuous mode might see non-local MACs?
+                    # Generally safely to assume traffic on LAN interface with MAC is local-ish.
+                    if dst_mac in self.active_devices:
+                         self.device_traffic[dst_mac]["download"] += packet_len
+                         self.download_acc += packet_len
+                         
+                         if dst_mac not in self.daily_traffic_buffer:
+                             self.daily_traffic_buffer[dst_mac] = {"upload": 0, "download": 0}
+                         self.daily_traffic_buffer[dst_mac]["download"] += packet_len
+
                 self.total_packets += 1
                 self.total_bytes += packet_len
                 self._pps_packet_count += 1
 
                 # Protocol tracking
                 self.protocol_counts[proto] = self.protocol_counts.get(proto, 0) + 1
-
-                # Per-device traffic
-                if packet.src:
-                    mac = packet.src
-                    self.active_devices[mac] = {
-                        "last_seen": time.time(),
-                        "ip": src_ip
-                    }
-                    if mac not in self.device_traffic:
-                        self.device_traffic[mac] = {"upload": 0, "download": 0, "ip": src_ip}
-                    self.device_traffic[mac]["download"] += packet_len
-                    self.device_traffic[mac]["ip"] = src_ip
-
-                    # Update persistence buffer
-                    if mac not in self.daily_traffic_buffer:
-                        self.daily_traffic_buffer[mac] = {"upload": 0, "download": 0}
-                    self.daily_traffic_buffer[mac]["download"] += packet_len
-
 
                 # Packet log for live stream
                 log_entry = {
@@ -187,7 +205,11 @@ class PacketCollector:
                     self._last_pps_time = now
 
                 # External Traffic Tracking (Outgoing)
-                if not self._is_private_ip(dst_ip):
+                # If src is local and dst is NOT local (private IP check), it's external traffic
+                # Existing check: if not self._is_private_ip(dst_ip):
+                #   self._track_external_connection(dst_ip, packet_len)
+                # We should refine this to ensure SRC is actually one of ours.
+                if packet.src in self.active_devices and not self._is_private_ip(dst_ip):
                     self._track_external_connection(dst_ip, packet_len)
 
         except Exception as e:
@@ -439,6 +461,24 @@ class PacketCollector:
                 
                 summary.upload_bytes += traffic["upload"]
                 summary.download_bytes += traffic["download"]
+
+            # Persist Global Bandwidth History (Delta)
+            current_upload = self.upload_acc
+            current_download = self.download_acc
+            
+            delta_upload = current_upload - self._last_persist_upload
+            delta_download = current_download - self._last_persist_download
+            
+            # Update last persist reference
+            self._last_persist_upload = current_upload
+            self._last_persist_download = current_download
+
+            if delta_upload > 0 or delta_download > 0:
+                bw_history = BandwidthHistory(
+                    upload_bytes=delta_upload,
+                    download_bytes=delta_download
+                )
+                db.add(bw_history)
             
             db.commit()
             # logger.info(f"Persisted daily stats for {len(buffer_copy)} devices")

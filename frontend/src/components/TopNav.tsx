@@ -13,6 +13,8 @@ import {
     Menu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { NotificationCenter } from './NotificationCenter';
+import { useWebSocket } from '../contexts/WebSocketContext';
 
 interface TopNavProps {
     activeTab: string;
@@ -33,6 +35,8 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setActiveTab, setComm
     ];
 
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+    const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
+    const { unreadCount } = useWebSocket();
 
     return (
         <div className="sticky top-0 z-50 w-full border-b border-white/5 bg-black/50 backdrop-blur-xl">
@@ -76,9 +80,14 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setActiveTab, setComm
 
                     <div className="hidden sm:block h-4 w-px bg-white/10 mx-1" />
 
-                    <button className="relative rounded-md p-1.5 text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                    <button
+                        onClick={() => setIsNotificationOpen(true)}
+                        className="relative rounded-md p-1.5 text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                    >
                         <Bell className="h-4 w-4" />
-                        <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-black" />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-black" />
+                        )}
                     </button>
 
                     <button
@@ -157,6 +166,11 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setActiveTab, setComm
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <NotificationCenter
+                isOpen={isNotificationOpen}
+                onClose={() => setIsNotificationOpen(false)}
+            />
         </div>
     );
 };

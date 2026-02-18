@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Cpu, Globe, Shield, HardDrive, Smartphone, Monitor, Wifi, Clock, ArrowUpRight, ArrowDownLeft, Calendar } from 'lucide-react';
+import { X, Cpu, Globe, Shield, HardDrive, Smartphone, Monitor, Wifi, Clock, ArrowUpRight, ArrowDownLeft, Calendar, Edit2, Check } from 'lucide-react';
 import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Device } from '../types';
 
@@ -23,11 +23,52 @@ interface DeviceDetailProps {
     device: Device | null;
     isOpen: boolean;
     onClose: () => void;
+    onUpdate?: (updatedDevice: Device) => void;
 }
 
-export function DeviceDetail({ device, isOpen, onClose }: DeviceDetailProps) {
+export function DeviceDetail({ device, isOpen, onClose, onUpdate }: DeviceDetailProps) {
     const [stats, setStats] = useState<DailyUsage[]>([]);
     const [loading, setLoading] = useState(false);
+
+    // Editing state
+    const [isEditing, setIsEditing] = useState(false);
+    const [editNickname, setEditNickname] = useState('');
+    const [editNotes, setEditNotes] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (device) {
+            setEditNickname(device.nickname || '');
+            setEditNotes(device.notes || '');
+            setIsEditing(false);
+        }
+    }, [device, isOpen]);
+
+    const handleSave = async () => {
+        if (!device) return;
+        setSaving(true);
+        try {
+            const response = await fetch(`/api/devices/${device.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nickname: editNickname || null,
+                    notes: editNotes || null
+                })
+            });
+
+            if (!response.ok) throw new Error("Failed to update device");
+
+            const updated = await response.json();
+            if (onUpdate) onUpdate(updated);
+            setIsEditing(false);
+        } catch (err) {
+            console.error("Error updating device:", err);
+            // Could add toast error here
+        } finally {
+            setSaving(false);
+        }
+    };
 
     useEffect(() => {
         if (device && isOpen) {
@@ -87,7 +128,21 @@ export function DeviceDetail({ device, isOpen, onClose }: DeviceDetailProps) {
                                         {getIcon(device.type)}
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-bold text-white tracking-tight">{device.hostname || 'Unknown Device'}</h2>
+                                        {isEditing ? (
+                                            <input
+                                                type="text"
+                                                value={editNickname}
+                                                onChange={(e) => setEditNickname(e.target.value)}
+                                                placeholder={device.hostname || 'Device Name'}
+                                                className="bg-white/10 border border-white/20 rounded px-2 py-1 text-xl font-bold text-white w-full focus:outline-none focus:border-blue-500"
+                                            />
+                                        ) : (
+                                            <h2 className="text-2xl font-bold text-white tracking-tight">
+                                                {device.nickname || device.hostname || 'Unknown Device'}
+                                                {device.nickname && <span className="ml-2 text-sm font-normal text-gray-500">({device.hostname})</span>}
+                                            </h2>
+                                        )}
+
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className={`w-2 h-2 rounded-full ${device.is_online ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                                             <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
@@ -96,12 +151,30 @@ export function DeviceDetail({ device, isOpen, onClose }: DeviceDetailProps) {
                                         </div>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={onClose}
-                                    className="p-2 rounded-xl hover:bg-white/10 text-gray-400 transition-colors"
-                                >
-                                    <X className="w-6 h-6" />
-                                </button>
+                                <div className="flex gap-2">
+                                    {isEditing ? (
+                                        <button
+                                            onClick={handleSave}
+                                            disabled={saving}
+                                            className="p-2 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+                                        >
+                                            <Check className="w-6 h-6" />
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => setIsEditing(true)}
+                                            className="p-2 rounded-xl hover:bg-white/10 text-gray-400 transition-colors"
+                                        >
+                                            <Edit2 className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={onClose}
+                                        className="p-2 rounded-xl hover:bg-white/10 text-gray-400 transition-colors"
+                                    >
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Main Info Grid */}
@@ -110,6 +183,25 @@ export function DeviceDetail({ device, isOpen, onClose }: DeviceDetailProps) {
                                 <InfoCard icon={<Shield className="w-4 h-4" />} label="MAC Address" value={device.mac_address} />
                                 <InfoCard icon={<HardDrive className="w-4 h-4" />} label="Vendor" value={device.vendor || 'Unknown'} />
                                 <InfoCard icon={<Clock className="w-4 h-4" />} label="Last Seen" value={new Date(device.last_seen).toLocaleTimeString()} />
+                            </div>
+
+                            {/* Notes Section */}
+                            <div className="mb-8">
+                                <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-2">
+                                    <Edit2 className="w-3 h-3" /> Notes
+                                </label>
+                                {isEditing ? (
+                                    <textarea
+                                        value={editNotes}
+                                        onChange={(e) => setEditNotes(e.target.value)}
+                                        className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-blue-500/50 resize-none"
+                                        placeholder="Add notes about this device..."
+                                    />
+                                ) : (
+                                    <div className="w-full min-h-[60px] bg-white/5 border border-white/5 rounded-xl p-3 text-sm text-gray-300">
+                                        {device.notes ? device.notes : <span className="text-gray-600 italic">No notes added.</span>}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Traffic Insights */}

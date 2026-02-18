@@ -1,4 +1,4 @@
-from fastapi import APIRouter, WebSocket, Depends
+from fastapi import APIRouter, WebSocket, Depends, Security, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
 import json
@@ -20,6 +20,8 @@ from ..core.speedtest_service import speedtest_service
 from ..core.system_stats import system_stats # Import system_stats
 from ..core.collector import global_collector # Import global_collector
 from fastapi import WebSocketDisconnect
+from ..core.auth import verify_api_key
+from ..core.limiter import limiter
 
 router = APIRouter()
 
@@ -32,7 +34,8 @@ class ConnectionManager:
         self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
 
     async def broadcast(self, message: dict):
         for connection in self.active_connections:
@@ -52,6 +55,24 @@ def get_device(device_id: int, db: Session = Depends(get_db)):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Device not found")
     return device
+
+@router.put("/devices/{device_id}", response_model=schemas.Device)
+def update_device(device_id: int, device_update: schemas.DeviceUpdate, db: Session = Depends(get_db)):
+    """Updates device details (nickname, notes, type)."""
+    db_device = db.query(models.Device).filter(models.Device.id == device_id).first()
+    if not db_device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    
+    if device_update.nickname is not None:
+        db_device.nickname = device_update.nickname
+    if device_update.notes is not None:
+        db_device.notes = device_update.notes
+    if device_update.type is not None:
+        db_device.type = device_update.type
+        
+    db.commit()
+    db.refresh(db_device)
+    return db_device
 
 @router.get("/devices/{device_id}/history")
 def get_device_history(device_id: int, days: int = 7, db: Session = Depends(get_db)):
@@ -167,9 +188,30 @@ async def events_websocket(websocket: WebSocket):
         manager.disconnect(websocket)
 
 @router.get("/alerts")
-async def get_alerts(db: Session = Depends(get_db)):
-    """Fetches security alerts."""
-    return db.query(models.SecurityAlert).order_by(models.SecurityAlert.timestamp.desc()).limit(50).all()
+async def get_alerts(severity: str = None, timeframe: str = None, db: Session = Depends(get_db)):
+    """Fetches security alerts with optional filtering."""
+    from datetime import datetime, timedelta
+    
+    query = db.query(models.SecurityAlert)
+    
+    if severity:
+        # Allow comma-separated severities ?severity=HIGH,CRITICAL
+        severities = severity.upper().split(',')
+        query = query.filter(models.SecurityAlert.severity.in_(severities))
+        
+    if timeframe:
+        since = datetime.now()
+        if timeframe == "1h":
+            since -= timedelta(hours=1)
+        elif timeframe == "24h":
+            since -= timedelta(hours=24)
+        elif timeframe == "7d":
+            since -= timedelta(days=7)
+        elif timeframe == "30d":
+            since -= timedelta(days=30)
+        query = query.filter(models.SecurityAlert.timestamp >= since)
+        
+    return query.order_by(models.SecurityAlert.timestamp.desc()).limit(100).all()
 
 @router.get("/docker/containers")
 def get_docker_containers():
@@ -308,8 +350,9 @@ async def get_container_logs(container_id: str, tail: int = 100):
     """Returns recent logs for a specific container."""
     return {"logs": docker_monitor.get_logs(container_id, tail)}
 
-@router.post("/docker/containers/{container_id}/action")
-async def container_action(container_id: str, payload: dict):
+@router.post("/docker/containers/{container_id}/action", dependencies=[Depends(verify_api_key)])
+@limiter.limit("10/minute")
+async def container_action(request: Request, container_id: str, payload: dict):
     """Performs an action (start, stop, restart) on a container."""
     action = payload.get("action")
     if action not in ["start", "stop", "restart"]:
@@ -318,7 +361,7 @@ async def container_action(container_id: str, payload: dict):
     success = docker_monitor.perform_action(container_id, action)
     return {"success": success}
 
-@router.patch("/alerts/{alert_id}/resolve")
+@router.patch("/alerts/{alert_id}/resolve", dependencies=[Depends(verify_api_key)])
 def resolve_alert(alert_id: int, db: Session = Depends(get_db)):
     alert = db.query(models.SecurityAlert).filter(models.SecurityAlert.id == alert_id).first()
     if alert:
@@ -334,9 +377,18 @@ def get_external_connections():
 @router.get("/network/history")
 async def get_network_history(timeframe: str = "1h", db: Session = Depends(get_db)):
     """Returns bandwidth and latency history."""
-    # TODO: Filter by timeframe
-    bandwidth = db.query(models.BandwidthHistory).order_by(models.BandwidthHistory.timestamp.desc()).limit(100).all()
-    latency = db.query(models.LatencyLog).order_by(models.LatencyLog.timestamp.desc()).limit(100).all()
+    start_time = datetime.now() - timedelta(hours=24) # Default
+    if timeframe == "1h":
+        start_time = datetime.now() - timedelta(hours=1)
+    elif timeframe == "24h":
+        start_time = datetime.now() - timedelta(hours=24)
+    elif timeframe == "7d":
+        start_time = datetime.now() - timedelta(days=7)
+    elif timeframe == "30d":
+        start_time = datetime.now() - timedelta(days=30)
+    
+    bandwidth = db.query(models.BandwidthHistory).filter(models.BandwidthHistory.timestamp >= start_time).order_by(models.BandwidthHistory.timestamp.asc()).all()
+    latency = db.query(models.LatencyLog).filter(models.LatencyLog.timestamp >= start_time).order_by(models.LatencyLog.timestamp.asc()).all()
     return {"bandwidth": bandwidth, "latency": latency}
 
 @router.get("/network/health")
@@ -368,7 +420,7 @@ def get_settings(db: Session = Depends(get_db)):
     """Returns all system settings."""
     return db.query(models.SystemSettings).all()
 
-@router.post("/settings")
+@router.post("/settings", dependencies=[Depends(verify_api_key)])
 def update_setting(setting: schemas.SystemSettingBase, db: Session = Depends(get_db)):
     """Updates or creates a system setting."""
     db_setting = db.query(models.SystemSettings).filter(models.SystemSettings.key == setting.key).first()
@@ -398,8 +450,9 @@ def get_speedtest_servers():
     """Returns a list of available speedtest servers."""
     return speedtest_service.get_servers()
 
-@router.post("/speedtest")
-async def run_speedtest(server_id: int = None, provider: str = "ookla", db: Session = Depends(get_db)):
+@router.post("/speedtest", dependencies=[Depends(verify_api_key)])
+@limiter.limit("5/minute")
+async def run_speedtest(request: Request, server_id: int = None, provider: str = "ookla", db: Session = Depends(get_db)):
     """Triggers a new speedtest."""
     return await speedtest_service.run_speedtest(db, server_id, provider)
 

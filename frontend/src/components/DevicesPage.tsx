@@ -222,6 +222,10 @@ export function DevicesPage() {
                 device={selectedDevice}
                 isOpen={isDetailOpen}
                 onClose={() => setIsDetailOpen(false)}
+                onUpdate={(updatedDevice) => {
+                    setDevices(prev => prev.map(d => d.id === updatedDevice.id ? updatedDevice : d));
+                    setSelectedDevice(updatedDevice);
+                }}
             />
         </div>
     );
