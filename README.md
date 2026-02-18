@@ -66,4 +66,32 @@ Telemetry data and discovered devices are stored in the `./backend/data/` direct
 
 ---
 
+## 📖 API Documentation
+
+The backend provides a RESTful API documented via Swagger UI.
+
+- **Docs:** `http://localhost:21081/docs`
+- **ReDoc:** `http://localhost:21081/redoc`
+
+### Key Endpoints
+
+- `GET /api/devices`: List all tracked devices
+- `GET /api/traffic/history`: Network traffic history
+- `POST /api/speedtest/run`: Trigger a speed test
+- `GET /api/system/stats`: System resource usage
+
+## 🧪 Testing
+
+```bash
+# Backend
+cd backend
+pytest
+
+# Frontend
+cd frontend
+npm test
+```
+
+---
+
 *Made with ❤️ by Antigravity*

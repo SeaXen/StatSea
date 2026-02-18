@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Box,
@@ -11,13 +11,19 @@ import {
     ArrowLeft,
     RotateCw,
     Terminal,
-    RefreshCw
+    RefreshCw,
+    Trash2
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import { API_CONFIG } from '../config/apiConfig';
 
 // --- Interfaces ---
+
+interface ContainerHistory {
+    cpu: number[];
+    mem: number[];
+}
 
 interface ContainerHistoryPoint {
     timestamp: string;
@@ -90,10 +96,11 @@ interface ContainerListProps {
     searchQuery: string;
     setSearchQuery: (v: string) => void;
     onSelect: (id: string) => void;
+    onPrune: () => void;
     loading: boolean;
 }
 
-const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, setSearchQuery, onSelect, loading }) => {
+const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, setSearchQuery, onSelect, onPrune, loading }) => {
     const filteredContainers = useMemo(() =>
         containers.filter(c =>
             c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -118,6 +125,14 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={onPrune}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-xs font-bold transition-all"
+                        title="Prune stopped containers"
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Prune</span>
+                    </button>
                     <div className="relative group">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
                         <input
@@ -193,6 +208,14 @@ interface ContainerDetailProps {
 const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHistoryPoint[], usage: ContainerUsage | null }> = ({
     container, onBack, onAction, actionLoading, logs, logsLoading, history, usage
 }) => {
+    const logsEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (logsEndRef.current) {
+            logsEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [logs]);
+
     const cpuData = useMemo(() => history.map(h => ({ v: h.cpu_pct })), [history]);
     const memData = useMemo(() => history.map(h => ({ v: h.mem_usage })), [history]);
     const netData = useMemo(() => history.map(h => ({
@@ -392,6 +415,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                                     {logsLoading ? 'Synchronizing stream...' : 'Waiting for telemetry...'}
                                 </div>
                             )}
+                            <div ref={logsEndRef} />
                         </div>
                     </div>
                 </div>
@@ -489,6 +513,31 @@ const DockerManager: React.FC = () => {
         }
     }, [fetchContainers]);
 
+    const handlePrune = useCallback(async () => {
+        if (!window.confirm("Are you sure you want to remove all stopped containers? This action cannot be undone.")) return;
+
+        const toastId = toast.loading("Pruning stopped containers...");
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.PRUNE}`, {
+                method: 'POST',
+            });
+
+            if (!response.ok) throw new Error('Prune failed');
+
+            const result = await response.json();
+            if (result.error) throw new Error(result.error);
+
+            const deletedCount = result.ContainersDeleted?.length || 0;
+            const spaceReclaimed = formatBytes(result.SpaceReclaimed || 0);
+
+            toast.success(`Pruned ${deletedCount} containers. Reclaimed ${spaceReclaimed}`, { id: toastId });
+            fetchContainers();
+        } catch (error) {
+            console.error("Prune error:", error);
+            toast.error("Failed to prune containers", { id: toastId });
+        }
+    }, [fetchContainers]);
+
     useEffect(() => {
         fetchContainers();
         const interval = setInterval(fetchContainers, 3000);
@@ -541,8 +590,10 @@ const DockerManager: React.FC = () => {
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
                         onSelect={setSelectedId}
+                        onPrune={handlePrune}
                         loading={loading}
                     />
+
                 )}
             </AnimatePresence>
         </div>

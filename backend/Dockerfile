@@ -23,4 +23,4 @@ RUN mkdir -p /app/data
 EXPOSE 21081
 
 # Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "21081"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "21081", "--workers", "2"]

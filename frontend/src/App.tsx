@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Toaster } from 'sonner';
@@ -20,8 +20,9 @@ import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
 import { TopNav } from './components/TopNav';
 import ServerStatusCard from './components/ServerStatusCard';
 import SystemDetailOverlay from './components/SystemDetailOverlay';
+import { Sidebar } from './components/Sidebar';
 
-const Dashboard = ({ loading }: { loading: boolean }) => {
+const Dashboard = () => {
     const { wsData, isConnected } = useWebSocket();
     const [overlayOpen, setOverlayOpen] = useState(false);
     const [overlayType, setOverlayType] = useState<'cpu' | 'ram' | 'disk' | 'all'>('all');
@@ -143,80 +144,86 @@ export default function App() {
 function AppContent() {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [commandOpen, setCommandOpen] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
 
-
-
-    useEffect(() => {
-        // Simulate initial data fetch/load
-        const timer = setTimeout(() => setLoading(false), 2000);
-        return () => clearTimeout(timer);
-    }, []);
 
     return (
-        <div className="min-h-screen bg-[#0f1014] text-foreground font-sans selection:bg-blue-500/30 flex flex-col">
+        <div className="flex min-h-screen bg-[#0f1014] text-foreground font-sans selection:bg-blue-500/30">
             <Toaster richColors position="top-right" theme="dark" />
             <CommandPalette open={commandOpen} setOpen={setCommandOpen} changeTab={setActiveTab} />
 
-            <TopNav
+            <Sidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
-                setCommandOpen={setCommandOpen}
+                isCollapsed={sidebarCollapsed}
+                setIsCollapsed={setSidebarCollapsed}
+                isMobileOpen={mobileMenuOpen}
+                setIsMobileOpen={setMobileMenuOpen}
             />
 
-            {/* Main Content */}
-            <main className="flex-1 w-full max-w-[1920px] mx-auto bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-background to-background relative">
-                <div className="relative h-full">
-                    {/* Dashboard - Always rendered for immediate access */}
-                    <div className={`${activeTab === 'dashboard' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                        <Dashboard loading={loading} />
+            <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
+                <TopNav
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    setCommandOpen={setCommandOpen}
+                    onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                />
+
+                {/* Main Content */}
+                <main className="flex-1 w-full max-w-[1920px] mx-auto bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-background to-background relative overflow-x-hidden">
+                    <div className="relative h-full">
+                        {/* Dashboard - Always rendered for immediate access */}
+                        <div className={`${activeTab === 'dashboard' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                            <Dashboard />
+                        </div>
+
+                        {/* Lazy Loaded Components with Keep-Alive */}
+                        {activeTab === 'devices' && (
+                            <div className={`${activeTab === 'devices' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                <DevicesPage />
+                            </div>
+                        )}
+
+                        {activeTab === 'network' && (
+                            <div className={`${activeTab === 'network' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                <NetworkMap />
+                            </div>
+                        )}
+
+                        {activeTab === 'geo' && (
+                            <div className={`${activeTab === 'geo' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                <ConnectionGlobe />
+                            </div>
+                        )}
+
+                        {activeTab === 'analytics' && (
+                            <div className={`${activeTab === 'analytics' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                <AnalyticsDashboard />
+                            </div>
+                        )}
+
+                        {activeTab === 'containers' && (
+                            <div className={`${activeTab === 'containers' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                <DockerManager />
+                            </div>
+                        )}
+
+                        {activeTab === 'speedtest' && (
+                            <div className={`${activeTab === 'speedtest' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                <SpeedtestPage />
+                            </div>
+                        )}
+
+                        {activeTab === 'settings' && (
+                            <div className={`${activeTab === 'settings' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                <SettingsPage />
+                            </div>
+                        )}
                     </div>
-
-                    {/* Lazy Loaded Components with Keep-Alive */}
-                    {activeTab === 'devices' && (
-                        <div className={`${activeTab === 'devices' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                            <DevicesPage />
-                        </div>
-                    )}
-
-                    {activeTab === 'network' && (
-                        <div className={`${activeTab === 'network' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                            <NetworkMap />
-                        </div>
-                    )}
-
-                    {activeTab === 'geo' && (
-                        <div className={`${activeTab === 'geo' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                            <ConnectionGlobe />
-                        </div>
-                    )}
-
-                    {activeTab === 'analytics' && (
-                        <div className={`${activeTab === 'analytics' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                            <AnalyticsDashboard />
-                        </div>
-                    )}
-
-                    {activeTab === 'containers' && (
-                        <div className={`${activeTab === 'containers' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                            <DockerManager />
-                        </div>
-                    )}
-
-                    {activeTab === 'speedtest' && (
-                        <div className={`${activeTab === 'speedtest' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                            <SpeedtestPage />
-                        </div>
-                    )}
-
-                    {activeTab === 'settings' && (
-                        <div className={`${activeTab === 'settings' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                            <SettingsPage />
-                        </div>
-                    )}
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
     );
 }

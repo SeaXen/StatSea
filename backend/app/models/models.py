@@ -3,6 +3,15 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..db.database import Base
 
+class DeviceGroup(Base):
+    __tablename__ = "device_groups"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    color = Column(String, default="#3b82f6")
+    
+    devices = relationship("Device", back_populates="group")
+
 class Device(Base):
     __tablename__ = "devices"
 
@@ -17,9 +26,24 @@ class Device(Base):
     is_online = Column(Boolean, default=False)
     nickname = Column(String, nullable=True)
     notes = Column(String, nullable=True)
+    tags = Column(String, nullable=True) # JSON list of strings
+    group_id = Column(Integer, ForeignKey("device_groups.id"), nullable=True) 
 
+    group = relationship("DeviceGroup", back_populates="devices")
     traffic_logs = relationship("TrafficLog", back_populates="device")
     daily_summaries = relationship("DeviceDailySummary", back_populates="device")
+    quota = relationship("BandwidthQuota", uselist=False, back_populates="device", cascade="all, delete-orphan")
+    status_logs = relationship("DeviceStatusLog", back_populates="device", cascade="all, delete-orphan")
+
+class BandwidthQuota(Base):
+    __tablename__ = "bandwidth_quotas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(Integer, ForeignKey("devices.id"), unique=True)
+    daily_limit_bytes = Column(BigInteger, nullable=True)
+    monthly_limit_bytes = Column(BigInteger, nullable=True)
+    
+    device = relationship("Device", back_populates="quota")
 
 class DeviceDailySummary(Base):
     __tablename__ = "device_daily_summaries"
@@ -116,6 +140,7 @@ class SpeedtestResult(Base):
     server_name = Column(String, nullable=True)
     server_country = Column(String, nullable=True)
     provider = Column(String, default="ookla") # ookla, cloudflare
+    isp = Column(String, nullable=True)
 
 class DockerContainerMetric(Base):
     __tablename__ = "docker_metrics"
@@ -129,6 +154,16 @@ class DockerContainerMetric(Base):
     net_rx = Column(BigInteger)
     net_tx = Column(BigInteger)
 
+class DeviceStatusLog(Base):
+    __tablename__ = "device_status_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(Integer, ForeignKey("devices.id"))
+    status = Column(String, index=True) # 'online' or 'offline'
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    device = relationship("Device", back_populates="status_logs")
+
 class SystemNetworkHistory(Base):
     """vnstat-like total interface usage history"""
     __tablename__ = "system_network_history"
@@ -140,4 +175,17 @@ class SystemNetworkHistory(Base):
     bytes_recv = Column(BigInteger)
     packets_sent = Column(BigInteger)
     packets_recv = Column(BigInteger)
+
+class DnsLog(Base):
+    """Log of DNS queries captured by the collector"""
+    __tablename__ = "dns_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    client_ip = Column(String, index=True)
+    device_id = Column(Integer, ForeignKey("devices.id"), nullable=True)
+    query_domain = Column(String, index=True)
+    record_type = Column(String) # A, AAAA, CNAME, etc.
+    
+    device = relationship("Device")
 

@@ -41,9 +41,29 @@ class SystemStats:
         except Exception:
             load_avg = 0
 
+        # Try to get CPU Temperature
+        temperature = None
+        try:
+            temps = psutil.sensors_temperatures()
+            if temps:
+                for name, entries in temps.items():
+                    if 'cpu' in name.lower() or 'core' in name.lower() or 'package' in name.lower():
+                        if entries:
+                            temperature = entries[0].current
+                            break
+                # Fallback to first available if no specific cpu match
+                if temperature is None:
+                     for name, entries in temps.items():
+                        if entries:
+                            temperature = entries[0].current
+                            break
+        except Exception:
+            pass
+
         return {
             "hostname": platform.node(),
             "uptime": SystemStats.get_uptime(),
+            "temperature": temperature,
             "cpu_pct": cpu_pct,
             "cpu_load": round(load_avg, 2),
             "ram": {

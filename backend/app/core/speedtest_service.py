@@ -106,6 +106,7 @@ class SpeedtestService:
                 "upload": upload / 1_000_000,     # Convert to Mbps
                 "ping": st.results.ping,
                 "server": st.results.server,
+                "client": st.results.client,
                 "timestamp": datetime.now(),
                 "provider": "ookla"
             }
@@ -122,6 +123,10 @@ class SpeedtestService:
                  # Run in executor to avoid blocking the main thread
                 result = await loop.run_in_executor(None, lambda: self.run_ookla_speedtest(server_id))
             
+            isp = result.get("client", {}).get("isp")
+            if provider == "cloudflare":
+                isp = "Cloudflare Network"
+
             db_item = SpeedtestResult(
                 timestamp=result["timestamp"],
                 ping=result["ping"],
@@ -130,7 +135,8 @@ class SpeedtestService:
                 server_id=int(result["server"]["id"]),
                 server_name=f"{result['server']['name']}, {result['server']['country']}",
                 server_country=result.get("server", {}).get("country", "Unknown"),
-                provider=provider
+                provider=provider,
+                isp=isp
             )
             db.add(db_item)
             db.commit()

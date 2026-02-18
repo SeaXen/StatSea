@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
+import DnsQueryLog from './DnsQueryLog';
+import NetworkComparison from './NetworkComparison';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell
 } from 'recharts';
 import {
     Shield, AlertTriangle, Activity, Zap, Pause, Play, Search, Globe, Wifi, Server,
-    Database, Radio, Layers, BarChart3, TrendingUp, Monitor, Network
+    Database, Radio, Layers, BarChart3, TrendingUp, Monitor, Network, Settings,
+    ArrowRightLeft
 } from 'lucide-react';
 import { API_CONFIG } from '../config/apiConfig';
 
@@ -103,6 +106,15 @@ interface SystemHistoryPoint {
     bytes_recv: number;
 }
 
+interface DashboardConfig {
+    showStatsRow: boolean;
+    showLiveBandwidth: boolean;
+    showGauges: boolean;
+    showProtocolFilters: boolean;
+    showProtocolCharts: boolean;
+    showPacketCharts: boolean;
+}
+
 // ─── Helper ───
 function formatBytes(bytes: number): string {
     if (bytes === 0) return '0 B';
@@ -192,7 +204,7 @@ const ProtocolBadge = ({ proto, active, onClick }: { proto: string; active: bool
 
 // ─── MAIN COMPONENT ───
 const AnalyticsDashboard = () => {
-    const [activeView, setActiveView] = useState<'live' | 'statistics' | 'connections' | 'security' | 'history'>('live');
+    const [activeView, setActiveView] = useState<'live' | 'statistics' | 'connections' | 'security' | 'history' | 'dns' | 'comparison'>('live');
     const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
     const [bandwidthData, setBandwidthData] = useState<BandwidthPoint[]>([]);
     const [latencyData, setLatencyData] = useState<LatencyPoint[]>([]);
@@ -204,7 +216,24 @@ const AnalyticsDashboard = () => {
     const [paused, setPaused] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeProtocols, setActiveProtocols] = useState<Set<string>>(new Set(['TCP', 'UDP', 'HTTP', 'HTTPS', 'DNS', 'ICMP', 'SSH', 'FTP']));
+    const [showSettings, setShowSettings] = useState(false);
+    const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>(() => {
+        const saved = localStorage.getItem('dashboardConfig');
+        return saved ? JSON.parse(saved) : {
+            showStatsRow: true,
+            showLiveBandwidth: true,
+            showGauges: true,
+            showProtocolFilters: true,
+            showProtocolCharts: true,
+            showPacketCharts: true
+        };
+    });
+
     const logRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        localStorage.setItem('dashboardConfig', JSON.stringify(dashboardConfig));
+    }, [dashboardConfig]);
 
     const toggleProtocol = (proto: string) => {
         setActiveProtocols(prev => {
@@ -213,6 +242,10 @@ const AnalyticsDashboard = () => {
             else next.add(proto);
             return next;
         });
+    };
+
+    const toggleWidget = (key: keyof DashboardConfig) => {
+        setDashboardConfig(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
     useEffect(() => {
@@ -365,90 +398,135 @@ const AnalyticsDashboard = () => {
                             }`}>
                         {paused ? <><Play className="w-3.5 h-3.5" /> Resume</> : <><Pause className="w-3.5 h-3.5" /> Pause</>}
                     </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowSettings(!showSettings)}
+                            className={`p-2 rounded-lg transition-colors border ${showSettings ? 'bg-gray-800 border-gray-600 text-cyan-400' : 'bg-gray-900/60 border-gray-800 text-gray-400 hover:text-white'}`}
+                        >
+                            <Settings className="w-4 h-4" />
+                        </button>
+
+                        {/* Settings Dropdown */}
+                        {showSettings && (
+                            <div className="absolute right-0 top-full mt-2 w-56 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-50 p-3 animate-in fade-in slide-in-from-top-2">
+                                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Dashboard Layout</h4>
+                                <div className="space-y-1">
+                                    {[
+                                        { key: 'showStatsRow', label: 'Key Statistics' },
+                                        { key: 'showLiveBandwidth', label: 'Live Bandwidth Graph' },
+                                        { key: 'showGauges', label: 'Network Gauges' },
+                                        { key: 'showProtocolFilters', label: 'Protocol Filters' },
+                                        { key: 'showProtocolCharts', label: 'Protocol Distribution' },
+                                        { key: 'showPacketCharts', label: 'Packet Size/Volume' },
+
+                                    ].map(item => (
+                                        <button
+                                            key={item.key}
+                                            onClick={() => toggleWidget(item.key as keyof DashboardConfig)}
+                                            className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-gray-800 rounded-lg text-xs text-gray-300 transition-colors"
+                                        >
+                                            <span>{item.label}</span>
+                                            <div className={`w-8 h-4 rounded-full relative transition-colors ${dashboardConfig[item.key as keyof DashboardConfig] ? 'bg-cyan-500/20' : 'bg-gray-700'}`}>
+                                                <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${dashboardConfig[item.key as keyof DashboardConfig] ? 'left-4.5 bg-cyan-400' : 'left-0.5 bg-gray-500'}`} style={{ left: dashboardConfig[item.key as keyof DashboardConfig] ? '18px' : '2px' }} />
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {/* ─── Stats Row (8 cards) ─── */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-                <StatCard label="Packets" value={formatNumber(analyticsData.total_packets)} icon={Zap} color="#22d3ee" sub="total captured" />
-                <StatCard label="Data" value={formatBytes(analyticsData.total_bytes)} icon={Database} color="#34d399" sub="transferred" />
-                <StatCard label="PPS" value={`${analyticsData.packets_per_sec}`} icon={Activity} color="#a855f7" sub="packets/sec" trend="up" />
-                <StatCard label="Suspicious" value={analyticsData.suspicious} icon={AlertTriangle} color={analyticsData.suspicious > 0 ? '#f43f5e' : '#6b7280'} sub="flagged" trend={analyticsData.suspicious > 0 ? 'up' : 'neutral'} />
-                <StatCard label="DNS" value={formatNumber(analyticsData.dns_queries)} icon={Globe} color="#eab308" sub="queries" />
-                <StatCard label="HTTP" value={formatNumber(analyticsData.http_requests)} icon={Network} color="#f97316" sub="requests" />
-                <StatCard label="Sessions" value={analyticsData.active_sessions} icon={Radio} color="#14b8a6" sub="active" trend="up" />
-                <StatCard label="Devices" value={analyticsData.active_device_count} icon={Monitor} color="#8b5cf6" sub="online" />
-            </div>
+            {dashboardConfig.showStatsRow && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                    <StatCard label="Packets" value={formatNumber(analyticsData.total_packets)} icon={Zap} color="#22d3ee" sub="total captured" />
+                    <StatCard label="Data" value={formatBytes(analyticsData.total_bytes)} icon={Database} color="#34d399" sub="transferred" />
+                    <StatCard label="PPS" value={`${analyticsData.packets_per_sec}`} icon={Activity} color="#a855f7" sub="packets/sec" trend="up" />
+                    <StatCard label="Suspicious" value={analyticsData.suspicious} icon={AlertTriangle} color={analyticsData.suspicious > 0 ? '#f43f5e' : '#6b7280'} sub="flagged" trend={analyticsData.suspicious > 0 ? 'up' : 'neutral'} />
+                    <StatCard label="DNS" value={formatNumber(analyticsData.dns_queries)} icon={Globe} color="#eab308" sub="queries" />
+                    <StatCard label="HTTP" value={formatNumber(analyticsData.http_requests)} icon={Network} color="#f97316" sub="requests" />
+                    <StatCard label="Sessions" value={analyticsData.active_sessions} icon={Radio} color="#14b8a6" sub="active" trend="up" />
+                    <StatCard label="Devices" value={analyticsData.active_device_count} icon={Monitor} color="#8b5cf6" sub="online" />
+                </div>
+            )}
 
             {/* ─── Live Bandwidth Timeline + Gauges + Protocol Filters ─── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className={`grid grid-cols-1 ${dashboardConfig.showLiveBandwidth && dashboardConfig.showGauges && dashboardConfig.showProtocolFilters ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-4`}>
                 {/* Live Bandwidth Timeline */}
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                    <h3 className="text-xs font-medium text-gray-400 mb-2 flex items-center gap-2">
-                        <TrendingUp className="w-3.5 h-3.5 text-cyan-400" /> Live Bandwidth
-                    </h3>
-                    <div className="h-[100px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={analyticsData.bandwidth_history || []}>
-                                <defs>
-                                    <linearGradient id="liveDown" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
-                                    </linearGradient>
-                                    <linearGradient id="liveUp" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <XAxis dataKey="time" stroke="#374151" fontSize={9} tickCount={4} />
-                                <YAxis stroke="#374151" fontSize={9} tickFormatter={(v: number) => formatBytes(v)} width={50} />
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px', fontSize: '11px' }}
-                                    itemStyle={{ color: '#e5e7eb' }}
-                                    formatter={(value: number) => formatBytes(value)}
-                                />
-                                <Area type="monotone" dataKey="down" stroke="#22d3ee" strokeWidth={1.5} fill="url(#liveDown)" dot={false} name="Download" />
-                                <Area type="monotone" dataKey="up" stroke="#34d399" strokeWidth={1.5} fill="url(#liveUp)" dot={false} name="Upload" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Gauges */}
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4 flex items-center justify-center gap-6">
-                    <CircularGauge percentage={downPct} rate={formatBytes(analyticsData.download_rate) + '/s'} label="Download" color="#22d3ee" dotColor="#22d3ee" />
-                    <CircularGauge percentage={upPct} rate={formatBytes(analyticsData.upload_rate) + '/s'} label="Upload" color="#34d399" dotColor="#34d399" />
-                </div>
-
-                {/* Protocol Filters */}
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                    <h3 className="text-xs font-medium text-gray-400 mb-2">Protocol Filters</h3>
-                    <div className="flex flex-wrap gap-2">
-                        {allProtocols.map(p => (
-                            <ProtocolBadge key={p} proto={p} active={activeProtocols.has(p)} onClick={() => toggleProtocol(p)} />
-                        ))}
-                    </div>
-                    {/* Connection Types mini */}
-                    <div className="mt-4 pt-3 border-t border-gray-800">
-                        <h4 className="text-xs text-gray-500 mb-2">Connection Types</h4>
-                        <div className="flex items-center gap-3">
-                            {connTypeData.map(ct => (
-                                <div key={ct.name} className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full" style={{ background: ct.color }} />
-                                    <span className="text-xs text-gray-400">{ct.name}</span>
-                                    <span className="text-xs font-mono text-gray-500">{formatNumber(ct.value)}</span>
-                                </div>
-                            ))}
+                {dashboardConfig.showLiveBandwidth && (
+                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                        <h3 className="text-xs font-medium text-gray-400 mb-2 flex items-center gap-2">
+                            <TrendingUp className="w-3.5 h-3.5 text-cyan-400" /> Live Bandwidth
+                        </h3>
+                        <div className="h-[100px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={analyticsData.bandwidth_history || []}>
+                                    <defs>
+                                        <linearGradient id="liveDown" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="liveUp" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <XAxis dataKey="time" stroke="#374151" fontSize={9} tickCount={4} />
+                                    <YAxis stroke="#374151" fontSize={9} tickFormatter={(v: number) => formatBytes(v)} width={50} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px', fontSize: '11px' }}
+                                        itemStyle={{ color: '#e5e7eb' }}
+                                        formatter={(value: number) => formatBytes(value)}
+                                    />
+                                    <Area type="monotone" dataKey="down" stroke="#22d3ee" strokeWidth={1.5} fill="url(#liveDown)" dot={false} name="Download" />
+                                    <Area type="monotone" dataKey="up" stroke="#34d399" strokeWidth={1.5} fill="url(#liveUp)" dot={false} name="Upload" />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
-                </div>
+                )}
+
+                {/* Gauges */}
+                {dashboardConfig.showGauges && (
+                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4 flex items-center justify-center gap-6">
+                        <CircularGauge percentage={downPct} rate={formatBytes(analyticsData.download_rate) + '/s'} label="Download" color="#22d3ee" dotColor="#22d3ee" />
+                        <CircularGauge percentage={upPct} rate={formatBytes(analyticsData.upload_rate) + '/s'} label="Upload" color="#34d399" dotColor="#34d399" />
+                    </div>
+                )}
+
+                {/* Protocol Filters */}
+                {dashboardConfig.showProtocolFilters && (
+                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                        <h3 className="text-xs font-medium text-gray-400 mb-2">Protocol Filters</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {allProtocols.map(p => (
+                                <ProtocolBadge key={p} proto={p} active={activeProtocols.has(p)} onClick={() => toggleProtocol(p)} />
+                            ))}
+                        </div>
+                        {/* Connection Types mini */}
+                        <div className="mt-4 pt-3 border-t border-gray-800">
+                            <h4 className="text-xs text-gray-500 mb-2">Connection Types</h4>
+                            <div className="flex items-center gap-3">
+                                {connTypeData.map(ct => (
+                                    <div key={ct.name} className="flex items-center gap-1.5">
+                                        <div className="w-2 h-2 rounded-full" style={{ background: ct.color }} />
+                                        <span className="text-xs text-gray-400">{ct.name}</span>
+                                        <span className="text-xs font-mono text-gray-500">{formatNumber(ct.value)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
 
             </div>
 
             {/* ─── Tab Navigation ─── */}
             <div className="flex gap-1 border-b border-gray-800">
-                {(['live', 'statistics', 'connections', 'security', 'history'] as const).map(tab => (
+                {(['live', 'statistics', 'connections', 'security', 'history', 'dns', 'comparison'] as const).map(tab => (
                     <button key={tab} onClick={() => setActiveView(tab)}
                         className={`px-4 py-2 text-xs font-medium capitalize transition-all rounded-t-lg ${activeView === tab
                             ? 'text-cyan-400 bg-gray-900/60 border border-gray-800 border-b-transparent -mb-px'
@@ -571,115 +649,121 @@ const AnalyticsDashboard = () => {
                     </div>
 
                     {/* Row 2: Protocol Distribution + Top Devices */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Protocol Distribution */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
-                                <Server className="w-4 h-4 text-purple-400" /> Protocol Distribution
-                            </h3>
-                            <div className="h-[250px] flex items-center">
-                                <ResponsiveContainer width="50%" height="100%">
-                                    <PieChart>
-                                        <Pie data={protocolChartData} cx="50%" cy="50%" innerRadius={45} outerRadius={75}
-                                            paddingAngle={3} dataKey="value" stroke="none">
-                                            {protocolChartData.map((entry, i) => (
-                                                <Cell key={i} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }} itemStyle={{ color: '#e5e7eb' }} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                                <div className="flex flex-col gap-1.5 pl-2">
-                                    {protocolChartData.map((entry) => (
-                                        <div key={entry.name} className="flex items-center gap-2 text-xs">
-                                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: entry.color }} />
-                                            <span className="text-gray-400 w-12">{entry.name}</span>
-                                            <span className="text-gray-500 font-mono">{entry.value.toLocaleString()}</span>
-                                        </div>
-                                    ))}
+                    {/* Row 2: Protocol Distribution + Top Devices */}
+                    {dashboardConfig.showProtocolCharts && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Protocol Distribution */}
+                            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                                <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
+                                    <Server className="w-4 h-4 text-purple-400" /> Protocol Distribution
+                                </h3>
+                                <div className="h-[250px] flex items-center">
+                                    <ResponsiveContainer width="50%" height="100%">
+                                        <PieChart>
+                                            <Pie data={protocolChartData} cx="50%" cy="50%" innerRadius={45} outerRadius={75}
+                                                paddingAngle={3} dataKey="value" stroke="none">
+                                                {protocolChartData.map((entry, i) => (
+                                                    <Cell key={i} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }} itemStyle={{ color: '#e5e7eb' }} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="flex flex-col gap-1.5 pl-2">
+                                        {protocolChartData.map((entry) => (
+                                            <div key={entry.name} className="flex items-center gap-2 text-xs">
+                                                <div className="w-2.5 h-2.5 rounded-full" style={{ background: entry.color }} />
+                                                <span className="text-gray-400 w-12">{entry.name}</span>
+                                                <span className="text-gray-500 font-mono">{entry.value.toLocaleString()}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Top Devices */}
+                            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                                <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
+                                    <Monitor className="w-4 h-4 text-cyan-400" /> Top Devices by Traffic
+                                </h3>
+                                <div className="h-[250px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={analyticsData.top_devices.map(d => ({
+                                            name: d.hostname || d.ip || d.mac.slice(-5),
+                                            Download: d.download,
+                                            Upload: d.upload
+                                        }))} layout="vertical" margin={{ left: 60 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                                            <XAxis type="number" stroke="#4b5563" fontSize={10} tickFormatter={(v: number) => formatBytes(v)} />
+                                            <YAxis type="category" dataKey="name" stroke="#4b5563" fontSize={11} width={55} />
+                                            <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }} itemStyle={{ color: '#e5e7eb' }}
+                                                formatter={(value: number) => formatBytes(value)} />
+                                            <Bar dataKey="Download" fill="#22d3ee" radius={[0, 4, 4, 0]} barSize={10} />
+                                            <Bar dataKey="Upload" fill="#34d399" radius={[0, 4, 4, 0]} barSize={10} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
                                 </div>
                             </div>
                         </div>
-
-                        {/* Top Devices */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
-                                <Monitor className="w-4 h-4 text-cyan-400" /> Top Devices by Traffic
-                            </h3>
-                            <div className="h-[250px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={analyticsData.top_devices.map(d => ({
-                                        name: d.hostname || d.ip || d.mac.slice(-5),
-                                        Download: d.download,
-                                        Upload: d.upload
-                                    }))} layout="vertical" margin={{ left: 60 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                                        <XAxis type="number" stroke="#4b5563" fontSize={10} tickFormatter={(v: number) => formatBytes(v)} />
-                                        <YAxis type="category" dataKey="name" stroke="#4b5563" fontSize={11} width={55} />
-                                        <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }} itemStyle={{ color: '#e5e7eb' }}
-                                            formatter={(value: number) => formatBytes(value)} />
-                                        <Bar dataKey="Download" fill="#22d3ee" radius={[0, 4, 4, 0]} barSize={10} />
-                                        <Bar dataKey="Upload" fill="#34d399" radius={[0, 4, 4, 0]} barSize={10} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
+                    )}
 
                     {/* Row 3: Packet Size Distribution + Bytes per Protocol */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Packet Size Distribution */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
-                                <Layers className="w-4 h-4 text-amber-400" /> Packet Size Distribution
-                            </h3>
-                            <div className="h-[220px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={sizeDistData} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                                        <XAxis type="number" stroke="#4b5563" fontSize={10} tickFormatter={(v: number) => formatNumber(v)} />
-                                        <YAxis type="category" dataKey="shortName" stroke="#4b5563" fontSize={10} width={50} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }}
-                                            itemStyle={{ color: '#e5e7eb' }}
-                                            formatter={(value: number) => value.toLocaleString()}
-                                        />
-                                        <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14} name="Packets">
-                                            {sizeDistData.map((entry, i) => (
-                                                <Cell key={i} fill={entry.color} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
+                    {/* Row 3: Packet Size Distribution + Bytes per Protocol */}
+                    {dashboardConfig.showPacketCharts && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Packet Size Distribution */}
+                            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                                <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
+                                    <Layers className="w-4 h-4 text-amber-400" /> Packet Size Distribution
+                                </h3>
+                                <div className="h-[220px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={sizeDistData} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                                            <XAxis type="number" stroke="#4b5563" fontSize={10} tickFormatter={(v: number) => formatNumber(v)} />
+                                            <YAxis type="category" dataKey="shortName" stroke="#4b5563" fontSize={10} width={50} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }}
+                                                itemStyle={{ color: '#e5e7eb' }}
+                                                formatter={(value: number) => value.toLocaleString()}
+                                            />
+                                            <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14} name="Packets">
+                                                {sizeDistData.map((entry, i) => (
+                                                    <Cell key={i} fill={entry.color} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Bytes per Protocol */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
-                                <BarChart3 className="w-4 h-4 text-blue-400" /> Traffic Volume by Protocol
-                            </h3>
-                            <div className="h-[220px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={bytesPerProtoData} margin={{ left: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                                        <XAxis dataKey="name" stroke="#4b5563" fontSize={10} />
-                                        <YAxis stroke="#4b5563" fontSize={10} tickFormatter={(v: number) => formatBytes(v)} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }}
-                                            itemStyle={{ color: '#e5e7eb' }}
-                                            formatter={(value: number) => formatBytes(value)}
-                                        />
-                                        <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={28} name="Bytes">
-                                            {bytesPerProtoData.map((entry, i) => (
-                                                <Cell key={i} fill={entry.color} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
+                            {/* Bytes per Protocol */}
+                            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                                <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
+                                    <BarChart3 className="w-4 h-4 text-blue-400" /> Traffic Volume by Protocol
+                                </h3>
+                                <div className="h-[220px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={bytesPerProtoData} margin={{ left: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                                            <XAxis dataKey="name" stroke="#4b5563" fontSize={10} />
+                                            <YAxis stroke="#4b5563" fontSize={10} tickFormatter={(v: number) => formatBytes(v)} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }}
+                                                itemStyle={{ color: '#e5e7eb' }}
+                                                formatter={(value: number) => formatBytes(value)}
+                                            />
+                                            <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={28} name="Bytes">
+                                                {bytesPerProtoData.map((entry, i) => (
+                                                    <Cell key={i} fill={entry.color} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             )}
 
@@ -818,6 +902,17 @@ const AnalyticsDashboard = () => {
                             </ResponsiveContainer>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* ═══════════════════ DNS LOGS ═══════════════════ */}
+            {activeView === 'dns' && (
+                <DnsQueryLog />
+            )}
+
+            {activeView === 'comparison' && (
+                <div className="space-y-6 animate-in fade-in duration-500">
+                    <NetworkComparison />
                 </div>
             )}
         </div>

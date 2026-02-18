@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 // Basic API Configuration
 const API_PORT = import.meta.env.VITE_API_PORT || '21081';
 export const API_CONFIG = {
@@ -22,6 +23,7 @@ export const API_CONFIG = {
             LOGS: (id: string) => `/docker/containers/${id}/logs`,
             HISTORY: (id: string) => `/docker/${id}/history`,
             USAGE: (id: string) => `/docker/${id}/usage`,
+            PRUNE: '/docker/prune',
         },
         DEVICES: '/devices',
         SPEEDTEST: '/speedtest',

@@ -10,7 +10,7 @@ except ImportError:
     SCAPY_AVAILABLE = False
 
 from ..db.database import SessionLocal
-from ..models.models import Device, SecurityAlert, DeviceDailySummary, BandwidthHistory
+from ..models.models import Device, SecurityAlert, DeviceDailySummary, BandwidthHistory, DeviceStatusLog, DnsLog
 from datetime import datetime
 from sqlalchemy import func, Date
 import asyncio
@@ -73,6 +73,10 @@ class PacketCollector:
         # Buffer for DB persistence (MAC -> {upload, download})
         # This resets after every flush to DB
         self.daily_traffic_buffer: Dict[str, Dict] = {} 
+        
+        # Buffer for DNS logs (list of dicts)
+        self.dns_log_buffer: List[Dict] = []
+        self.DNS_BUFFER_SIZE = 50 # Flush when it hits this size
 
 
     def set_event_callback(self, callback):
@@ -303,6 +307,30 @@ class PacketCollector:
                 # DNS/HTTP counters
                 if proto == "DNS":
                     self.dns_queries += 1
+                    try:
+                        if packet.haslayer('DNS') and packet['DNS'].qr == 0: # Query
+                            qd = packet['DNS'].qd
+                            if qd:
+                                qname = qd.qname.decode('utf-8') if isinstance(qd.qname, bytes) else str(qd.qname)
+                                # Remove trailing dot
+                                if qname.endswith('.'):
+                                    qname = qname[:-1]
+                                
+                                qtype = qd.qtype
+                                # Map common qtypes (scapy likely has integer values)
+                                # 1=A, 28=AAAA, 5=CNAME, 15=MX, 16=TXT
+                                type_map = {1: 'A', 28: 'AAAA', 5: 'CNAME', 15: 'MX', 16: 'TXT', 12: 'PTR'}
+                                record_type = type_map.get(qtype, str(qtype))
+
+                                self.dns_log_buffer.append({
+                                    "timestamp": datetime.now(),
+                                    "client_ip": src_ip,
+                                    "query_domain": qname,
+                                    "record_type": record_type
+                                })
+                    except Exception as e:
+                        logger.error(f"Error parsing DNS packet: {e}")
+
                 if proto in ("HTTP", "HTTPS"):
                     self.http_requests += 1
 
@@ -394,6 +422,7 @@ class PacketCollector:
                 # Persist daily stats every ~5 minutes or so (controlled by flush_interval for now)
                 # In production you might want a separate schedule, but this is fine for now
                 self._persist_daily_stats()
+                self._flush_dns_logs()
             except Exception as e:
                 logger.error(f"Error in persistence loop: {e}")
             time.sleep(self.flush_interval)
@@ -415,10 +444,29 @@ class PacketCollector:
                         last_seen=datetime.fromtimestamp(data["last_seen"])
                     )
                     db.add(device)
+                    db.flush() # Get ID
+                    
+                    # Log initial status
+                    status_log = DeviceStatusLog(
+                        device_id=device.id,
+                        status="online",
+                        timestamp=datetime.now()
+                    )
+                    db.add(status_log)
+
                     # Trigger alert for truly new devices
                     self._trigger_new_device_alert(mac, data["ip"])
                     logger.info(f"New device discovered and persisted: {mac} ({data['ip']})")
                 else:
+                    # Check for status change
+                    if not device.is_online:
+                        status_log = DeviceStatusLog(
+                            device_id=device.id,
+                            status="online",
+                            timestamp=datetime.now()
+                        )
+                        db.add(status_log)
+                        
                     device.ip_address = data["ip"]
                     device.is_online = True
                     device.last_seen = datetime.fromtimestamp(data["last_seen"])
@@ -620,6 +668,65 @@ class PacketCollector:
                 "connection_types": dict(self.connection_types),
                 "bytes_per_protocol": dict(self.bytes_per_protocol)
             }
+
+    def _flush_dns_logs(self):
+        """Persists buffered DNS logs to valid database entries."""
+        with self.stats_lock:
+            if not self.dns_log_buffer:
+                return
+            buffer_copy = list(self.dns_log_buffer) # Copy
+            self.dns_log_buffer.clear()
+            
+        db = SessionLocal()
+        try:
+            # Optimize: Get IP->DeviceID mapping cache
+            # For now, just simplistic lookup or using collector's active_devices if possible?
+            # Queries might be frequent, so we should rely on active_devices cache to resolve Device ID quickly if possible,
+            # but active_devices only stores MAC -> IP.
+            # We have IP. We need IP -> DeviceID.
+            # Let's query relevant devices from DB or just do a join later?
+            # For insertion, let's try to find device_id by IP.
+            
+            # Note: This is a bit inefficient if buffer is large. 
+            # Ideally we have a IP->ID cache.
+            
+            # Simple approach: Store IP, resolve to device ID if possible.
+            # We can use a small cache of ip->device_id updated occasionally.
+            
+            for entry in buffer_copy:
+                # Try to map IP to device
+                # We can iterate active_devices to find MAC for this IP
+                device_id = None
+                with self.stats_lock:
+                    for mac, meta in self.active_devices.items():
+                        if meta.get("ip") == entry["client_ip"]:
+                            # Resolve device_id from DB? Too slow to query every time.
+                            # Just storing IP is enough, we can link in UI or query time.
+                            # But defining the relationship in model uses ForeignKey.
+                            # Let's look up device by MAC (which is indexed) 
+                            # But wait, we need the ID.
+                            pass
+                
+                # To properly link, we need the Device link.
+                # Let's do a quick lookup.
+                device = db.query(Device).filter(Device.ip_address == entry["client_ip"]).first()
+                if device:
+                    device_id = device.id
+                
+                dns_log = DnsLog(
+                    timestamp=entry["timestamp"],
+                    client_ip=entry["client_ip"],
+                    query_domain=entry["query_domain"],
+                    record_type=entry["record_type"],
+                    device_id=device_id
+                )
+                db.add(dns_log)
+            
+            db.commit()
+        except Exception as e:
+            logger.error(f"Error flushing DNS logs: {e}")
+        finally:
+            db.close()
 
 # Global collector instance
 global_collector = PacketCollector()

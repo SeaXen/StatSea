@@ -1,21 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     Server,
     Cpu,
-    Database,
     HardDrive,
     Activity,
     Clock,
     Network,
-    ArrowUpRight,
-    ArrowDownLeft
+    Thermometer
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { API_CONFIG } from '../config/apiConfig';
+import { WidgetSkeleton } from './skeletons/WidgetSkeleton';
 
 interface SystemInfo {
     hostname: string;
     uptime: string;
+    temperature?: number | null;
     cpu_pct: number;
     cpu_load: number;
     ram: { total: number; used: number; percent: number };
@@ -31,6 +32,7 @@ interface ServerStatusCardProps {
 const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ onDetailClick }) => {
     const [info, setInfo] = useState<SystemInfo | null>(null);
     const [loading, setLoading] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
     const fetchInfo = async () => {
         try {
@@ -38,6 +40,7 @@ const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ onDetailClick }) =>
             const data = await res.json();
             setInfo(data);
             setLoading(false);
+            setLastUpdated(new Date());
         } catch (error) {
             console.error('Failed to fetch system info:', error);
         }
@@ -57,137 +60,140 @@ const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ onDetailClick }) =>
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     };
 
-    if (loading || !info) {
+    const renderDonut = (value: number, color: string) => {
+        const data = [
+            { name: 'Used', value: value },
+            { name: 'Free', value: 100 - value },
+        ];
+
         return (
-            <div className="bg-[#0A0B0E] border border-white/5 rounded-2xl p-6 h-[400px] animate-pulse flex items-center justify-center">
-                <div className="text-white/20">Loading system metrics...</div>
+            <div className="relative h-24 w-24 mx-auto my-2">
+                <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={data}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={35}
+                            outerRadius={45}
+                            startAngle={90}
+                            endAngle={-270}
+                            dataKey="value"
+                            stroke="none"
+                        >
+                            <Cell key="cell-0" fill={color} />
+                            <Cell key="cell-1" fill="rgba(255,255,255,0.05)" />
+                        </Pie>
+                    </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-sm font-bold text-white">{Math.round(value)}%</span>
+                </div>
             </div>
         );
+    };
+
+    if (loading || !info) {
+        return <WidgetSkeleton />;
     }
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#0A0B0E] border border-white/5 rounded-2xl overflow-hidden group"
+            className="bg-[#0A0B0E] border border-white/5 rounded-2xl overflow-hidden group h-full flex flex-col"
         >
-            <div className="p-6">
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                            <Server className="w-5 h-5 text-blue-400" />
+            <div className="p-6 flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-lg shadow-blue-500/5">
+                            <Server className="w-6 h-6 text-blue-400" />
                         </div>
                         <div>
-                            <h3 className="text-white font-semibold text-lg">{info.hostname}</h3>
-                            <div className="flex items-center gap-2 text-white/40 text-xs">
-                                <Clock className="w-3 h-3" />
-                                <span>Uptime: {info.uptime}</span>
-                                <span className="mx-1">•</span>
-                                <Network className="w-3 h-3 text-indigo-400" />
-                                <span>{info.active_devices} Devices</span>
+                            <h3 className="text-white font-semibold text-lg tracking-tight">{info.hostname}</h3>
+                            <div className="flex items-center gap-3 text-white/40 text-xs mt-1">
+                                <span className="flex items-center gap-1.5 bg-white/5 px-2 py-0.5 rounded text-white/60">
+                                    <Clock className="w-3 h-3" />
+                                    {info.uptime}
+                                </span>
+                                {info.temperature && (
+                                    <span className="flex items-center gap-1.5 bg-rose-500/10 px-2 py-0.5 rounded text-rose-400 border border-rose-500/20">
+                                        <Thermometer className="w-3 h-3" />
+                                        {info.temperature}°C
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
-                    <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/20">
-                        Online
+                    <div className="flex flex-col items-end gap-1">
+                        <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/20 shadow-sm shadow-emerald-500/10">
+                            Online
+                        </div>
+                        <div className="text-[10px] text-white/20 font-mono">
+                            UPDATED {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </div>
                     </div>
                 </div>
 
-                <div className="space-y-6">
-                    {/* CPU Utilization */}
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-3 gap-4 flex-1">
+                    {/* CPU */}
                     <div
-                        className="space-y-2 cursor-pointer group/item"
+                        className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-white/5 to-transparent border border-white/5 hover:border-blue-500/30 transition-all cursor-pointer group/item relative overflow-hidden"
                         onClick={() => onDetailClick('cpu')}
                     >
-                        <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-2 text-white/60">
-                                <Cpu className="w-3.5 h-3.5" />
-                                <span>CPU Utilization</span>
-                            </div>
-                            <span className="text-white font-medium">{info.cpu_pct.toFixed(1)}%</span>
+                        <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                        <div className="flex items-center gap-2 text-xs font-semibold text-blue-400 mb-1 z-10">
+                            <Cpu className="w-3.5 h-3.5" /> CPU
                         </div>
-                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${info.cpu_pct}%` }}
-                                className={`h-full rounded-full ${info.cpu_pct > 80 ? 'bg-red-500' : 'bg-blue-500'}`}
-                            />
-                        </div>
-                        <div className="flex justify-between items-center text-[10px] text-white/30 pt-1">
-                            <span>Usage Load: {info.cpu_load.toFixed(2)}</span>
-                            <span className="group-hover/item:text-blue-400 transition-colors">View details →</span>
+                        <div className="z-10">{renderDonut(info.cpu_pct, '#60a5fa')}</div>
+                        <div className="text-[10px] text-white/40 mt-1 font-mono z-10">
+                            Load: {info.cpu_load.toFixed(2)}
                         </div>
                     </div>
 
-                    {/* RAM Usage */}
+                    {/* RAM */}
                     <div
-                        className="space-y-2 cursor-pointer group/item"
+                        className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-white/5 to-transparent border border-white/5 hover:border-purple-500/30 transition-all cursor-pointer group/item relative overflow-hidden"
                         onClick={() => onDetailClick('ram')}
                     >
-                        <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-2 text-white/60">
-                                <Database className="w-3.5 h-3.5" />
-                                <span>Memory (RAM)</span>
-                            </div>
-                            <span className="text-white font-medium">{info.ram.percent.toFixed(1)}%</span>
+                        <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                        <div className="flex items-center gap-2 text-xs font-semibold text-purple-400 mb-1 z-10">
+                            <Activity className="w-3.5 h-3.5" /> RAM
                         </div>
-                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${info.ram.percent}%` }}
-                                className={`h-full rounded-full ${info.ram.percent > 90 ? 'bg-red-500' : 'bg-purple-500'}`}
-                            />
-                        </div>
-                        <div className="flex justify-between items-center text-[10px] text-white/30 pt-1">
-                            <span>{formatBytes(info.ram.used)} / {formatBytes(info.ram.total)}</span>
-                            <span className="group-hover/item:text-purple-400 transition-colors">View details →</span>
+                        <div className="z-10">{renderDonut(info.ram.percent, '#c084fc')}</div>
+                        <div className="text-[10px] text-white/40 mt-1 font-mono z-10">
+                            {formatBytes(info.ram.used)} / {formatBytes(info.ram.total)}
                         </div>
                     </div>
 
-                    {/* Disk Usage */}
+                    {/* Disk */}
                     <div
-                        className="space-y-2 cursor-pointer group/item"
+                        className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-white/5 to-transparent border border-white/5 hover:border-emerald-500/30 transition-all cursor-pointer group/item relative overflow-hidden"
                         onClick={() => onDetailClick('disk')}
                     >
-                        <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-2 text-white/60">
-                                <HardDrive className="w-3.5 h-3.5" />
-                                <span>Disk Storage</span>
-                            </div>
-                            <span className="text-white font-medium">{info.disk.percent.toFixed(1)}%</span>
+                        <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                        <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 mb-1 z-10">
+                            <HardDrive className="w-3.5 h-3.5" /> DISK
                         </div>
-                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${info.disk.percent}%` }}
-                                className="h-full bg-orange-500 rounded-full"
-                            />
-                        </div>
-                        <div className="flex justify-between items-center text-[10px] text-white/30 pt-1">
-                            <span>{formatBytes(info.disk.used)} / {formatBytes(info.disk.total)}</span>
-                            <span className="group-hover/item:text-orange-400 transition-colors">View details →</span>
+                        <div className="z-10">{renderDonut(info.disk.percent, '#34d399')}</div>
+                        <div className="text-[10px] text-white/40 mt-1 font-mono z-10">
+                            {formatBytes(info.disk.used)}
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-white/5 grid grid-cols-2 gap-4">
-                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
-                        <div className="flex items-center gap-2 text-white/40 text-[10px] uppercase font-bold tracking-wider mb-1">
-                            <ArrowUpRight className="w-3 h-3 text-emerald-400" />
-                            <span>Total Sent</span>
-                        </div>
-                        <div className="text-white font-semibold text-sm">
-                            {formatBytes(info.network.sent)}
-                        </div>
+                {/* Footer Info */}
+                <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between text-xs text-white/30">
+                    <div className="flex items-center gap-2">
+                        <Network className="w-3.5 h-3.5" />
+                        <span>{info.network.recv ? formatBytes(info.network.recv) : '0 B'} ↓</span>
+                        <span className="w-px h-3 bg-white/10" />
+                        <span>{info.network.sent ? formatBytes(info.network.sent) : '0 B'} ↑</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
-                        <div className="flex items-center gap-2 text-white/40 text-[10px] uppercase font-bold tracking-wider mb-1">
-                            <ArrowDownLeft className="w-3 h-3 text-blue-400" />
-                            <span>Total Received</span>
-                        </div>
-                        <div className="text-white font-semibold text-sm">
-                            {formatBytes(info.network.recv)}
-                        </div>
+                    <div>
+                        {info.active_devices} Active Devices
                     </div>
                 </div>
             </div>

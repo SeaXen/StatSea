@@ -30,7 +30,8 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
     const [processes, setProcesses] = useState<ResourceProcess[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterType, setFilterType] = useState<'all' | 'Process' | 'Container'>('all');
+    // Use initialType cast to correct union type if needed, or just default 'all'
+    const [filterType, setFilterType] = useState<'all' | 'Process' | 'Container'>((initialType as any) || 'all');
     const [sortField, setSortField] = useState<'cpu' | 'ram' | 'name'>('cpu');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 

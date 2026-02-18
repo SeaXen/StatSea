@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -10,6 +10,8 @@ class DeviceBase(BaseModel):
     type: Optional[str] = "Unknown"  # IoT, Mobile, PC
     nickname: Optional[str] = None
     notes: Optional[str] = None
+    tags: Optional[List[str]] = []
+    group_id: Optional[int] = None
 
 class DeviceCreate(DeviceBase):
     pass
@@ -18,6 +20,8 @@ class DeviceUpdate(BaseModel):
     nickname: Optional[str] = None
     notes: Optional[str] = None
     type: Optional[str] = None
+    tags: Optional[List[str]] = None
+    group_id: Optional[int] = None
 
 class Device(DeviceBase):
     id: int
@@ -25,6 +29,16 @@ class Device(DeviceBase):
     last_seen: Optional[datetime]
     is_online: bool
     traffic_logs: List['TrafficLog'] = []
+
+    @field_validator('tags', mode='before')
+    def parse_tags(cls, v):
+        if isinstance(v, str):
+            try:
+                import json
+                return json.loads(v)
+            except ValueError:
+                return []
+        return v
 
     class Config:
         from_attributes = True
@@ -63,6 +77,63 @@ class SecurityAlertBase(BaseModel):
 class SecurityAlert(SecurityAlertBase):
     id: int
     timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+class BandwidthQuotaBase(BaseModel):
+    daily_limit_bytes: Optional[int] = None
+    monthly_limit_bytes: Optional[int] = None
+
+class BandwidthQuotaCreate(BandwidthQuotaBase):
+    device_id: int
+
+class BandwidthQuota(BandwidthQuotaBase):
+    id: int
+    device_id: int
+    
+    class Config:
+        from_attributes = True
+
+class DeviceStatusLogBase(BaseModel):
+    device_id: int
+    status: str
+    timestamp: datetime
+
+class DeviceStatusLog(DeviceStatusLogBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+class DeviceGroupBase(BaseModel):
+    name: str
+    color: Optional[str] = "#3b82f6"
+
+class DeviceGroupCreate(DeviceGroupBase):
+    pass
+
+class DeviceGroupUpdate(BaseModel):
+    name: Optional[str] = None
+    color: Optional[str] = None
+
+class DeviceGroup(DeviceGroupBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+    class Config:
+        from_attributes = True
+
+class DnsLogBase(BaseModel):
+    timestamp: datetime
+    client_ip: str
+    query_domain: str
+    record_type: str
+    device_id: Optional[int] = None
+
+class DnsLog(DnsLogBase):
+    id: int
 
     class Config:
         from_attributes = True

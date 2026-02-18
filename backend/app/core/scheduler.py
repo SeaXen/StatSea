@@ -5,6 +5,8 @@ from ..models import models
 from .speedtest_service import speedtest_service
 from .notifications import notification_service
 from .cleanup import run_cleanup_job
+from .quotas import check_quotas
+from .uptime import check_device_availability
 import logging
 import json
 
@@ -16,9 +18,40 @@ class SchedulerService:
         self.scheduler.start()
         self.job_id = "auto_speedtest"
         self.cleanup_job_id = "data_cleanup"
+        self.quota_job_id = "quota_check"
         
         # Schedule cleanup daily
         self.schedule_cleanup()
+        
+        # Schedule quota check every 15 minutes
+        self.schedule_quota_check()
+
+        # Schedule uptime check every 1 minute
+        self.schedule_uptime_check()
+
+    def schedule_uptime_check(self):
+        """Schedules the device uptime/offline check."""
+        if not self.scheduler.get_job("uptime_monitor"):
+            self.scheduler.add_job(
+                check_device_availability,
+                'interval',
+                minutes=1,
+                id="uptime_monitor",
+                replace_existing=True
+            )
+            logger.info("Uptime monitor scheduled (Every 1 min).")
+
+    def schedule_quota_check(self):
+        """Schedules the bandwidth quota check."""
+        if not self.scheduler.get_job(self.quota_job_id):
+            self.scheduler.add_job(
+                check_quotas,
+                'interval',
+                minutes=15,
+                id=self.quota_job_id,
+                replace_existing=True
+            )
+            logger.info("Bandwidth quota check scheduled (Every 15 mins).")
 
     def schedule_speedtest(self, interval_hours: int = 0):
         """Schedules the speedtest job. If interval_hours is 0, removes the job."""

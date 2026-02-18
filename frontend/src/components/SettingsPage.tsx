@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Sun, Bell, Activity, Terminal, Database, Trash2, ShieldCheck, Cpu, User, Check } from 'lucide-react';
+import { Save, Sun, Bell, Activity, Terminal, Database, Trash2, ShieldCheck, Cpu, User, Check, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { presets, accentColors, legacyThemes, ThemeConfig, ThemeMode } from '../lib/themes';
@@ -16,6 +16,7 @@ export default function Settings() {
     const [activeSection, setActiveSection] = useState('appearance');
     const [themeConfig, setThemeConfig] = useState<ThemeConfig>({ mode: 'dark', accent: accentColors[0].value });
     const [devMode, setDevMode] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Initial Load & Migration
     useEffect(() => {
@@ -165,6 +166,40 @@ export default function Settings() {
         }
     };
 
+    const handleExport = async () => {
+        setIsExporting(true);
+        try {
+            const res = await fetch(`http://${window.location.hostname}:21081/api/settings/export`);
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                // Content-Disposition header should provide filename, but fallback just in case
+                const contentDisposition = res.headers.get('Content-Disposition');
+                let filename = 'statsea-backup.json';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                    if (filenameMatch && filenameMatch.length === 2)
+                        filename = filenameMatch[1];
+                }
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                toast.success("Export completed successfully");
+            } else {
+                throw new Error("Export failed");
+            }
+        } catch (e) {
+            console.error("Export error:", e);
+            toast.error("Failed to export data");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const SidebarItem = ({ id, icon: Icon, label }: { id: string, icon: any, label: string }) => (
         <button
             onClick={() => setActiveSection(id)}
@@ -218,6 +253,7 @@ export default function Settings() {
                         <SidebarItem id="appearance" icon={Sun} label="Appearance" />
                         <SidebarItem id="monitoring" icon={Activity} label="Monitoring" />
                         <SidebarItem id="notifications" icon={Bell} label="Notifications" />
+                        <SidebarItem id="backup" icon={Download} label="Backup" />
                     </div>
 
                     <div className="hidden md:block space-y-2">
@@ -225,6 +261,7 @@ export default function Settings() {
                         <SidebarItem id="appearance" icon={Sun} label="Appearance" />
                         <SidebarItem id="monitoring" icon={Activity} label="Monitoring" />
                         <SidebarItem id="notifications" icon={Bell} label="Notifications" />
+                        <SidebarItem id="backup" icon={Download} label="Backup" />
 
                         {devMode && (
                             <motion.div
@@ -482,6 +519,58 @@ export default function Settings() {
                                                     </button>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Backup Section */}
+                            {activeSection === 'backup' && (
+                                <div className="p-8 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400">
+                                            <Download className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-2xl font-semibold">Data Management</h2>
+                                            <p className="text-muted-foreground">Export your system data for backup or analysis</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div className="p-6 rounded-2xl bg-card/20 border border-border/20">
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                <div>
+                                                    <h3 className="text-lg font-medium mb-1">Export Database</h3>
+                                                    <p className="text-sm text-muted-foreground max-w-md">
+                                                        Download a complete JSON backup of all devices, traffic logs, speedtest results, and system configuration.
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={handleExport}
+                                                    disabled={isExporting}
+                                                    className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:pointer-events-none"
+                                                >
+                                                    {isExporting ? (
+                                                        <>
+                                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                                            Exporting...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Download className="w-5 h-5" />
+                                                            Export Data
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex gap-3">
+                                            <Database className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                                            <p className="text-sm text-yellow-200/80">
+                                                Note: Importing data is not yet supported in this version. Keep your backups safe.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>

@@ -11,6 +11,7 @@ interface SpeedtestResultDTO {
     server_name?: string;
     server_country?: string;
     provider: 'ookla' | 'cloudflare';
+    isp?: string;
 }
 
 // Frontend Domain Model
@@ -42,7 +43,7 @@ class SpeedtestService {
             download: dto.download,
             upload: dto.upload,
             packetLoss: 0, // Backend doesn't provide this yet
-            isp: 'Unknown', // Backend doesn't provide this yet
+            isp: dto.isp || 'Unknown',
             server: {
                 id: String(dto.server_id || 0),
                 name: dto.server_name?.split(',')[0].trim() || 'Auto',

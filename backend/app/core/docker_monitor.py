@@ -273,5 +273,20 @@ class DockerMonitor:
             logger.error(f"Error performing {action} on {container_id}: {e}")
             return False
 
+    def prune_containers(self) -> Dict:
+        """Prunes stopped containers."""
+        if self.use_mock:
+            logger.info("MOCK: Pruning stopped containers")
+            return {"ContainersDeleted": ["mock-c1", "mock-c2"], "SpaceReclaimed": 1024}
+        
+        if not self.client:
+             return {"error": "Docker client not available"}
+
+        try:
+            return self.client.containers.prune()
+        except Exception as e:
+            logger.error(f"Error pruning containers: {e}")
+            return {"error": str(e)}
+
 # Global monitor instance
 docker_monitor = DockerMonitor()

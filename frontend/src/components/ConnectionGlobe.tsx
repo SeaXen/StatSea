@@ -76,6 +76,8 @@ export const ConnectionGlobe = () => {
     ];
 
     const [selectedPoint, setSelectedPoint] = useState<any | null>(null);
+    const [ipInfo, setIpInfo] = useState<any | null>(null);
+    const [loadingIp, setLoadingIp] = useState(false);
 
     // Aggregate top countries
     const topCountries = displayConnections.reduce((acc, curr) => {
@@ -107,7 +109,7 @@ export const ConnectionGlobe = () => {
                 <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 pointer-events-none">
                     <div className="px-3 py-1 bg-slate-800/80 rounded-full border border-slate-700 flex items-center gap-2 backdrop-blur-md">
                         <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                        <span className="text-[10px] text-slate-300 font-medium">
+                        <span className="text-xs text-slate-300 font-medium">
                             {displayConnections.length} Active Nodes
                         </span>
                     </div>
@@ -124,9 +126,21 @@ export const ConnectionGlobe = () => {
                     pointAltitude={(d: any) => d === selectedPoint ? 0.3 : 0.05}
                     pointRadius={(d: any) => d === homeLocation ? 0.5 : d === selectedPoint ? 0.8 : 0.4}
                     pointsMerge={false} // changing to false to allow individual interaction
-                    onPointClick={(point: any) => {
+                    onPointClick={async (point: any) => {
                         setSelectedPoint(point);
+                        setIpInfo(null);
+                        setLoadingIp(true);
                         globeRef.current.pointOfView({ lat: point.lat, lon: point.lon, altitude: 2 }, 1000);
+
+                        try {
+                            const res = await fetch(`/api/network/ip/${point.ip}`);
+                            const data = await res.json();
+                            setIpInfo(data);
+                        } catch (err) {
+                            console.error("IP Lookup failed", err);
+                        } finally {
+                            setLoadingIp(false);
+                        }
                     }}
                     arcsData={arcData}
                     arcColor="color"
@@ -154,7 +168,19 @@ export const ConnectionGlobe = () => {
                                 <h4 className="font-semibold text-white flex items-center gap-2">
                                     {getCountryFlag(selectedPoint.country_code || 'US')} {selectedPoint.city}, {selectedPoint.country}
                                 </h4>
-                                <div className="text-xs text-slate-400 font-mono mt-1">{selectedPoint.ip}</div>
+                                <div className="text-xs text-slate-400 font-mono mt-1 mb-2">{selectedPoint.ip}</div>
+
+                                {loadingIp ? (
+                                    <div className="text-xs text-blue-400 animate-pulse">Running IP Intelligence Scan...</div>
+                                ) : ipInfo ? (
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-300 mt-2 border-t border-white/5 pt-2">
+                                        <div><span className="text-slate-500">ASN:</span> {ipInfo.asn}</div>
+                                        <div><span className="text-slate-500">Org:</span> {ipInfo.org}</div>
+                                        <div className="col-span-2"><span className="text-slate-500">Abuse:</span> {ipInfo.abuse_contact}</div>
+                                    </div>
+                                ) : (
+                                    <div className="text-xs text-red-400">Failed to load IP details</div>
+                                )}
                             </div>
                             <div className="text-right">
                                 <div className="text-xs text-slate-500 uppercase font-bold">Traffic</div>
@@ -163,7 +189,7 @@ export const ConnectionGlobe = () => {
                         </div>
                         <button
                             className="absolute -top-2 -right-2 bg-slate-800 rounded-full p-1 border border-white/10 hover:bg-slate-700 transition-colors"
-                            onClick={(e) => { e.stopPropagation(); setSelectedPoint(null); }}
+                            onClick={(e) => { e.stopPropagation(); setSelectedPoint(null); setIpInfo(null); }}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                         </button>
