@@ -1,8 +1,9 @@
-import psutil
-import time
 import os
 import platform
-from datetime import datetime
+import time
+
+import psutil
+
 
 class SystemStats:
     @staticmethod
@@ -10,17 +11,20 @@ class SystemStats:
         """Returns system uptime in a human-readable format."""
         boot_time_timestamp = psutil.boot_time()
         uptime_seconds = time.time() - boot_time_timestamp
-        
+
         days, remainder = divmod(uptime_seconds, 86400)
         hours, remainder = divmod(remainder, 3600)
         minutes, seconds = divmod(remainder, 60)
-        
+
         parts = []
-        if days > 0: parts.append(f"{int(days)}d")
-        if hours > 0: parts.append(f"{int(hours)}h")
-        if minutes > 0: parts.append(f"{int(minutes)}m")
+        if days > 0:
+            parts.append(f"{int(days)}d")
+        if hours > 0:
+            parts.append(f"{int(hours)}h")
+        if minutes > 0:
+            parts.append(f"{int(minutes)}m")
         parts.append(f"{int(seconds)}s")
-        
+
         return " ".join(parts)
 
     @staticmethod
@@ -28,7 +32,7 @@ class SystemStats:
         """Returns comprehensive host metrics."""
         cpu_pct = psutil.cpu_percent(interval=None)
         memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
         net_io = psutil.net_io_counters()
 
         # Try to get CPU Load (average)
@@ -37,7 +41,7 @@ class SystemStats:
                 load_avg = os.getloadavg()[0]
             else:
                 # Windows fallback
-                load_avg = cpu_pct / 10 # rough estimation for UI
+                load_avg = cpu_pct / 10  # rough estimation for UI
         except Exception:
             load_avg = 0
 
@@ -47,13 +51,13 @@ class SystemStats:
             temps = psutil.sensors_temperatures()
             if temps:
                 for name, entries in temps.items():
-                    if 'cpu' in name.lower() or 'core' in name.lower() or 'package' in name.lower():
+                    if "cpu" in name.lower() or "core" in name.lower() or "package" in name.lower():
                         if entries:
                             temperature = entries[0].current
                             break
                 # Fallback to first available if no specific cpu match
                 if temperature is None:
-                     for name, entries in temps.items():
+                    for name, entries in temps.items():
                         if entries:
                             temperature = entries[0].current
                             break
@@ -66,42 +70,34 @@ class SystemStats:
             "temperature": temperature,
             "cpu_pct": cpu_pct,
             "cpu_load": round(load_avg, 2),
-            "ram": {
-                "total": memory.total,
-                "used": memory.used,
-                "percent": memory.percent
-            },
-            "disk": {
-                "total": disk.total,
-                "used": disk.used,
-                "percent": disk.percent
-            },
-            "network": {
-                "sent": net_io.bytes_sent,
-                "recv": net_io.bytes_recv
-            }
+            "ram": {"total": memory.total, "used": memory.used, "percent": memory.percent},
+            "disk": {"total": disk.total, "used": disk.used, "percent": disk.percent},
+            "network": {"sent": net_io.bytes_sent, "recv": net_io.bytes_recv},
         }
 
     @staticmethod
     def get_top_processes(limit=10):
         """Returns top resource consuming processes."""
         processes = []
-        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
+        for proc in psutil.process_iter(["pid", "name", "cpu_percent", "memory_info"]):
             try:
                 # Need to call cpu_percent twice or once with interval to get real value if first call
                 # But since we are likely calling this repeatedly, it's fine
-                processes.append({
-                    "id": str(proc.info['pid']),
-                    "name": proc.info['name'],
-                    "cpu": proc.info['cpu_percent'],
-                    "ram": proc.info['memory_info'].rss,
-                    "type": "Process"
-                })
+                processes.append(
+                    {
+                        "id": str(proc.info["pid"]),
+                        "name": proc.info["name"],
+                        "cpu": proc.info["cpu_percent"],
+                        "ram": proc.info["memory_info"].rss,
+                        "type": "Process",
+                    }
+                )
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 pass
-        
+
         # Sort by CPU then RAM
-        top = sorted(processes, key=lambda x: (x['cpu'], x['ram']), reverse=True)[:limit]
+        top = sorted(processes, key=lambda x: (x["cpu"], x["ram"]), reverse=True)[:limit]
         return top
+
 
 system_stats = SystemStats()

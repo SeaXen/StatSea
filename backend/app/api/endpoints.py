@@ -1,36 +1,40 @@
-from fastapi import APIRouter, WebSocket, Depends, Security, HTTPException, status, Request
-from sqlalchemy.orm import Session
-from typing import List, Optional
-from datetime import datetime
-import json
 import asyncio
-import random
 import time
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, WebSocket
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+
+from ..core import sanitization
+from ..core.ai_predictor import ai_predictor
+from ..core.auth_jwt import get_current_admin_user, get_current_user
+from ..core.collector import global_collector
+from ..core.docker_monitor import docker_monitor
+from ..core.exceptions import ValidationException
+from ..core.ip_intel import get_ip_info
+from ..core.limiter import limiter
+from ..core.scheduler import scheduler
+from ..core.speedtest_service import speedtest_service
+from ..core.system_stats import system_stats
 from ..db.database import get_db
 from ..models import models
 from ..schemas import defaults as schemas
+from ..services.analytics_service import AnalyticsService
 
-from ..core.collector import global_collector
-from ..core.docker_monitor import docker_monitor
-from ..core.monitor import monitor
-from ..core.system_monitor import system_monitor # Import system_monitor
-from ..core.security import security_engine
-from ..core.scheduler import scheduler
-from ..core.speedtest_service import speedtest_service
-from ..core.system_stats import system_stats # Import system_stats
-from fastapi import WebSocketDisconnect
-from ..core.limiter import limiter
-from ..core.wol import wake_device
-from ..core.ip_intel import get_ip_info
-from ..core.ai_predictor import ai_predictor
-from ..core.auth_jwt import create_access_token, create_refresh_token, get_current_user, get_current_admin_user
-from fastapi.security import OAuth2PasswordRequestForm
+# Import Services
+from ..services.auth_service import AuthService
+from ..services.device_service import DeviceService
+from ..services.user_service import UserService
+from ..services.log_service import LogService
+from ..services.email_service import EmailService
 
 router = APIRouter()
 
+
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
+        self.active_connections: list[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -41,290 +45,725 @@ class ConnectionManager:
             self.active_connections.remove(websocket)
 
     async def broadcast(self, message: dict):
-        for connection in self.active_connections:
+        for connection in list(self.active_connections):
             try:
                 await connection.send_json(message)
             except Exception:
-                # Connection might be dead
-                pass
+                # Connection might be dead, remove it
+                self.disconnect(connection)
+
 
 manager = ConnectionManager()
 global_collector.set_event_callback(manager.broadcast)
 
-@router.get("/devices/{device_id}", response_model=schemas.Device)
-def get_device(device_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    device = db.query(models.Device).filter(models.Device.id == device_id).first()
-    if not device:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Device not found")
-    return device
+# --- Device Endpoints ---
 
-@router.put("/devices/{device_id}", response_model=schemas.Device)
-def update_device(device_id: int, device_update: schemas.DeviceUpdate, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Updates device details (nickname, notes, type)."""
-    db_device = db.query(models.Device).filter(models.Device.id == device_id).first()
-    if not db_device:
-        raise HTTPException(status_code=404, detail="Device not found")
-    
-    if device_update.nickname is not None:
-        db_device.nickname = device_update.nickname
-    if device_update.notes is not None:
-        db_device.notes = device_update.notes
-    if device_update.type is not None:
-        db_device.type = device_update.type
-    if device_update.tags is not None:
-        db_device.tags = json.dumps(device_update.tags)
-    if device_update.group_id is not None:
-        db_device.group_id = device_update.group_id
-        
-    db.commit()
-    db.refresh(db_device)
-    return db_device
 
-@router.get("/devices/{device_id}/uptime", response_model=List[schemas.DeviceStatusLog])
-def get_device_uptime(
+@router.get(
+    "/devices",
+    response_model=list[schemas.Device],
+    summary="List all devices",
+    description="Retrieve a list of all devices with pagination.",
+)
+def list_devices(
+    skip: int = 0,
+    limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
-    """Returns uptime history (status logs) for a device."""
-    query = db.query(models.DeviceStatusLog).filter(
-        models.DeviceStatusLog.device_id == device_id
-    )
-    
-    if start:
-        query = query.filter(models.DeviceStatusLog.timestamp >= start)
-    if end:
-        query = query.filter(models.DeviceStatusLog.timestamp <= end)
+    return DeviceService.get_devices(db, skip, limit)
 
-    logs = query.order_by(models.DeviceStatusLog.timestamp.desc()).limit(limit).all()
-    
-    return logs
 
-@router.post("/devices/{mac}/wake")
+@router.get(
+    "/devices/{device_id}",
+    response_model=schemas.Device,
+    summary="Get device details",
+    description="Retrieve detailed information about a specific device.",
+)
+def get_device(
+    device_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return DeviceService.get_device(db, device_id)
+
+
+@router.put(
+    "/devices/{device_id}",
+    response_model=schemas.Device,
+    summary="Update device",
+    description="Update device information.",
+)
+def update_device(
+    device_id: int,
+    device_update: schemas.DeviceUpdate,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    return DeviceService.update_device(db, device_id, device_update)
+
+
+@router.post(
+    "/devices/{mac}/wake",
+    summary="Wake on LAN",
+    description="Send a Wake-on-LAN magic packet to the device.",
+)
 async def wake_host(mac: str, admin_user: models.User = Depends(get_current_admin_user)):
-    """Sends a Wake-on-LAN magic packet to the device."""
-    success = wake_device(mac)
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to send WoL packet")
+    DeviceService.wake_host(mac)
     return {"status": "success", "message": f"Magic packet sent to {mac}"}
 
-@router.get("/quotas/{device_id}", response_model=schemas.BandwidthQuota)
-def get_device_quota(device_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns the bandwidth quota for a device."""
-    quota = db.query(models.BandwidthQuota).filter(models.BandwidthQuota.device_id == device_id).first()
-    if not quota:
-        raise HTTPException(status_code=404, detail="Quota not found")
-    return quota
 
-@router.put("/quotas/{device_id}", response_model=schemas.BandwidthQuota)
-def set_device_quota(device_id: int, quota_data: schemas.BandwidthQuotaBase, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Sets or updates the bandwidth quota for a device."""
-    # Ensure device exists
-    device = db.query(models.Device).filter(models.Device.id == device_id).first()
-    if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
+# --- Quota Endpoints ---
 
-    quota = db.query(models.BandwidthQuota).filter(models.BandwidthQuota.device_id == device_id).first()
-    if not quota:
-        quota = models.BandwidthQuota(device_id=device_id)
-        db.add(quota)
-    
-    quota.daily_limit_bytes = quota_data.daily_limit_bytes
-    quota.monthly_limit_bytes = quota_data.monthly_limit_bytes
-    
-    db.commit()
-    db.refresh(quota)
-    return quota
 
-@router.delete("/quotas/{device_id}")
-def delete_device_quota(device_id: int, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Removes the bandwidth quota for a device."""
-    quota = db.query(models.BandwidthQuota).filter(models.BandwidthQuota.device_id == device_id).first()
-    if not quota:
-        raise HTTPException(status_code=404, detail="Quota not found")
-    
-    db.delete(quota)
-    db.commit()
+@router.get(
+    "/quotas/{device_id}",
+    response_model=schemas.BandwidthQuota,
+    summary="Get device quota",
+    description="Retrieve bandwidth quota for a specific device.",
+)
+def get_device_quota(
+    device_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return DeviceService.get_quota(db, device_id)
+
+
+@router.put(
+    "/quotas/{device_id}",
+    response_model=schemas.BandwidthQuota,
+    summary="Set device quota",
+    description="Set or update bandwidth quota for a specific device.",
+)
+def set_device_quota(
+    device_id: int,
+    quota_data: schemas.BandwidthQuotaBase,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    return DeviceService.set_quota(db, device_id, quota_data)
+
+
+@router.delete(
+    "/quotas/{device_id}",
+    summary="Delete device quota",
+    description="Remove bandwidth quota for a specific device.",
+)
+def delete_device_quota(
+    device_id: int,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    DeviceService.delete_quota(db, device_id)
     return {"status": "success"}
 
-@router.get("/devices/{device_id}/history")
-def get_device_history(device_id: int, days: int = 7, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns daily traffic history for the past N days."""
-    from datetime import datetime, timedelta
-    since = datetime.now().date() - timedelta(days=days)
-    
-    summaries = db.query(models.DeviceDailySummary).filter(
-        models.DeviceDailySummary.device_id == device_id,
-        models.DeviceDailySummary.date >= since
-    ).order_by(models.DeviceDailySummary.date.asc()).all()
-    
-    return [
-        {
-            "date": s.date.isoformat(),
-            "upload": s.upload_bytes,
-            "download": s.download_bytes
-        }
-        for s in summaries
-    ]
 
-@router.get("/devices/{device_id}/stats")
-def get_device_stats(device_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    # Legacy endpoint compatibility, or just redirect to history?
-    # For now, let's just return the history as "stats"
-    return get_device_history(device_id, days=30, db=db)
+# --- Analytics Endpoints ---
 
-@router.get("/network/history")
-def get_network_history(limit: int = 60, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns bandwidth history for sparklines."""
-    history = db.query(models.BandwidthHistory).order_by(models.BandwidthHistory.timestamp.desc()).limit(limit).all()
+
+@router.get(
+    "/network/history",
+    summary="Get network history",
+    description="Retrieve historical network usage data.",
+)
+def get_network_history(
+    skip: int = 0,
+    limit: int = 60,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return AnalyticsService.get_network_history(db, limit)
+
+
+@router.get(
+    "/network/topology",
+    summary="Get network topology",
+    description="Retrieve network topology data.",
+)
+async def get_network_topology(
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
+):
+    return AnalyticsService.get_topology(db)
+
+
+@router.get(
+    "/network/connections",
+    summary="Get external connections",
+    description="Retrieve current external connections.",
+)
+def get_external_connections(current_user: models.User = Depends(get_current_user)):
+    return global_collector.get_external_connections()
+
+
+@router.get(
+    "/network/ip/{ip_address}",
+    summary="Lookup IP",
+    description="Get information about an IP address.",
+)
+def lookup_ip(
+    ip_address: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return get_ip_info(ip_address)
+
+
+@router.get(
+    "/analytics/summary",
+    summary="Get analytics summary",
+    description="Retrieve a summary of network analytics.",
+)
+async def get_analytics_summary(current_user: models.User = Depends(get_current_user)):
+    return global_collector.get_analytics_summary()
+
+
+@router.get(
+    "/analytics/packets",
+    summary="Get packet log",
+    description="Retrieve packet logs with optional filtering.",
+)
+def get_packet_log(
+    limit: int = 100,
+    protocol: str | None = None,
+    ip: str | None = None,
+    port: int | None = None,
+    flags: str | None = None,
+    current_user: models.User = Depends(get_current_user),
+):
+    return global_collector.get_packet_log(
+        limit=limit, protocol=protocol, ip=ip, port=port, flags=flags
+    )
+
+
+@router.get(
+    "/analytics/prediction",
+    summary="Get usage prediction",
+    description="Predict future network usage.",
+)
+def get_usage_prediction(current_user: models.User = Depends(get_current_user)):
+    return ai_predictor.predict_total_usage()
+
+
+@router.get(
+    "/analytics/anomalies",
+    summary="Get usage anomalies",
+    description="Detect network usage anomalies.",
+)
+def get_usage_anomalies(current_user: models.User = Depends(get_current_user)):
+    return ai_predictor.detect_anomalies()
+
+
+@router.get(
+    "/analytics/dns-logs",
+    summary="Get DNS logs",
+    description="Retrieve DNS query logs.",
+)
+def get_dns_logs(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return LogService.get_dns_logs(db, skip, limit)
+
+
+@router.get(
+    "/analytics/device-logs",
+    summary="Get device logs",
+    description="Retrieve logs for a specific device.",
+)
+def get_device_logs(
+    device_id: int | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return LogService.get_device_logs(db, device_id, skip, limit)
+
+
+# --- Docker Endpoints ---
+
+
+@router.get(
+    "/docker/containers",
+    summary="Get Docker containers",
+    description="Retrieve status of all Docker containers.",
+)
+def get_docker_containers(current_user: models.User = Depends(get_current_user)):
+    return docker_monitor.get_stats()
+
+
+@router.get(
+    "/docker/{container_id}/history",
+    summary="Get container history",
+    description="Retrieve historical stats for a container.",
+)
+def get_docker_container_history(
+    container_id: str,
+    minutes: int = 60,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return AnalyticsService.get_docker_history(db, container_id, minutes)
+
+
+@router.get(
+    "/docker/{container_id}/usage",
+    summary="Get container usage",
+    description="Retrieve current usage stats for a container.",
+)
+def get_docker_container_usage(
+    container_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return AnalyticsService.get_docker_usage(db, container_id)
+
+
+@router.get(
+    "/docker/containers/{container_id}/logs",
+    summary="Get container logs",
+    description="Retrieve logs for a specific container.",
+)
+async def get_container_logs(
+    container_id: str, tail: int = 100, current_user: models.User = Depends(get_current_user)
+):
+    return {"logs": docker_monitor.get_logs(container_id, tail)}
+
+
+@router.post(
+    "/docker/containers/{container_id}/action",
+    summary="Container action",
+    description="Perform an action (start/stop/restart) on a container.",
+)
+@limiter.limit("10/minute")
+async def container_action(
+    request: Request,
+    container_id: str,
+    payload: dict,
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    action = payload.get("action")
+    if action not in ["start", "stop", "restart"]:
+        return {"success": False, "error": "Invalid action"}
+    success = docker_monitor.perform_action(container_id, action)
+    return {"success": success}
+
+
+@router.post(
+    "/docker/prune",
+    summary="Prune containers",
+    description="Remove unused Docker containers and images.",
+)
+@limiter.limit("5/minute")
+def prune_containers(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    return docker_monitor.prune_containers()
+
+
+# --- System Endpoints ---
+
+
+@router.get(
+    "/system/info",
+    summary="Get system info",
+    description="Retrieve general system information.",
+)
+def get_system_info(current_user: models.User = Depends(get_current_user)):
+    info = system_stats.get_info()
+    info["active_devices"] = len(global_collector.active_devices)
+    return info
+
+
+@router.get(
+    "/system/processes",
+    summary="Get system processes",
+    description="Retrieve top system processes and container stats.",
+)
+def get_system_processes(current_user: models.User = Depends(get_current_user)):
+    top_procs = system_stats.get_top_processes(limit=15)
+    docker_stats = docker_monitor.get_stats()
+    combined = []
+
+    for p in top_procs:
+        combined.append(
+            {
+                "id": f"p-{p['id']}",
+                "name": p["name"],
+                "cpu": round(p["cpu"], 1),
+                "ram": round(p["ram"] / (1024 * 1024), 1),
+                "type": "Process",
+                "status": "running",
+            }
+        )
+
+    for c in docker_stats:
+        combined.append(
+            {
+                "id": f"d-{c['id']}",
+                "name": c["name"],
+                "cpu": round(c["cpu_pct"], 1),
+                "ram": round(c["mem_usage"], 1),
+                "type": "Container",
+                "status": c["status"],
+            }
+        )
+    return sorted(combined, key=lambda x: (x["cpu"], x["ram"]), reverse=True)
+
+
+@router.get(
+    "/system/network/history",
+    summary="Get system network history",
+    description="Retrieve historical system network usage.",
+)
+def get_system_network_history(
+    hours: int = 24,
+    start: datetime | None = None,
+    end: datetime | None = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    query = db.query(models.SystemNetworkHistory)
+    if start and end:
+        query = query.filter(
+            models.SystemNetworkHistory.timestamp >= start,
+            models.SystemNetworkHistory.timestamp <= end,
+        )
+    else:
+        since = datetime.now() - timedelta(hours=hours)
+        query = query.filter(models.SystemNetworkHistory.timestamp >= since)
+    history = query.order_by(models.SystemNetworkHistory.timestamp.asc()).all()
     return [
         {
             "timestamp": h.timestamp.isoformat(),
-            "upload": h.upload_bytes,
-            "download": h.download_bytes
+            "interface": h.interface,
+            "bytes_sent": h.bytes_sent,
+            "bytes_recv": h.bytes_recv,
         }
-        for h in reversed(history)
+        for h in history
     ]
 
-@router.get("/settings/export")
-def export_data(db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Exports all database data as JSON."""
-    from datetime import date, datetime, timedelta
-    
-    # helper for json serialization
-    def json_serial(obj):
-        if isinstance(obj, (datetime, date)):
-            return obj.isoformat()
-        raise TypeError (f"Type {type(obj)} not serializable")
 
-    def model_to_dict(obj):
-        return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
-
-    # Fetch data from all tables
-    data = {
-        "devices": [model_to_dict(d) for d in db.query(models.Device).all()],
-        "device_daily_summaries": [model_to_dict(s) for s in db.query(models.DeviceDailySummary).all()],
-        "bandwidth_history": [model_to_dict(h) for h in db.query(models.BandwidthHistory).all()],
-        "latency_logs": [model_to_dict(l) for l in db.query(models.LatencyLog).all()],
-        "security_events": [model_to_dict(e) for e in db.query(models.SecurityEvent).all()],
-        "security_alerts": [model_to_dict(a) for a in db.query(models.SecurityAlert).all()],
-        "traffic_logs": [model_to_dict(t) for t in db.query(models.TrafficLog).all()],
-        "speedtest_results": [model_to_dict(s) for s in db.query(models.SpeedtestResult).all()],
-        "docker_metrics": [model_to_dict(m) for m in db.query(models.DockerContainerMetric).all()],
-        "system_network_history": [model_to_dict(h) for h in db.query(models.SystemNetworkHistory).all()],
-        "system_settings": [model_to_dict(s) for s in db.query(models.SystemSettings).all()],
-        "export_metadata": {
-            "version": "1.0",
-            "timestamp": datetime.now().isoformat()
-        }
-    }
-    
-    from fastapi.responses import JSONResponse
-    filename = f"statsea-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
-    
-    return JSONResponse(
-        content=json.loads(json.dumps(data, default=json_serial)),
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+# --- Auth Endpoints ---
 
 
-@router.get("/devices", response_model=List[schemas.Device])
-def get_devices(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    # consistent return for now
-    devices = db.query(models.Device).all()
-    if not devices:
-        # Seed some mock devices if empty
-        defaults = [
-             models.Device(mac_address="AA:BB:CC:DD:EE:01", ip_address="192.168.1.10", hostname="iPhone-13", vendor="Apple", type="Mobile", is_online=True),
-             models.Device(mac_address="AA:BB:CC:DD:EE:02", ip_address="192.168.1.11", hostname="Galaxy-S24", vendor="Samsung", type="Mobile", is_online=False),
-             models.Device(mac_address="AA:BB:CC:DD:EE:03", ip_address="192.168.1.20", hostname="Desktop-PC", vendor="Microsoft", type="PC", is_online=True),
-        ]
-        db.add_all(defaults)
+@router.post(
+    "/auth/login",
+    response_model=schemas.Token,
+    summary="Login",
+    description="Authenticate user and return a token.",
+)
+async def login(
+    db: Session = Depends(get_db),
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    remember_me: bool = Form(False),
+):
+    user = AuthService.authenticate_user(db, form_data.username, form_data.password)
+    return AuthService.create_session(db, user, remember_me)
+
+
+@router.post(
+    "/auth/refresh",
+    response_model=schemas.Token,
+    summary="Refresh token",
+    description="Refresh an expired access token.",
+)
+async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
+    return AuthService.refresh_session(db, refresh_token)
+
+
+@router.get(
+    "/auth/me",
+    response_model=schemas.User,
+    summary="Get current user",
+    description="Retrieve information about the currently authenticated user.",
+)
+async def get_me(current_user: models.User = Depends(get_current_user)):
+    return current_user
+
+
+@router.post(
+    "/auth/change-password",
+    summary="Change password",
+    description="Change the current user's password.",
+)
+async def change_password(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    current_password = payload.get("current_password")
+    new_password = payload.get("new_password")
+    if not current_password or not new_password:
+        raise ValidationException("Missing passwords")
+    AuthService.change_password(db, current_user, current_password, new_password)
+    return {"status": "success", "message": "Password updated successfully"}
+
+
+@router.post(
+    "/auth/logout",
+    summary="Logout",
+    description="Logout the current user and invalidate the token.",
+)
+async def logout(refresh_token: str | None = None, db: Session = Depends(get_db)):
+    AuthService.logout(db, refresh_token)
+    return {"status": "success", "message": "Logged out successfully"}
+
+
+# --- Admin Endpoints ---
+
+
+@router.get(
+    "/admin/users",
+    response_model=list[schemas.User],
+    summary="List users",
+    description="Retrieve a list of all users.",
+)
+def list_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    return UserService.list_users(db, skip, limit)
+
+
+@router.post(
+    "/admin/users",
+    response_model=schemas.User,
+    summary="Create user",
+    description="Create a new user.",
+)
+def create_user(
+    user: schemas.UserCreate,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    return UserService.create_user(db, user)
+
+
+@router.put(
+    "/admin/users/{user_id}",
+    response_model=schemas.User,
+    summary="Update user",
+    description="Update an existing user.",
+)
+def update_user(
+    user_id: int,
+    user_update: schemas.UserUpdate,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    return UserService.update_user(db, user_id, user_update)
+
+
+@router.delete(
+    "/admin/users/{user_id}",
+    summary="Delete user",
+    description="Delete a user.",
+)
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    UserService.delete_user(db, user_id, admin_user.id)
+    return {"status": "success"}
+
+
+# --- Groups Endpoints ---
+
+
+@router.get(
+    "/groups",
+    response_model=list[schemas.DeviceGroup],
+    summary="Get groups",
+    description="Retrieve a list of all device groups.",
+)
+def get_groups(
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
+):
+    return db.query(models.DeviceGroup).all()
+
+
+@router.post(
+    "/groups",
+    response_model=schemas.DeviceGroup,
+    summary="Create group",
+    description="Create a new device group.",
+)
+def create_group(
+    group: schemas.DeviceGroupCreate,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    sanitized_name = sanitization.sanitize_string(group.name, max_length=100)
+    db_group = models.DeviceGroup(name=sanitized_name, color=group.color)
+    db.add(db_group)
+    try:
         db.commit()
-        devices = db.query(models.Device).all()
-    return devices
+        db.refresh(db_group)
+        return db_group
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Group already exists")
+
+
+@router.put(
+    "/groups/{group_id}",
+    response_model=schemas.DeviceGroup,
+    summary="Update group",
+    description="Update an existing device group.",
+)
+def update_group(
+    group_id: int,
+    group_update: schemas.DeviceGroupUpdate,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    db_group = db.query(models.DeviceGroup).filter(models.DeviceGroup.id == group_id).first()
+    if not db_group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    if group_update.name is not None:
+        db_group.name = sanitization.sanitize_string(group_update.name, max_length=100)
+    if group_update.color is not None:
+        db_group.color = group_update.color
+    db.commit()
+    db.refresh(db_group)
+    return db_group
+
+
+@router.delete(
+    "/groups/{group_id}",
+    summary="Delete group",
+    description="Delete a device group.",
+)
+def delete_group(
+    group_id: int,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    db_group = db.query(models.DeviceGroup).filter(models.DeviceGroup.id == group_id).first()
+    if not db_group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    db.query(models.Device).filter(models.Device.group_id == group_id).update(
+        {models.Device.group_id: None}
+    )
+    db.delete(db_group)
+    db.commit()
+    return {"status": "success"}
+
+
+# --- Settings Endpoints ---
+
+
+@router.get(
+    "/settings",
+    response_model=list[schemas.SystemSetting],
+    summary="Get settings",
+    description="Retrieve all system settings.",
+)
+def get_settings(
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
+):
+    return db.query(models.SystemSettings).all()
+
+
+@router.post(
+    "/settings",
+    summary="Update setting",
+    description="Update a specific system setting.",
+)
+def update_setting(
+    setting: schemas.SystemSettingBase,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    db_setting = (
+        db.query(models.SystemSettings).filter(models.SystemSettings.key == setting.key).first()
+    )
+    if db_setting:
+        db_setting.value = setting.value
+        db_setting.type = setting.type
+        db_setting.description = setting.description
+    else:
+        db_setting = models.SystemSettings(**setting.dict())
+        db.add(db_setting)
+    db.commit()
+    db.refresh(db_setting)
+    if setting.key == "speedtest_interval":
+        try:
+            scheduler.schedule_speedtest(float(setting.value))
+        except ValueError:
+            pass
+    return db_setting
+
+
+# --- WebSocket Endpoints ---
+
 
 @router.websocket("/ws/live")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     try:
         while True:
-            # Get real-time stats from the collector
             stats = global_collector.get_current_stats()
-            
             data = {
                 "timestamp": time.time(),
                 "u": stats["u"],
                 "d": stats["d"],
-                "active_devices": stats["active_device_count"]
+                "active_devices": stats["active_device_count"],
             }
             await websocket.send_json(data)
             await asyncio.sleep(1)
-    except WebSocketDisconnect:
-        # print("Client disconnected from live stats")
-        pass
-    except Exception as e:
-        print(f"WebSocket error: {e}")
-        pass
+    except (WebSocketDisconnect, ConnectionStateError):
+        logger.debug("Live stats WebSocket disconnected")
 
-@router.get("/network/topology")
-async def get_network_topology(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    devices = db.query(models.Device).all()
-    
-    nodes = []
-    edges = []
-    
-    # Add Router as the central node
-    nodes.append({
-        "id": "router",
-        "label": "Main Router",
-        "type": "Router",
-        "ip": "192.168.1.1",
-        "group": "core"
-    })
-    
-    for device in devices:
-        nodes.append({
-            "id": str(device.id),
-            "label": device.hostname or f"Device {device.mac_address[-5:]}",
-            "type": device.type,
-            "ip": device.ip_address,
-            "group": "device"
-        })
-        
-        edges.append({
-            "from": "router",
-            "to": str(device.id),
-            "value": 1
-        })
-        
-        
-    return {"nodes": nodes, "edges": edges}
 
 @router.websocket("/ws/events")
 async def events_websocket(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            # Keep alive
             await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-    except Exception:
+    except (WebSocketDisconnect, ConnectionStateError):
         manager.disconnect(websocket)
 
-@router.get("/alerts")
-async def get_alerts(severity: str = None, timeframe: str = None, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Fetches security alerts with optional filtering."""
-    from datetime import datetime, timedelta
-    
+
+# --- Other Endpoints ---
+
+
+@router.get(
+    "/health",
+    summary="Health check",
+    description="Check if the API is running.",
+)
+async def health_check():
+    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
+@router.get(
+    "/alerts",
+    summary="Get alerts",
+    description="Retrieve security alerts.",
+)
+async def get_alerts(
+    severity: str = None,
+    timeframe: str = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
     query = db.query(models.SecurityAlert)
-    
     if severity:
-        # Allow comma-separated severities ?severity=HIGH,CRITICAL
-        severities = severity.upper().split(',')
+        severities = severity.upper().split(",")
         query = query.filter(models.SecurityAlert.severity.in_(severities))
-        
     if timeframe:
         since = datetime.now()
         if timeframe == "1h":
@@ -336,559 +775,60 @@ async def get_alerts(severity: str = None, timeframe: str = None, db: Session = 
         elif timeframe == "30d":
             since -= timedelta(days=30)
         query = query.filter(models.SecurityAlert.timestamp >= since)
-        
-    return query.order_by(models.SecurityAlert.timestamp.desc()).limit(100).all()
+        query = query.filter(models.SecurityAlert.timestamp >= since)
+    return query.order_by(models.SecurityAlert.timestamp.desc()).offset(skip).limit(limit).all()
 
-@router.get("/docker/containers")
-def get_docker_containers(current_user: models.User = Depends(get_current_user)):
-    """Returns list of running containers and their current stats."""
-    return docker_monitor.get_stats()
 
-@router.get("/docker/{container_id}/history")
-def get_docker_container_history(container_id: str, minutes: int = 60, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns historical stats for a container."""
-    from datetime import datetime, timedelta
-    since = datetime.now() - timedelta(minutes=minutes)
-    
-    metrics = db.query(models.DockerContainerMetric).filter(
-        models.DockerContainerMetric.container_id.like(f"{container_id}%"), # match short or long id
-        models.DockerContainerMetric.timestamp >= since
-    ).order_by(models.DockerContainerMetric.timestamp.asc()).all()
-    
-    return [
-        {
-            "timestamp": m.timestamp.isoformat(),
-            "cpu_pct": m.cpu_pct,
-            "mem_usage": m.mem_usage,
-            "net_rx": m.net_rx,
-            "net_tx": m.net_tx
-        }
-        for m in metrics
-    ]
+@router.post(
+    "/reports/test-email",
+    summary="Send test email",
+    description="Trigger a test email for scheduled reports.",
+)
+def send_test_email(to_email: str, current_user: models.User = Depends(get_current_user)):
+    EmailService.send_daily_summary(to_email)
+    return {"status": "success", "message": f"Test email sent to {to_email}"}
 
-@router.get("/docker/{container_id}/usage")
-def get_docker_container_usage(container_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns aggregated usage statistics (Daily, Monthly, Yearly, All-time)."""
-    from datetime import datetime, timedelta
-    from sqlalchemy import func
-    
-    now = datetime.now()
-    periods = {
-        "daily": now - timedelta(days=1),
-        "monthly": now - timedelta(days=30),
-        "yearly": now - timedelta(days=365),
-        "all_time": datetime(2000, 1, 1) # way back
-    }
-    
-    result = {}
-    for period_name, since in periods.items():
-        # Get min and max RX/TX for calculate the delta (since these are cumulative counters)
-        stats = db.query(
-            func.min(models.DockerContainerMetric.net_rx).label("min_rx"),
-            func.max(models.DockerContainerMetric.net_rx).label("max_rx"),
-            func.min(models.DockerContainerMetric.net_tx).label("min_tx"),
-            func.max(models.DockerContainerMetric.net_tx).label("max_tx")
-        ).filter(
-            models.DockerContainerMetric.container_id.like(f"{container_id}%"),
-            models.DockerContainerMetric.timestamp >= since
-        ).first()
-        
-        if stats and stats.max_rx is not None:
-            result[period_name] = {
-                "rx": (stats.max_rx - stats.min_rx) if stats.max_rx >= stats.min_rx else 0,
-                "tx": (stats.max_tx - stats.min_tx) if stats.max_tx >= stats.min_tx else 0
-            }
-        else:
-            result[period_name] = {"rx": 0, "tx": 0}
-            
-    return result
 
-@router.get("/system/network/history")
-def get_system_network_history(
-    hours: int = 24, 
-    start: Optional[datetime] = None, 
-    end: Optional[datetime] = None, 
+@router.get(
+    "/speedtest",
+    summary="Get speedtest history",
+    description="Retrieve historical speedtest results.",
+)
+def get_speedtest_history(
+    skip: int = 0,
+    limit: int = 50,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
-    """Returns total system network usage history (vnstat-like)."""
-    from datetime import datetime, timedelta
-
-    query = db.query(models.SystemNetworkHistory)
-
-    if start and end:
-        query = query.filter(
-            models.SystemNetworkHistory.timestamp >= start,
-            models.SystemNetworkHistory.timestamp <= end
-        )
-    else:
-        since = datetime.now() - timedelta(hours=hours)
-        query = query.filter(models.SystemNetworkHistory.timestamp >= since)
-
-    history = query.order_by(models.SystemNetworkHistory.timestamp.asc()).all()
-
-    return [
-        {
-            "timestamp": h.timestamp.isoformat(),
-            "interface": h.interface,
-            "bytes_sent": h.bytes_sent,
-            "bytes_recv": h.bytes_recv
-        }
-        for h in history
-    ]
+    return (
+        db.query(models.SpeedtestResult)
+        .order_by(models.SpeedtestResult.timestamp.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
-@router.get("/system/info")
-def get_system_info(current_user: models.User = Depends(get_current_user)):
-    """Returns host-level metrics for the dashboard."""
-    info = system_stats.get_info()
-    info["active_devices"] = len(global_collector.active_devices)
-    return info
-
-@router.get("/system/processes")
-def get_system_processes(current_user: models.User = Depends(get_current_user)):
-    """Returns top resource consuming processes (Host + Docker)."""
-    # 1. Get host processes
-    top_procs = system_stats.get_top_processes(limit=15)
-    
-    # 2. Get docker stats
-    docker_stats = docker_monitor.get_stats()
-    
-    # 3. Combine and normalize
-    # RAM in system_stats is bytes (RSS), in docker it's MB.
-    # We'll normalize to MB for the UI.
-    combined = []
-    
-    for p in top_procs:
-        combined.append({
-            "id": f"p-{p['id']}",
-            "name": p['name'],
-            "cpu": round(p['cpu'], 1),
-            "ram": round(p['ram'] / (1024 * 1024), 1),
-            "type": "Process",
-            "status": "running"
-        })
-        
-    for c in docker_stats:
-        combined.append({
-            "id": f"d-{c['id']}",
-            "name": c['name'],
-            "cpu": round(c['cpu_pct'], 1),
-            "ram": round(c['mem_usage'], 1),
-            "type": "Container",
-            "status": c['status']
-        })
-        
-    # Sort the final combined list by CPU then RAM
-    return sorted(combined, key=lambda x: (x['cpu'], x['ram']), reverse=True)
-
-
-@router.get("/docker/containers/{container_id}/logs")
-async def get_container_logs(container_id: str, tail: int = 100, current_user: models.User = Depends(get_current_user)):
-    """Returns recent logs for a specific container."""
-    return {"logs": docker_monitor.get_logs(container_id, tail)}
-
-@router.post("/docker/containers/{container_id}/action")
-@limiter.limit("10/minute")
-async def container_action(request: Request, container_id: str, payload: dict, admin_user: models.User = Depends(get_current_admin_user)):
-    """Performs an action (start, stop, restart) on a container."""
-    action = payload.get("action")
-    if action not in ["start", "stop", "restart"]:
-        return {"success": False, "error": "Invalid action"}
-    
-    success = docker_monitor.perform_action(container_id, action)
-    return {"success": success}
-
-@router.post("/docker/prune")
+@router.post(
+    "/speedtest",
+    summary="Run speedtest",
+    description="Trigger a new speedtest.",
+)
 @limiter.limit("5/minute")
-def prune_containers(request: Request, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Prunes stopped containers."""
-    return docker_monitor.prune_containers()
-
-@router.patch("/alerts/{alert_id}/resolve")
-def resolve_alert(alert_id: int, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    alert = db.query(models.SecurityAlert).filter(models.SecurityAlert.id == alert_id).first()
-    if alert:
-        alert.is_resolved = True
-        db.commit()
-    return {"status": "success"}
-
-@router.get("/network/connections")
-def get_external_connections(current_user: models.User = Depends(get_current_user)):
-    """Returns geo-located external connections for the 3D globe."""
-    return global_collector.get_external_connections()
-
-@router.get("/network/ip/{ip_address}")
-def lookup_ip(ip_address: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns WHOIS and location info for an IP."""
-    return get_ip_info(ip_address)
-
-@router.get("/network/history")
-async def get_network_history(timeframe: str = "1h", db: Session = Depends(get_db)):
-    """Returns bandwidth and latency history."""
-    start_time = datetime.now() - timedelta(hours=24) # Default
-    if timeframe == "1h":
-        start_time = datetime.now() - timedelta(hours=1)
-    elif timeframe == "24h":
-        start_time = datetime.now() - timedelta(hours=24)
-    elif timeframe == "7d":
-        start_time = datetime.now() - timedelta(days=7)
-    elif timeframe == "30d":
-        start_time = datetime.now() - timedelta(days=30)
-    
-    bandwidth = db.query(models.BandwidthHistory).filter(models.BandwidthHistory.timestamp >= start_time).order_by(models.BandwidthHistory.timestamp.asc()).all()
-    latency = db.query(models.LatencyLog).filter(models.LatencyLog.timestamp >= start_time).order_by(models.LatencyLog.timestamp.asc()).all()
-    return {"bandwidth": bandwidth, "latency": latency}
-
-@router.get("/network/health")
-async def get_network_health(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns a computed network health score (0-100)."""
-    # Simple logic: High latency or recent outages lower the score
-    recent_latency = db.query(models.LatencyLog).order_by(models.LatencyLog.timestamp.desc()).limit(10).all()
-    
-    score = 100
-    if recent_latency:
-        avg_latency = sum(l.latency_ms for l in recent_latency) / len(recent_latency)
-        if avg_latency > 100: score -= 20
-        if avg_latency > 500: score -= 40
-    
-    return {"score": max(0, score), "status": "Excellent" if score > 80 else "Good" if score > 50 else "Poor"}
-
-@router.get("/security/events")
-async def get_security_events(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns all security events."""
-    return db.query(models.SecurityEvent).order_by(models.SecurityEvent.timestamp.desc()).limit(50).all()
-
-@router.get("/analytics/summary")
-async def get_analytics_summary(current_user: models.User = Depends(get_current_user)):
-    """Returns comprehensive traffic analytics data."""
-    return global_collector.get_analytics_summary()
-
-@router.get("/analytics/packets")
-def get_packet_log(
-    limit: int = 100, 
-    protocol: Optional[str] = None, 
-    ip: Optional[str] = None, 
-    port: Optional[int] = None, 
-    flags: Optional[str] = None,
-    current_user: models.User = Depends(get_current_user)
+async def run_speedtest(
+    request: Request,
+    server_id: int = None,
+    provider: str = "ookla",
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
 ):
-    """Returns filtered packet logs."""
-    return global_collector.get_packet_log(limit=limit, protocol=protocol, ip=ip, port=port, flags=flags)
-
-@router.get("/analytics/prediction")
-def get_usage_prediction(current_user: models.User = Depends(get_current_user)):
-    """Predicts monthly usage trends."""
-    return ai_predictor.predict_total_usage()
-
-@router.get("/analytics/anomalies")
-def get_usage_anomalies(current_user: models.User = Depends(get_current_user)):
-    """Returns detected usage anomalies."""
-    return ai_predictor.detect_anomalies()
-
-@router.get("/analytics/history/system")
-def get_system_historical_stats(period: str = "daily", db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """
-    Returns system-wide historical usage.
-    period: daily, monthly, yearly
-    """
-    if period == "daily":
-        results = db.query(models.SystemDailySummary).order_by(models.SystemDailySummary.date.desc()).limit(30).all()
-        return [{"date": r.date, "sent": r.bytes_sent, "recv": r.bytes_recv} for r in results]
-    elif period == "monthly":
-        results = db.query(models.SystemMonthlySummary).order_by(models.SystemMonthlySummary.month.desc()).limit(12).all()
-        return [{"month": r.month, "sent": r.bytes_sent, "recv": r.bytes_recv} for r in results]
-    elif period == "yearly":
-        results = db.query(models.SystemYearlySummary).order_by(models.SystemYearlySummary.year.desc()).all()
-        return [{"year": r.year, "sent": r.bytes_sent, "recv": r.bytes_recv} for r in results]
-    return {"error": "Invalid period"}
-
-@router.get("/analytics/history/device/{mac}")
-def get_device_historical_stats(mac: str, period: str = "daily", db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """
-    Returns device-specific historical usage.
-    period: daily, monthly, yearly
-    """
-    device = db.query(models.Device).filter(models.Device.mac_address == mac).first()
-    if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
-    
-    if period == "daily":
-        results = db.query(models.DeviceDailySummary).filter(models.DeviceDailySummary.device_id == device.id).order_by(models.DeviceDailySummary.date.desc()).limit(30).all()
-        return [{"date": r.date, "sent": r.upload_bytes, "recv": r.download_bytes} for r in results]
-    elif period == "monthly":
-        results = db.query(models.DeviceMonthlySummary).filter(models.DeviceMonthlySummary.device_id == device.id).order_by(models.DeviceMonthlySummary.month.desc()).limit(12).all()
-        return [{"month": r.month, "sent": r.upload_bytes, "recv": r.download_bytes} for r in results]
-    elif period == "yearly":
-        results = db.query(models.DeviceYearlySummary).filter(models.DeviceYearlySummary.device_id == device.id).order_by(models.DeviceYearlySummary.year.desc()).all()
-        return [{"year": r.year, "sent": r.upload_bytes, "recv": r.download_bytes} for r in results]
-    return {"error": "Invalid period"}
-
-@router.get("/network/dns", response_model=List[schemas.DnsLog])
-def get_dns_logs(limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns recent DNS logs."""
-    return db.query(models.DnsLog).order_by(models.DnsLog.timestamp.desc()).limit(limit).all()
-
-@router.get("/network/dns/top")
-def get_top_domains(limit: int = 10, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns top queried domains."""
-    from sqlalchemy import func
-    results = db.query(models.DnsLog.query_domain, func.count(models.DnsLog.query_domain).label('count'))\
-        .group_by(models.DnsLog.query_domain)\
-        .order_by(func.count(models.DnsLog.query_domain).desc())\
-        .limit(limit).all()
-    
-    return [{"domain": r[0], "count": r[1]} for r in results]
-
-@router.get("/settings", response_model=List[schemas.SystemSetting])
-def get_settings(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns all system settings."""
-    return db.query(models.SystemSettings).all()
-
-@router.post("/settings")
-def update_setting(setting: schemas.SystemSettingBase, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Updates or creates a system setting."""
-    db_setting = db.query(models.SystemSettings).filter(models.SystemSettings.key == setting.key).first()
-    if db_setting:
-        db_setting.value = setting.value
-        db_setting.type = setting.type
-        db_setting.description = setting.description
-    else:
-        db_setting = models.SystemSettings(**setting.dict())
-        db.add(db_setting)
-    
-    db.commit()
-    db.refresh(db_setting)
-
-    # Trigger scheduler update if interval changed
-    if setting.key == "speedtest_interval":
-        try:
-            val = float(setting.value)
-            scheduler.schedule_speedtest(val)
-        except ValueError:
-            pass
-
-    return db_setting
-
-@router.get("/speedtest/servers")
-def get_speedtest_servers(current_user: models.User = Depends(get_current_user)):
-    """Returns a list of available speedtest servers."""
-    return speedtest_service.get_servers()
-
-@router.post("/speedtest")
-@limiter.limit("5/minute")
-async def run_speedtest(request: Request, server_id: int = None, provider: str = "ookla", db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Triggers a new speedtest."""
     return await speedtest_service.run_speedtest(db, server_id, provider)
 
-@router.get("/speedtest")
-def get_speedtest_history(limit: int = 50, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns speedtest history."""
-    return db.query(models.SpeedtestResult).order_by(models.SpeedtestResult.timestamp.desc()).limit(limit).all()
 
-# Device Groups Endpoints
-
-@router.post("/groups", response_model=schemas.DeviceGroup)
-def create_group(group: schemas.DeviceGroupCreate, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Creates a new device group."""
-    db_group = models.DeviceGroup(name=group.name, color=group.color)
-    db.add(db_group)
-    try:
-        db.commit()
-        db.refresh(db_group)
-        return db_group
-    except Exception:
-        db.rollback()
-        raise HTTPException(status_code=400, detail="Group already exists")
-
-@router.get("/groups", response_model=List[schemas.DeviceGroup])
-def get_groups(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Returns all device groups."""
-    return db.query(models.DeviceGroup).all()
-
-@router.put("/groups/{group_id}", response_model=schemas.DeviceGroup)
-def update_group(group_id: int, group_update: schemas.DeviceGroupUpdate, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Updates a device group."""
-    db_group = db.query(models.DeviceGroup).filter(models.DeviceGroup.id == group_id).first()
-    if not db_group:
-        raise HTTPException(status_code=404, detail="Group not found")
-    
-    if group_update.name is not None:
-        db_group.name = group_update.name
-    if group_update.color is not None:
-        db_group.color = group_update.color
-        
-    db.commit()
-    db.refresh(db_group)
-    return db_group
-
-@router.delete("/groups/{group_id}")
-def delete_group(group_id: int, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Deletes a device group."""
-    db_group = db.query(models.DeviceGroup).filter(models.DeviceGroup.id == group_id).first()
-    if not db_group:
-        raise HTTPException(status_code=404, detail="Group not found")
-    
-    # Set group_id to null for devices in this group
-    devices = db.query(models.Device).filter(models.Device.group_id == group_id).all()
-    for device in devices:
-        device.group_id = None
-        
-    db.delete(db_group)
-    db.commit()
-    return {"status": "success"}
-
-# Authentication Endpoints
-
-@router.post("/auth/login", response_model=schemas.Token)
-async def login(
-    db: Session = Depends(get_db), 
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    remember_me: bool = Form(False)
-):
-    user = db.query(models.User).filter(models.User.username == form_data.username).first()
-    if not user or not user.verify_password(form_data.password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    expires_delta = None
-    if remember_me:
-        expires_delta = timedelta(days=7)
-    else:
-        expires_delta = timedelta(days=1)
-        
-    refresh_token_str, expires_at = create_refresh_token(user_id=user.id, expires_delta=expires_delta)
-    
-    # Save refresh token to DB
-    db_refresh_token = models.RefreshToken(
-        token=refresh_token_str,
-        user_id=user.id,
-        expires_at=expires_at
-    )
-    db.add(db_refresh_token)
-    
-    # Update last login
-    user.last_login = datetime.now() # timezone-aware is already handled by DB if configured, but let's be safe
-    from datetime import timezone
-    user.last_login = datetime.now(timezone.utc)
-    
-    db.commit()
-    
-    return {
-        "access_token": access_token, 
-        "refresh_token": refresh_token_str, 
-        "token_type": "bearer"
-    }
-
-@router.post("/auth/refresh", response_model=schemas.Token)
-async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
-    db_token = db.query(models.RefreshToken).filter(
-        models.RefreshToken.token == refresh_token,
-        models.RefreshToken.is_revoked == False,
-        models.RefreshToken.expires_at > datetime.now(timezone.utc) # need to ensure timezone matches
-    ).first()
-    
-    if not db_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token"
-        )
-    
-    user = db_token.user
-    if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="User unavailable")
-        
-    # Rotate token: revoke old one, issue new ones
-    db_token.is_revoked = True
-    
-    new_access_token = create_access_token(data={"sub": user.username})
-    new_refresh_token_str, new_expires_at = create_refresh_token(user_id=user.id)
-    
-    new_db_token = models.RefreshToken(
-        token=new_refresh_token_str,
-        user_id=user.id,
-        expires_at=new_expires_at
-    )
-    db.add(new_db_token)
-    db.commit()
-    
-    return {
-        "access_token": new_access_token,
-        "refresh_token": new_refresh_token_str,
-        "token_type": "bearer"
-    }
-
-@router.get("/auth/me", response_model=schemas.User)
-async def get_me(current_user: models.User = Depends(get_current_user)):
-    return current_user
-
-@router.post("/auth/change-password")
-async def change_password(payload: dict, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Allows a user to change their own password."""
-    current_password = payload.get("current_password")
-    new_password = payload.get("new_password")
-    
-    if not current_password or not new_password:
-        raise HTTPException(status_code=400, detail="Missing passwords")
-        
-    if not current_user.verify_password(current_password):
-        raise HTTPException(status_code=400, detail="Incorrect current password")
-        
-    current_user.hashed_password = models.User.get_password_hash(new_password)
-    db.commit()
-    return {"status": "success", "message": "Password updated successfully"}
-
-@router.post("/auth/logout")
-async def logout(refresh_token: Optional[str] = None, db: Session = Depends(get_db)):
-    if refresh_token:
-        db_token = db.query(models.RefreshToken).filter(models.RefreshToken.token == refresh_token).first()
-        if db_token:
-            db_token.is_revoked = True
-            db.commit()
-    return {"status": "success", "message": "Logged out successfully"}
-
-# Admin User Management
-
-@router.get("/admin/users", response_model=List[schemas.User])
-def list_users(db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Returns all users."""
-    return db.query(models.User).all()
-
-@router.put("/admin/users/{user_id}", response_model=schemas.User)
-def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Updates a user (roles, active status, etc)."""
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    if user_update.email is not None:
-        db_user.email = user_update.email
-    if user_update.full_name is not None:
-        db_user.full_name = user_update.full_name
-    if user_update.is_active is not None:
-        db_user.is_active = user_update.is_active
-    if user_update.is_admin is not None:
-        db_user.is_admin = user_update.is_admin
-    if user_update.password is not None:
-        db_user.hashed_password = models.User.get_password_hash(user_update.password)
-        
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-@router.delete("/admin/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    """Deletes a user."""
-    if user_id == admin_user.id:
-        raise HTTPException(status_code=400, detail="Cannot delete yourself")
-        
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    db.delete(db_user)
-    db.commit()
-    return {"status": "success"}
+@router.get(
+    "/speedtest/servers",
+    summary="Get speedtest servers",
+    description="Retrieve available speedtest servers.",
+)
+def get_speedtest_servers(current_user: models.User = Depends(get_current_user)):
+    return speedtest_service.get_servers()

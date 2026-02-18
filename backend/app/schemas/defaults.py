@@ -1,40 +1,45 @@
-from pydantic import BaseModel, field_validator
-from typing import Optional, List
 from datetime import datetime
+
+from pydantic import BaseModel, field_validator
+
 
 class DeviceBase(BaseModel):
     mac_address: str
-    ip_address: Optional[str] = None
-    hostname: Optional[str] = None
-    vendor: Optional[str] = None
-    type: Optional[str] = "Unknown"  # IoT, Mobile, PC
-    nickname: Optional[str] = None
-    notes: Optional[str] = None
-    tags: Optional[List[str]] = []
-    group_id: Optional[int] = None
+    ip_address: str | None = None
+    hostname: str | None = None
+    vendor: str | None = None
+    type: str | None = "Unknown"  # IoT, Mobile, PC
+    nickname: str | None = None
+    notes: str | None = None
+    tags: list[str] | None = []
+    group_id: int | None = None
+
 
 class DeviceCreate(DeviceBase):
     pass
 
+
 class DeviceUpdate(BaseModel):
-    nickname: Optional[str] = None
-    notes: Optional[str] = None
-    type: Optional[str] = None
-    tags: Optional[List[str]] = None
-    group_id: Optional[int] = None
+    nickname: str | None = None
+    notes: str | None = None
+    type: str | None = None
+    tags: list[str] | None = None
+    group_id: int | None = None
+
 
 class Device(DeviceBase):
     id: int
     first_seen: datetime
-    last_seen: Optional[datetime]
+    last_seen: datetime | None
     is_online: bool
-    traffic_logs: List['TrafficLog'] = []
+    traffic_logs: list["TrafficLog"] = []
 
-    @field_validator('tags', mode='before')
+    @field_validator("tags", mode="before")
     def parse_tags(cls, v):
         if isinstance(v, str):
             try:
                 import json
+
                 return json.loads(v)
             except ValueError:
                 return []
@@ -43,15 +48,18 @@ class Device(DeviceBase):
     class Config:
         from_attributes = True
 
+
 class SystemSettingBase(BaseModel):
     key: str
     value: str
     type: str = "string"
-    description: Optional[str] = None
+    description: str | None = None
+
 
 class SystemSetting(SystemSettingBase):
     class Config:
         from_attributes = True
+
 
 class TrafficLogBase(BaseModel):
     device_id: int
@@ -61,18 +69,21 @@ class TrafficLogBase(BaseModel):
     protocol: str = "TCP"
     app_category: str = "Unknown"
 
+
 class TrafficLog(TrafficLogBase):
     id: int
 
     class Config:
         from_attributes = True
 
+
 class SecurityAlertBase(BaseModel):
     severity: str
     title: str
     description: str
-    device_id: Optional[int] = None
+    device_id: int | None = None
     is_resolved: bool = False
+
 
 class SecurityAlert(SecurityAlertBase):
     id: int
@@ -81,24 +92,29 @@ class SecurityAlert(SecurityAlertBase):
     class Config:
         from_attributes = True
 
+
 class BandwidthQuotaBase(BaseModel):
-    daily_limit_bytes: Optional[int] = None
-    monthly_limit_bytes: Optional[int] = None
+    daily_limit_bytes: int | None = None
+    monthly_limit_bytes: int | None = None
+
 
 class BandwidthQuotaCreate(BandwidthQuotaBase):
     device_id: int
 
+
 class BandwidthQuota(BandwidthQuotaBase):
     id: int
     device_id: int
-    
+
     class Config:
         from_attributes = True
+
 
 class DeviceStatusLogBase(BaseModel):
     device_id: int
     status: str
     timestamp: datetime
+
 
 class DeviceStatusLog(DeviceStatusLogBase):
     id: int
@@ -106,16 +122,20 @@ class DeviceStatusLog(DeviceStatusLogBase):
     class Config:
         from_attributes = True
 
+
 class DeviceGroupBase(BaseModel):
     name: str
-    color: Optional[str] = "#3b82f6"
+    color: str | None = "#3b82f6"
+
 
 class DeviceGroupCreate(DeviceGroupBase):
     pass
 
+
 class DeviceGroupUpdate(BaseModel):
-    name: Optional[str] = None
-    color: Optional[str] = None
+    name: str | None = None
+    color: str | None = None
+
 
 class DeviceGroup(DeviceGroupBase):
     id: int
@@ -123,12 +143,14 @@ class DeviceGroup(DeviceGroupBase):
     class Config:
         from_attributes = True
 
+
 class DnsLogBase(BaseModel):
     timestamp: datetime
     client_ip: str
     query_domain: str
     record_type: str
-    device_id: Optional[int] = None
+    device_id: int | None = None
+
 
 class DnsLog(DnsLogBase):
     id: int
@@ -136,35 +158,41 @@ class DnsLog(DnsLogBase):
     class Config:
         from_attributes = True
 
+
 class UserBase(BaseModel):
     username: str
     email: str
-    full_name: Optional[str] = None
-    is_active: Optional[bool] = True
-    is_admin: Optional[bool] = False
+    full_name: str | None = None
+    is_active: bool | None = True
+    is_admin: bool | None = False
+
 
 class UserCreate(UserBase):
     password: str
 
+
 class UserUpdate(BaseModel):
-    email: Optional[str] = None
-    full_name: Optional[str] = None
-    password: Optional[str] = None
-    is_active: Optional[bool] = None
-    is_admin: Optional[bool] = None
+    email: str | None = None
+    full_name: str | None = None
+    password: str | None = None
+    is_active: bool | None = None
+    is_admin: bool | None = None
+
 
 class User(UserBase):
     id: int
     created_at: datetime
-    last_login: Optional[datetime] = None
+    last_login: datetime | None = None
 
     class Config:
         from_attributes = True
+
 
 class Token(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str
 
+
 class TokenData(BaseModel):
-    username: Optional[str] = None
+    username: str | None = None

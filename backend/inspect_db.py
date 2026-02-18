@@ -1,6 +1,6 @@
 
-import sqlite3
 import os
+import sqlite3
 
 db_path = r"d:\Gravity\StatSea\data\statsea.db"
 if not os.path.exists(db_path):

@@ -1,26 +1,36 @@
+import logging
+import uuid
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime
+
 import uvicorn
-import os
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from .core.limiter import limiter
+
 from .api import endpoints
 from .core.collector import global_collector
+from .core.config import settings
 from .core.docker_monitor import docker_monitor
+from .core.limiter import limiter
+from .core.logging import get_logger, set_request_id, setup_logging
 from .core.monitor import monitor
 from .core.scheduler import scheduler
 from .core.system_monitor import system_monitor
-from .db.database import engine, Base
+from .db.database import Base, SessionLocal, engine
 from .models import models
+
+# Initialize structured logging
+setup_logging(level=logging.DEBUG if settings.DEBUG else logging.INFO)
+logger = get_logger("main")
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
+
 # Seed default admin user
-from .db.database import SessionLocal
 def seed_admin():
     db = SessionLocal()
     try:
@@ -31,7 +41,7 @@ def seed_admin():
                 email="admin@statsea.local",
                 hashed_password=models.User.get_password_hash("admin123"),
                 full_name="StatSea Admin",
-                is_admin=True
+                is_admin=True,
             )
             db.add(admin)
             db.commit()
@@ -39,18 +49,15 @@ def seed_admin():
     finally:
         db.close()
 
+
 seed_admin()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Security check: Warn if using default JWT secret
-    jwt_secret = os.getenv("JWT_SECRET_KEY")
-    if not jwt_secret or jwt_secret == "statsea-jwt-secret-key-change-me-at-least-thirty-two-chars":
-        print("\n" + "!" * 80)
-        print("WARNING: SECURITY RISK DETECTED")
-        print("You are using the default JWT_SECRET_KEY. This is highly insecure.")
-        print("Please set a secure JWT_SECRET_KEY in your environment variables.")
-        print("!" * 80 + "\n")
+    if settings.JWT_SECRET_KEY == "statsea-jwt-secret-key-change-me-at-least-thirty-two-chars":
+        logger.warning("SECURITY RISK: Using default JWT_SECRET_KEY. Change it in .env")
 
     # Start services
     global_collector.start()
@@ -58,7 +65,9 @@ async def lifespan(app: FastAPI):
     await monitor.start()
     system_monitor.start()
     scheduler.update_scheduler_from_db()
+
     yield
+
     # Stop services
     global_collector.stop()
     docker_monitor.stop()
@@ -66,37 +75,57 @@ async def lifespan(app: FastAPI):
     system_monitor.stop()
     scheduler.scheduler.shutdown()
 
+
 app = FastAPI(
-    title="Statsea API",
+    title=settings.PROJECT_NAME,
+    version=settings.PROJECT_VERSION,
     description="Network Intelligence Dashboard API",
-    version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
+# Limiter setup
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    set_request_id(request_id)
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    import logging
-    logger = logging.getLogger("uvicorn.error")
-    logger.error(f"Global exception: {exc}", exc_info=True)
+    # The request_id is already in context from middleware
+    # Use it consistently with error_id for debugging
+    error_id = datetime.now().strftime("%Y%m%d%H%M%S%f")
+    logger.exception(
+        f"Unhandled exception: {exc}", extra={"error_id": error_id, "path": request.url.path}
+    )
+
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal Server Error"},
+        content={
+            "detail": "An unexpected internal error occurred.",
+            "error_code": "INTERNAL_SERVER_ERROR",
+            "error_id": error_id,
+            "timestamp": datetime.now().isoformat(),
+        },
     )
-# CORS (Allow all for local dev)
-# CORS (Allow specific origins for local dev)
-# CORS (Allow specific origins for local dev)
-origins = os.getenv("CORS_ORIGINS", "http://localhost,http://localhost:5173,http://localhost:5174,http://127.0.0.1,http://127.0.0.1:5173,http://127.0.0.1:5174").split(",")
 
+
+# CORS settings from config
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -105,7 +134,6 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    # Content-Security-Policy (Restricted to 'self' and allowed domains)
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
@@ -116,15 +144,14 @@ async def add_security_headers(request: Request, call_next):
     )
     return response
 
+
 app.include_router(endpoints.router, prefix="/api")
+
 
 @app.get("/")
 def read_root():
     return {"status": "online", "system": "Statsea Core"}
 
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8001, reload=True)

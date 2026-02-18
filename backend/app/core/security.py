@@ -1,9 +1,9 @@
-from sqlalchemy.orm import Session
-from ..models import models
-from ..core.notifications import notification_service
-import datetime
 import psutil
-import socket
+from sqlalchemy.orm import Session
+
+from ..core.notifications import notification_service
+from ..models import models
+
 
 class SecurityEngine:
     def __init__(self):
@@ -18,7 +18,7 @@ class SecurityEngine:
         current_ports = set()
         try:
             # Get all listening TCP ports
-            connections = psutil.net_connections(kind='tcp')
+            connections = psutil.net_connections(kind="tcp")
             for conn in connections:
                 if conn.status == psutil.CONN_LISTEN:
                     # Identifier: (port, ip)
@@ -29,7 +29,9 @@ class SecurityEngine:
             if not self.baseline_established:
                 self.known_ports = current_ports
                 self.baseline_established = True
-                print(f"Security Baseline: Established {len(self.known_ports)} known listening ports.")
+                print(
+                    f"Security Baseline: Established {len(self.known_ports)} known listening ports."
+                )
                 return
 
             # Check for new ports
@@ -42,7 +44,7 @@ class SecurityEngine:
                     event_type="NEW_OPEN_PORT",
                     severity="MEDIUM",
                     description=desc,
-                    source_ip=ip
+                    source_ip=ip,
                 )
                 print(f"SECURITY ALERT: {desc}")
                 # Send Notification
@@ -50,9 +52,9 @@ class SecurityEngine:
                     title="New Open Port Detected",
                     description=desc,
                     severity="MEDIUM",
-                    fields=[{"name": "Port", "value": str(port)}, {"name": "IP", "value": ip}]
+                    fields=[{"name": "Port", "value": str(port)}, {"name": "IP", "value": ip}],
                 )
-            
+
             # Update known ports (so we don't alert repeatedly for the same one)
             self.known_ports = current_ports
 
@@ -66,7 +68,16 @@ class SecurityEngine:
         """
         pass
 
-    def log_security_event(self, db: Session, event_type: str, severity: str, description: str, source_ip: str = None, mac_address: str = None, commit: bool = True):
+    def log_security_event(
+        self,
+        db: Session,
+        event_type: str,
+        severity: str,
+        description: str,
+        source_ip: str = None,
+        mac_address: str = None,
+        commit: bool = True,
+    ):
         """
         Logs a security event to the database.
         """
@@ -76,7 +87,7 @@ class SecurityEngine:
                 severity=severity,
                 description=description,
                 source_ip=source_ip,
-                mac_address=mac_address
+                mac_address=mac_address,
             )
             db.add(event)
             if commit:
@@ -87,5 +98,6 @@ class SecurityEngine:
             print(f"Security logging error: {e}")
             if commit:
                 db.rollback()
+
 
 security_engine = SecurityEngine()

@@ -247,6 +247,17 @@ const AnalyticsDashboard = () => {
     };
 
     useEffect(() => {
+        // Load from cache initially
+        const cachedAnalytics = localStorage.getItem('statsea_cache_analytics');
+        const cachedBandwidth = localStorage.getItem('statsea_cache_bandwidth');
+        const cachedSecurity = localStorage.getItem('statsea_cache_security');
+        const cachedExternal = localStorage.getItem('statsea_cache_external');
+
+        if (cachedAnalytics) setAnalyticsData(JSON.parse(cachedAnalytics));
+        if (cachedBandwidth) setBandwidthData(JSON.parse(cachedBandwidth));
+        if (cachedSecurity) setSecurityEvents(JSON.parse(cachedSecurity));
+        if (cachedExternal) setExternalConnections(JSON.parse(cachedExternal));
+
         const fetchData = async () => {
             if (paused) return;
             try {
@@ -260,18 +271,25 @@ const AnalyticsDashboard = () => {
                 setAnalyticsData(analyticsRes.data);
 
                 const netData = netRes.data;
-                setBandwidthData(netData.bandwidth.map((i: any) => ({
+                const formattedBandwidth = netData.bandwidth.map((i: any) => ({
                     ...i, timestamp: new Date(i.timestamp).toLocaleTimeString()
-                })).reverse());
+                })).reverse();
+
+                setBandwidthData(formattedBandwidth);
                 setLatencyData(netData.latency.map((i: any) => ({
                     ...i, timestamp: new Date(i.timestamp).toLocaleTimeString()
                 })).reverse());
 
                 setSecurityEvents(secRes.data);
                 setExternalConnections(connRes.data);
+
+                // Update cache
+                localStorage.setItem('statsea_cache_analytics', JSON.stringify(analyticsRes.data));
+                localStorage.setItem('statsea_cache_bandwidth', JSON.stringify(formattedBandwidth));
+                localStorage.setItem('statsea_cache_security', JSON.stringify(secRes.data));
+                localStorage.setItem('statsea_cache_external', JSON.stringify(connRes.data));
             } catch (error) {
                 console.error("Failed to fetch analytics data", error);
-                // toast.error("Failed to load dashboard data"); // Too frequent, maybe skip for 2s interval
             } finally {
                 setLoading(false);
             }

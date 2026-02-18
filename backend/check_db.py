@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from app.models.models import Device
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./data/statsea.db"

@@ -1,34 +1,43 @@
-import os
-import time
+import asyncio
+import ipaddress
+import random
 import threading
-import logging
-from typing import Dict, List, Optional
+import time
+from datetime import datetime
+
 try:
-    from scapy.all import sniff, IP, TCP, UDP, conf
+    from scapy.all import DNS, IP, TCP, UDP, sniff
+
     SCAPY_AVAILABLE = True
 except ImportError:
     SCAPY_AVAILABLE = False
 
-from ..db.database import SessionLocal
-from ..models.models import Device, SecurityAlert, DeviceDailySummary, BandwidthHistory, DeviceStatusLog, DnsLog
-from datetime import datetime
-from sqlalchemy import func, Date
-import asyncio
 import requests
-import ipaddress
+import sqlalchemy.exc
+
+from ..core.logging import get_logger
+from ..db.database import SessionLocal
+from ..models.models import (
+    BandwidthHistory,
+    Device,
+    DeviceDailySummary,
+    DeviceStatusLog,
+    DnsLog,
+)
 
 # Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("Collector")
+logger = get_logger("Collector")
+
 
 class PacketCollector:
     """
     Core engine for network telemetry capture and aggregation.
     """
+
     def __init__(self):
-        self.active_devices: Dict[str, Dict] = {} # MAC -> metadata
-        self.external_connections: Dict[str, Dict] = {} # IP -> geo info
-        self.geoip_cache: Dict[str, Dict] = {}
+        self.active_devices: dict[str, dict] = {}  # MAC -> metadata
+        self.external_connections: dict[str, dict] = {}  # IP -> geo info
+        self.geoip_cache: dict[str, dict] = {}
         self.stats_lock = threading.Lock()
         self.running = False
         self.interface = None
@@ -38,46 +47,48 @@ class PacketCollector:
         self._last_persist_download = 0
         self._thread = None
         self._persistence_thread = None
-        self.flush_interval = 30 # seconds
+        self.flush_interval = 30  # seconds
         self.event_callback = None
         self._loop = None
         # --- Advanced Analytics ---
-        self.protocol_counts: Dict[str, int] = {}  # protocol -> count
-        self.device_traffic: Dict[str, Dict] = {}  # MAC -> {upload, download, hostname}
+        self.protocol_counts: dict[str, int] = {}  # protocol -> count
+        self.device_traffic: dict[str, dict] = {}  # MAC -> {upload, download, hostname}
         self.total_packets = 0
         self.total_bytes = 0
         self.packets_per_sec = 0.0
         self.suspicious_count = 0
         self._last_pps_time = time.time()
         self._pps_packet_count = 0
-        self.packet_log: List[Dict] = []  # ring buffer for live stream
+        self.packet_log: list[dict] = []  # ring buffer for live stream
         self.PACKET_LOG_SIZE = 1000
         # --- Extended Analytics ---
-        self.bandwidth_history: List[Dict] = []  # ring buffer of {time, up, down}
+        self.bandwidth_history: list[dict] = []  # ring buffer of {time, up, down}
         self.BANDWIDTH_HISTORY_SIZE = 60  # 60 snapshots = ~2 minutes at 2s interval
         self._bw_snapshot_up = 0
         self._bw_snapshot_down = 0
         self._last_bw_snapshot = time.time()
-        self.packet_size_buckets: Dict[str, int] = {
-            "tiny (<128B)": 0, "small (128-512B)": 0, "medium (512-1024B)": 0, "large (1024B+)": 0
+        self.packet_size_buckets: dict[str, int] = {
+            "tiny (<128B)": 0,
+            "small (128-512B)": 0,
+            "medium (512-1024B)": 0,
+            "large (1024B+)": 0,
         }
         self.dns_queries = 0
         self.http_requests = 0
-        self.active_sessions: Dict[str, float] = {}  # session_key -> last_seen
+        self.active_sessions: dict[str, float] = {}  # session_key -> last_seen
         self.SESSION_TIMEOUT = 30  # seconds
-        self.connection_types: Dict[str, int] = {"internal": 0, "external": 0}
+        self.connection_types: dict[str, int] = {"internal": 0, "external": 0}
         self.SESSION_TIMEOUT = 30  # seconds
-        self.connection_types: Dict[str, int] = {"internal": 0, "external": 0}
-        self.bytes_per_protocol: Dict[str, int] = {}  # protocol -> total bytes
-        
+        self.connection_types: dict[str, int] = {"internal": 0, "external": 0}
+        self.bytes_per_protocol: dict[str, int] = {}  # protocol -> total bytes
+
         # Buffer for DB persistence (MAC -> {upload, download})
         # This resets after every flush to DB
-        self.daily_traffic_buffer: Dict[str, Dict] = {} 
-        
-        # Buffer for DNS logs (list of dicts)
-        self.dns_log_buffer: List[Dict] = []
-        self.DNS_BUFFER_SIZE = 50 # Flush when it hits this size
+        self.daily_traffic_buffer: dict[str, dict] = {}
 
+        # Buffer for DNS logs (list of dicts)
+        self.dns_log_buffer: list[dict] = []
+        self.DNS_BUFFER_SIZE = 50  # Flush when it hits this size
 
     def set_event_callback(self, callback):
         """Sets the callback for broadcasting events."""
@@ -88,19 +99,19 @@ class PacketCollector:
             self._loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._loop)
 
-    def start(self, interface: Optional[str] = None):
+    def start(self, interface: str | None = None):
         """Starts the sniffing thread."""
         if self.running:
             return
-        
+
         self.running = True
         self.interface = interface
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
-        
+
         self._persistence_thread = threading.Thread(target=self._persistence_loop, daemon=True)
         self._persistence_thread.start()
-        
+
         logger.info(f"Collector started on interface: {interface or 'default'}")
 
     def stop(self):
@@ -132,7 +143,7 @@ class PacketCollector:
                 # Extract flags (S, A, F, R, P, U, E, C)
                 # packet[TCP].flags is a FlagValue object, cast to str
                 flags = str(packet[TCP].flags)
-                
+
                 # Refine by well-known ports
                 if dst_port == 443 or src_port == 443:
                     proto = "HTTPS"
@@ -148,6 +159,42 @@ class PacketCollector:
                 dst_port = packet[UDP].dport
                 if dst_port == 53 or src_port == 53:
                     proto = "DNS"
+                    # Parse DNS query if possible
+                    try:
+                        if packet.haslayer(DNS) and packet[DNS].qr == 0:  # Query
+                            qd = packet[DNS].qd
+                            if qd:
+                                qname = (
+                                    qd.qname.decode("utf-8")
+                                    if isinstance(qd.qname, bytes)
+                                    else str(qd.qname)
+                                )
+                                # Remove trailing dot
+                                if qname.endswith("."):
+                                    qname = qname[:-1]
+
+                                qtype = qd.qtype
+                                # Map common qtypes
+                                type_map = {
+                                    1: "A",
+                                    28: "AAAA",
+                                    5: "CNAME",
+                                    15: "MX",
+                                    16: "TXT",
+                                    12: "PTR",
+                                }
+                                record_type = type_map.get(qtype, str(qtype))
+
+                                self.dns_log_buffer.append(
+                                    {
+                                        "timestamp": datetime.now(),
+                                        "client_ip": src_ip,
+                                        "query_domain": qname,
+                                        "record_type": record_type,
+                                    }
+                                )
+                    except Exception:
+                        pass  # Scapy might fail on malformed packets
             elif packet[IP].proto == 1:
                 proto = "ICMP"
 
@@ -160,14 +207,14 @@ class PacketCollector:
                         self.active_devices[src_mac] = {"last_seen": time.time(), "ip": src_ip}
                     else:
                         self.active_devices[src_mac]["last_seen"] = time.time()
-                        self.active_devices[src_mac]["ip"] = src_ip # Update IP if changed
+                        self.active_devices[src_mac]["ip"] = src_ip  # Update IP if changed
 
                     if src_mac not in self.device_traffic:
                         self.device_traffic[src_mac] = {"upload": 0, "download": 0, "ip": src_ip}
-                    
+
                     self.device_traffic[src_mac]["upload"] += packet_len
                     self.upload_acc += packet_len
-                    
+
                     # Buffer for persistence
                     if src_mac not in self.daily_traffic_buffer:
                         self.daily_traffic_buffer[src_mac] = {"upload": 0, "download": 0}
@@ -180,12 +227,12 @@ class PacketCollector:
                     # Let's add them if they look like local devices, but promiscuous mode might see non-local MACs?
                     # Generally safely to assume traffic on LAN interface with MAC is local-ish.
                     if dst_mac in self.active_devices:
-                         self.device_traffic[dst_mac]["download"] += packet_len
-                         self.download_acc += packet_len
-                         
-                         if dst_mac not in self.daily_traffic_buffer:
-                             self.daily_traffic_buffer[dst_mac] = {"upload": 0, "download": 0}
-                         self.daily_traffic_buffer[dst_mac]["download"] += packet_len
+                        self.device_traffic[dst_mac]["download"] += packet_len
+                        self.download_acc += packet_len
+
+                        if dst_mac not in self.daily_traffic_buffer:
+                            self.daily_traffic_buffer[dst_mac] = {"upload": 0, "download": 0}
+                        self.daily_traffic_buffer[dst_mac]["download"] += packet_len
 
                 self.total_packets += 1
                 self.total_bytes += packet_len
@@ -201,7 +248,7 @@ class PacketCollector:
                     "src": f"{src_ip}:{src_port}" if src_port else src_ip,
                     "dst": f"{dst_ip}:{dst_port}" if dst_port else dst_ip,
                     "size": packet_len,
-                    "flags": flags
+                    "flags": flags,
                 }
                 self.packet_log.append(log_entry)
                 if len(self.packet_log) > self.PACKET_LOG_SIZE:
@@ -223,8 +270,11 @@ class PacketCollector:
                 if packet.src in self.active_devices and not self._is_private_ip(dst_ip):
                     self._track_external_connection(dst_ip, packet_len)
 
-        except Exception as e:
-            logger.error(f"Error in packet callback: {e}")
+        except (AttributeError, KeyError, ValueError):
+            # These are expected if packets are malformed or missing layers
+            pass
+        except Exception:
+            logger.exception("Unexpected error in packet callback")
 
     def _run(self):
         """Main sniffer loop."""
@@ -241,24 +291,48 @@ class PacketCollector:
                     prn=self._packet_callback,
                     count=100,
                     timeout=2,
-                    store=0 # Don't keep packets in memory
+                    store=0,  # Don't keep packets in memory
                 )
-        except Exception as e:
-            logger.error(f"Sniffer crashed: {e}")
+        except PermissionError:
+            logger.error(
+                "Permission denied to sniff on interface. Ensure application is running with administrative privileges."
+            )
+            self._run_mock()
+        except Exception:
+            logger.exception("Sniffer crashed unexpectedly")
             self._run_mock()
 
     def _run_mock(self):
         """Mock traffic generator for development."""
-        import random
-        mock_macs = ["00:15:5D:01:02:03", "00:15:5D:04:05:06", "74:AC:5F:E1:D2:C3",
-                     "AA:BB:CC:DD:EE:01", "AA:BB:CC:DD:EE:02", "AA:BB:CC:DD:EE:03"]
-        mock_hostnames = {"AA:BB:CC:DD:EE:01": "iPhone-13", "AA:BB:CC:DD:EE:02": "Galaxy-S24",
-                          "AA:BB:CC:DD:EE:03": "Desktop-PC", "00:15:5D:01:02:03": "NAS-Server",
-                          "00:15:5D:04:05:06": "Smart-TV", "74:AC:5F:E1:D2:C3": "Laptop-Air"}
+
+        mock_macs = [
+            "00:15:5D:01:02:03",
+            "00:15:5D:04:05:06",
+            "74:AC:5F:E1:D2:C3",
+            "AA:BB:CC:DD:EE:01",
+            "AA:BB:CC:DD:EE:02",
+            "AA:BB:CC:DD:EE:03",
+        ]
+        mock_hostnames = {
+            "AA:BB:CC:DD:EE:01": "iPhone-13",
+            "AA:BB:CC:DD:EE:02": "Galaxy-S24",
+            "AA:BB:CC:DD:EE:03": "Desktop-PC",
+            "00:15:5D:01:02:03": "NAS-Server",
+            "00:15:5D:04:05:06": "Smart-TV",
+            "74:AC:5F:E1:D2:C3": "Laptop-Air",
+        }
         protocols = ["TCP", "UDP", "HTTP", "HTTPS", "DNS", "ICMP", "SSH", "FTP"]
         proto_weights = [30, 20, 15, 25, 8, 5, 3, 2]  # weighted distribution
-        mock_ext_ips = ["142.250.72.14", "104.16.132.229", "166.34.161.67", "151.101.1.140",
-                        "13.107.42.14", "31.13.65.36", "52.94.236.248", "185.199.108.153"]
+        mock_ext_ips = [
+            "142.250.72.14",
+            "104.16.132.229",
+            "166.34.161.67",
+            "151.101.1.140",
+            "13.107.42.14",
+            "31.13.65.36",
+            "52.94.236.248",
+            "185.199.108.153",
+        ]
 
         while self.running:
             with self.stats_lock:
@@ -273,17 +347,21 @@ class PacketCollector:
                 device_ip = f"192.168.1.{10 + mock_macs.index(mac)}"
                 ext_ip = random.choice(mock_ext_ips)
                 src_port = random.randint(1024, 65535)
-                dst_port = {"HTTP": 80, "HTTPS": 443, "DNS": 53, "SSH": 22, "FTP": 21}.get(proto, random.randint(1024, 65535))
+                dst_port = {"HTTP": 80, "HTTPS": 443, "DNS": 53, "SSH": 22, "FTP": 21}.get(
+                    proto, random.randint(1024, 65535)
+                )
                 pkt_size = random.randint(64, 1500)
 
-                self.active_devices[mac] = {
-                    "last_seen": time.time(),
-                    "ip": device_ip
-                }
+                self.active_devices[mac] = {"last_seen": time.time(), "ip": device_ip}
 
                 # Track per-device traffic
                 if mac not in self.device_traffic:
-                    self.device_traffic[mac] = {"upload": 0, "download": 0, "ip": device_ip, "hostname": mock_hostnames.get(mac, mac[-5:])}
+                    self.device_traffic[mac] = {
+                        "upload": 0,
+                        "download": 0,
+                        "ip": device_ip,
+                        "hostname": mock_hostnames.get(mac, mac[-5:]),
+                    }
                 self.device_traffic[mac]["download"] += down
                 self.device_traffic[mac]["upload"] += up
 
@@ -292,7 +370,6 @@ class PacketCollector:
                     self.daily_traffic_buffer[mac] = {"upload": 0, "download": 0}
                 self.daily_traffic_buffer[mac]["download"] += down
                 self.daily_traffic_buffer[mac]["upload"] += up
-
 
                 # Track protocol
                 self.protocol_counts[proto] = self.protocol_counts.get(proto, 0) + 1
@@ -314,29 +391,24 @@ class PacketCollector:
                 # DNS/HTTP counters
                 if proto == "DNS":
                     self.dns_queries += 1
-                    try:
-                        if packet.haslayer('DNS') and packet['DNS'].qr == 0: # Query
-                            qd = packet['DNS'].qd
-                            if qd:
-                                qname = qd.qname.decode('utf-8') if isinstance(qd.qname, bytes) else str(qd.qname)
-                                # Remove trailing dot
-                                if qname.endswith('.'):
-                                    qname = qname[:-1]
-                                
-                                qtype = qd.qtype
-                                # Map common qtypes (scapy likely has integer values)
-                                # 1=A, 28=AAAA, 5=CNAME, 15=MX, 16=TXT
-                                type_map = {1: 'A', 28: 'AAAA', 5: 'CNAME', 15: 'MX', 16: 'TXT', 12: 'PTR'}
-                                record_type = type_map.get(qtype, str(qtype))
-
-                                self.dns_log_buffer.append({
-                                    "timestamp": datetime.now(),
-                                    "client_ip": src_ip,
-                                    "query_domain": qname,
-                                    "record_type": record_type
-                                })
-                    except Exception as e:
-                        logger.error(f"Error parsing DNS packet: {e}")
+                    # Generate mock DNS log entry
+                    mock_domains = [
+                        "google.com",
+                        "github.com",
+                        "microsoft.com",
+                        "netflix.com",
+                        "statsea.local",
+                        "aws.amazon.com",
+                        "chatgpt.com",
+                    ]
+                    self.dns_log_buffer.append(
+                        {
+                            "timestamp": datetime.now(),
+                            "client_ip": device_ip,
+                            "query_domain": random.choice(mock_domains),
+                            "record_type": random.choice(["A", "AAAA", "CNAME"]),
+                        }
+                    )
 
                 if proto in ("HTTP", "HTTPS"):
                     self.http_requests += 1
@@ -371,11 +443,13 @@ class PacketCollector:
                 self._bw_snapshot_down += down
                 bw_elapsed = now - self._last_bw_snapshot
                 if bw_elapsed >= 2.0:
-                    self.bandwidth_history.append({
-                        "time": datetime.now().strftime("%H:%M:%S"),
-                        "up": self._bw_snapshot_up,
-                        "down": self._bw_snapshot_down
-                    })
+                    self.bandwidth_history.append(
+                        {
+                            "time": datetime.now().strftime("%H:%M:%S"),
+                            "up": self._bw_snapshot_up,
+                            "down": self._bw_snapshot_down,
+                        }
+                    )
                     if len(self.bandwidth_history) > self.BANDWIDTH_HISTORY_SIZE:
                         self.bandwidth_history.pop(0)
                     self._bw_snapshot_up = 0
@@ -389,7 +463,7 @@ class PacketCollector:
                     "src": f"{device_ip}:{src_port}",
                     "dst": f"{ext_ip}:{dst_port}",
                     "size": pkt_size,
-                    "suspicious": is_suspicious
+                    "suspicious": is_suspicious,
                 }
                 self.packet_log.append(log_entry)
                 if len(self.packet_log) > self.PACKET_LOG_SIZE:
@@ -397,10 +471,17 @@ class PacketCollector:
 
                 # External connection tracking
                 if ext_ip not in self.external_connections:
-                    threading.Thread(target=self._resolve_geoip, args=(ext_ip,), daemon=True).start()
+                    threading.Thread(
+                        target=self._resolve_geoip, args=(ext_ip,), daemon=True
+                    ).start()
                     self.external_connections[ext_ip] = {
-                        "bytes": 0, "hits": 0, "last_seen": 0,
-                        "city": "Resolving...", "country": "", "lat": 0, "lon": 0
+                        "bytes": 0,
+                        "hits": 0,
+                        "last_seen": 0,
+                        "city": "Resolving...",
+                        "country": "",
+                        "lat": 0,
+                        "lon": 0,
                     }
                 conn = self.external_connections[ext_ip]
                 conn["bytes"] += pkt_size
@@ -415,7 +496,7 @@ class PacketCollector:
             stats = {
                 "u": self.upload_acc,
                 "d": self.download_acc,
-                "active_device_count": len(self.active_devices)
+                "active_device_count": len(self.active_devices),
             }
             self.upload_acc = 0
             self.download_acc = 0
@@ -430,8 +511,10 @@ class PacketCollector:
                 # In production you might want a separate schedule, but this is fine for now
                 self._persist_daily_stats()
                 self._flush_dns_logs()
-            except Exception as e:
-                logger.error(f"Error in persistence loop: {e}")
+            except sqlalchemy.exc.SQLAlchemyError:
+                logger.exception("Database error in persistence loop")
+            except Exception:
+                logger.exception("Unexpected error in persistence loop")
             time.sleep(self.flush_interval)
 
     def _flush_devices(self):
@@ -440,7 +523,7 @@ class PacketCollector:
         try:
             with self.stats_lock:
                 devices_to_flush = list(self.active_devices.items())
-            
+
             for mac, data in devices_to_flush:
                 device = db.query(Device).filter(Device.mac_address == mac).first()
                 if not device:
@@ -448,16 +531,14 @@ class PacketCollector:
                         mac_address=mac,
                         ip_address=data["ip"],
                         is_online=True,
-                        last_seen=datetime.fromtimestamp(data["last_seen"])
+                        last_seen=datetime.fromtimestamp(data["last_seen"]),
                     )
                     db.add(device)
-                    db.flush() # Get ID
-                    
+                    db.flush()  # Get ID
+
                     # Log initial status
                     status_log = DeviceStatusLog(
-                        device_id=device.id,
-                        status="online",
-                        timestamp=datetime.now()
+                        device_id=device.id, status="online", timestamp=datetime.now()
                     )
                     db.add(status_log)
 
@@ -468,16 +549,14 @@ class PacketCollector:
                     # Check for status change
                     if not device.is_online:
                         status_log = DeviceStatusLog(
-                            device_id=device.id,
-                            status="online",
-                            timestamp=datetime.now()
+                            device_id=device.id, status="online", timestamp=datetime.now()
                         )
                         db.add(status_log)
-                        
+
                     device.ip_address = data["ip"]
                     device.is_online = True
                     device.last_seen = datetime.fromtimestamp(data["last_seen"])
-                    
+
             db.commit()
         finally:
             db.close()
@@ -493,56 +572,56 @@ class PacketCollector:
         db = SessionLocal()
         try:
             today = datetime.now().date()
-            
+
             for mac, traffic in buffer_copy.items():
                 device = db.query(Device).filter(Device.mac_address == mac).first()
                 if not device:
-                    continue # Should have been created by _flush_devices already
+                    continue  # Should have been created by _flush_devices already
 
                 # Check for existing summary for today
-                summary = db.query(DeviceDailySummary).filter(
-                    DeviceDailySummary.device_id == device.id,
-                    DeviceDailySummary.date == today
-                ).first()
+                summary = (
+                    db.query(DeviceDailySummary)
+                    .filter(
+                        DeviceDailySummary.device_id == device.id, DeviceDailySummary.date == today
+                    )
+                    .first()
+                )
 
                 if not summary:
                     summary = DeviceDailySummary(
-                        device_id=device.id,
-                        date=today,
-                        upload_bytes=0,
-                        download_bytes=0
+                        device_id=device.id, date=today, upload_bytes=0, download_bytes=0
                     )
                     db.add(summary)
-                
+
                 summary.upload_bytes += traffic["upload"]
                 summary.download_bytes += traffic["download"]
 
             # Persist Global Bandwidth History (Delta)
             current_upload = self.upload_acc
             current_download = self.download_acc
-            
+
             delta_upload = current_upload - self._last_persist_upload
             delta_download = current_download - self._last_persist_download
-            
+
             # Update last persist reference
             self._last_persist_upload = current_upload
             self._last_persist_download = current_download
 
             if delta_upload > 0 or delta_download > 0:
                 bw_history = BandwidthHistory(
-                    upload_bytes=delta_upload,
-                    download_bytes=delta_download
+                    upload_bytes=delta_upload, download_bytes=delta_download
                 )
                 db.add(bw_history)
-            
+
             db.commit()
             # logger.info(f"Persisted daily stats for {len(buffer_copy)} devices")
-        except Exception as e:
-            logger.error(f"Error persisting daily stats: {e}")
+        except sqlalchemy.exc.SQLAlchemyError:
+            logger.exception("Error persisting daily stats")
+        except Exception:
+            logger.exception("Unexpected error persisting daily stats")
             # Restore buffer on error? Naah, simpler to drop data than complex recovery for now.
         finally:
             db.close()
-
 
     def _trigger_new_device_alert(self, mac, ip):
         """Triggers a security alert for a new device."""
@@ -553,11 +632,11 @@ class PacketCollector:
                 severity="info",
                 title="New Device Detected",
                 description=f"A new device with MAC {mac} and IP {ip} has joined the network.",
-                device_id=device.id if device else None
+                device_id=device.id if device else None,
             )
             db.add(alert)
             db.commit()
-            
+
             if self.event_callback and self._loop:
                 event_data = {
                     "type": "NEW_DEVICE",
@@ -566,7 +645,7 @@ class PacketCollector:
                     "description": f"New device {mac} discovered.",
                     "mac": mac,
                     "ip": ip,
-                    "timestamp": time.time()
+                    "timestamp": time.time(),
                 }
                 # Call async callback from sync thread
                 self._loop.call_soon_threadsafe(
@@ -595,9 +674,9 @@ class PacketCollector:
                 "city": "Resolving...",
                 "country": "",
                 "lat": 0,
-                "lon": 0
+                "lon": 0,
             }
-        
+
         conn = self.external_connections[ip]
         conn["bytes"] += length
         conn["hits"] += 1
@@ -610,7 +689,9 @@ class PacketCollector:
         else:
             try:
                 # rate limit friendly: only resolve if not in cache
-                response = requests.get(f"http://ip-api.com/json/{ip}?fields=status,country,city,lat,lon", timeout=5)
+                response = requests.get(
+                    f"http://ip-api.com/json/{ip}?fields=status,country,city,lat,lon", timeout=5
+                )
                 if response.status_code == 200:
                     data = response.json()
                     if data.get("status") == "success":
@@ -619,30 +700,33 @@ class PacketCollector:
                         return
                 else:
                     return
-            except Exception as e:
-                logger.error(f"GeoIP resolution error for {ip}: {e}")
-                return
+            except requests.exceptions.RequestException as e:
+                logger.error(f"GeoIP resolution network error for {ip}: {e}")
+            except Exception:
+                logger.exception(f"Unexpected GeoIP resolution error for {ip}")
 
         with self.stats_lock:
             if ip in self.external_connections:
-                self.external_connections[ip].update({
-                    "city": data.get("city", "Unknown"),
-                    "country": data.get("country", "Unknown"),
-                    "lat": data.get("lat", 0),
-                    "lon": data.get("lon", 0)
-                })
+                self.external_connections[ip].update(
+                    {
+                        "city": data.get("city", "Unknown"),
+                        "country": data.get("country", "Unknown"),
+                        "lat": data.get("lat", 0),
+                        "lon": data.get("lon", 0),
+                    }
+                )
 
-    def get_external_connections(self) -> List[Dict]:
+    def get_external_connections(self) -> list[dict]:
         """Returns geo-located external connections for the frontend."""
         with self.stats_lock:
             # Return only resolved connections with location data
             return [
-                {"ip": ip, **data} 
-                for ip, data in self.external_connections.items() 
+                {"ip": ip, **data}
+                for ip, data in self.external_connections.items()
                 if data.get("lat") != 0
             ]
 
-    def get_analytics_summary(self) -> Dict:
+    def get_analytics_summary(self) -> dict:
         """Returns comprehensive analytics data for the Traffic Analyzer page."""
         with self.stats_lock:
             # Top devices by total traffic
@@ -652,7 +736,7 @@ class PacketCollector:
                     for mac, data in self.device_traffic.items()
                 ],
                 key=lambda x: x["total"],
-                reverse=True
+                reverse=True,
             )[:6]
 
             return {
@@ -673,34 +757,43 @@ class PacketCollector:
                 "http_requests": self.http_requests,
                 "active_sessions": len(self.active_sessions),
                 "connection_types": dict(self.connection_types),
-                "bytes_per_protocol": dict(self.bytes_per_protocol)
+                "bytes_per_protocol": dict(self.bytes_per_protocol),
             }
 
-    def get_packet_log(self, limit: int = 100, protocol: str = None, ip: str = None, port: int = None, flags: str = None) -> List[Dict]:
+    def get_packet_log(
+        self,
+        limit: int = 100,
+        protocol: str = None,
+        ip: str = None,
+        port: int = None,
+        flags: str = None,
+    ) -> list[dict]:
         """Returns filtered packet logs."""
         with self.stats_lock:
             # Start with a copy of the log to avoid modification during iteration
-            # Slice to max size first if no filters to speed up? 
+            # Slice to max size first if no filters to speed up?
             # No, we need to filter first then slice.
-            
+
             filtered = self.packet_log
-            
+
             if protocol:
                 protocol = protocol.upper()
                 filtered = [p for p in filtered if p["proto"] == protocol]
-                
+
             if ip:
                 # Check src or dst
                 filtered = [p for p in filtered if ip in p["src"] or ip in p["dst"]]
-                
+
             if port:
                 port_str = str(port)
                 # Check src or dst port (format is IP:PORT)
-                filtered = [p for p in filtered if f":{port_str}" in p["src"] or f":{port_str}" in p["dst"]]
-                
+                filtered = [
+                    p for p in filtered if f":{port_str}" in p["src"] or f":{port_str}" in p["dst"]
+                ]
+
             if flags:
                 flags = flags.upper()
-                # Check if packet has flags and if they match (contain) req flags? 
+                # Check if packet has flags and if they match (contain) req flags?
                 # Or exact match? Let's do contains for now (e.g. search "S" finds "SA")
                 filtered = [p for p in filtered if p.get("flags") and flags in p["flags"]]
 
@@ -712,9 +805,9 @@ class PacketCollector:
         with self.stats_lock:
             if not self.dns_log_buffer:
                 return
-            buffer_copy = list(self.dns_log_buffer) # Copy
+            buffer_copy = list(self.dns_log_buffer)  # Copy
             self.dns_log_buffer.clear()
-            
+
         db = SessionLocal()
         try:
             # Optimize: Get IP->DeviceID mapping cache
@@ -724,13 +817,13 @@ class PacketCollector:
             # We have IP. We need IP -> DeviceID.
             # Let's query relevant devices from DB or just do a join later?
             # For insertion, let's try to find device_id by IP.
-            
-            # Note: This is a bit inefficient if buffer is large. 
+
+            # Note: This is a bit inefficient if buffer is large.
             # Ideally we have a IP->ID cache.
-            
+
             # Simple approach: Store IP, resolve to device ID if possible.
             # We can use a small cache of ip->device_id updated occasionally.
-            
+
             for entry in buffer_copy:
                 # Try to map IP to device
                 # We can iterate active_devices to find MAC for this IP
@@ -741,30 +834,33 @@ class PacketCollector:
                             # Resolve device_id from DB? Too slow to query every time.
                             # Just storing IP is enough, we can link in UI or query time.
                             # But defining the relationship in model uses ForeignKey.
-                            # Let's look up device by MAC (which is indexed) 
+                            # Let's look up device by MAC (which is indexed)
                             # But wait, we need the ID.
                             pass
-                
+
                 # To properly link, we need the Device link.
                 # Let's do a quick lookup.
                 device = db.query(Device).filter(Device.ip_address == entry["client_ip"]).first()
                 if device:
                     device_id = device.id
-                
+
                 dns_log = DnsLog(
                     timestamp=entry["timestamp"],
                     client_ip=entry["client_ip"],
                     query_domain=entry["query_domain"],
                     record_type=entry["record_type"],
-                    device_id=device_id
+                    device_id=device_id,
                 )
                 db.add(dns_log)
-            
+
             db.commit()
-        except Exception as e:
-            logger.error(f"Error flushing DNS logs: {e}")
+        except sqlalchemy.exc.SQLAlchemyError:
+            logger.exception("Database error flushing DNS logs")
+        except Exception:
+            logger.exception("Unexpected error flushing DNS logs")
         finally:
             db.close()
+
 
 # Global collector instance
 global_collector = PacketCollector()

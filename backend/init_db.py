@@ -1,5 +1,5 @@
-from app.db.database import engine, Base
-from app.models import models
+from app.db.database import Base, engine
+
 
 def init_db():
     print("Creating database tables...")

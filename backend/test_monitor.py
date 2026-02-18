@@ -1,6 +1,6 @@
 import asyncio
-import sys
 import os
+import sys
 
 # Add parent dir to path to allow importing app
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -8,6 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.core.monitor import monitor
 from app.db import database
 from app.models import models
+
 
 async def main():
     print("Testing monitor...")
@@ -23,7 +24,7 @@ async def main():
         
         # Test anomaly detection
         monitor.latency_history["8.8.8.8"] = [10.0] * 5
-        print(f"Baseline latency set to 10ms. Injecting 500ms latency...")
+        print("Baseline latency set to 10ms. Injecting 500ms latency...")
         
         monitor.check_latency_anomalies(db, "8.8.8.8", 500.0)
         

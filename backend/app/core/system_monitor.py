@@ -1,23 +1,27 @@
+import threading
+import time
+from datetime import datetime
 
 import psutil
-import time
-import threading
-import logging
-from datetime import datetime
+import sqlalchemy.exc
+
 from ..db.database import SessionLocal
 from ..models.models import SystemNetworkHistory
+from .logging import get_logger
 
-logger = logging.getLogger("SystemMonitor")
+logger = get_logger("SystemMonitor")
+
 
 class SystemMonitor:
     """
     Monitors total system network usage (vnstat-style).
     Persists data to SystemNetworkHistory.
     """
+
     def __init__(self):
         self.running = False
         self._thread = None
-        self.interval = 60 # Snapshot every minute
+        self.interval = 60  # Snapshot every minute
         self._last_net_io = {}
 
     def start(self):
@@ -36,18 +40,18 @@ class SystemMonitor:
     def _run(self):
         # Initial reading to establish baseline
         self._last_net_io = psutil.net_io_counters(pernic=True)
-        
+
         while self.running:
             time.sleep(self.interval)
             try:
                 self._capture_snapshot()
-            except Exception as e:
-                logger.error(f"Error in System Monitor: {e}")
+            except Exception:
+                logger.exception("Unexpected error in System Monitor loop")
 
     def _capture_snapshot(self):
         current_net_io = psutil.net_io_counters(pernic=True)
         timestamp = datetime.now()
-        
+
         db = SessionLocal()
         try:
             for interface, counters in current_net_io.items():
@@ -56,7 +60,7 @@ class SystemMonitor:
                     continue
 
                 prev = self._last_net_io[interface]
-                
+
                 # Calculate delta
                 bytes_sent = counters.bytes_sent - prev.bytes_sent
                 bytes_recv = counters.bytes_recv - prev.bytes_recv
@@ -77,17 +81,22 @@ class SystemMonitor:
                         bytes_sent=bytes_sent,
                         bytes_recv=bytes_recv,
                         packets_sent=packets_sent,
-                        packets_recv=packets_recv
+                        packets_recv=packets_recv,
                     )
                     db.add(entry)
-                
+
                 self._last_net_io[interface] = counters
 
             db.commit()
-        except Exception as e:
-            logger.error(f"Failed to persist system network stats: {e}")
+        except sqlalchemy.exc.SQLAlchemyError:
+            logger.exception("Database error persisting system network stats")
+            db.rollback()
+        except Exception:
+            logger.exception("Unexpected error persisting system network stats")
+            db.rollback()
         finally:
             db.close()
+
 
 # Global instance
 system_monitor = SystemMonitor()

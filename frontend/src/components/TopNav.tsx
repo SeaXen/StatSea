@@ -40,6 +40,7 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
                     <button
                         onClick={onMenuClick}
                         className="md:hidden p-2 -ml-2 text-gray-400 hover:text-white"
+                        aria-label="Toggle menu"
                     >
                         <Menu className="h-6 w-6" />
                     </button>
@@ -59,6 +60,7 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
                     <button
                         onClick={() => setCommandOpen(true)}
                         className="group flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-sm text-gray-400 hover:border-white/10 hover:bg-white/10 hover:text-gray-200 transition-all"
+                        aria-label="Search"
                     >
                         <Search className="h-4 w-4" />
                         <span className="hidden sm:inline">Search...</span>
@@ -72,6 +74,7 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
                     <button
                         onClick={() => setIsNotificationOpen(true)}
                         className="relative rounded-full p-2 text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                        aria-label="Notifications"
                     >
                         <Bell className="h-5 w-5" />
                         {unreadCount > 0 && (
@@ -94,6 +97,7 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
                             onClick={handleLogout}
                             className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-full transition-all"
                             title="Sign Out"
+                            aria-label="Sign out"
                         >
                             <LogOut className="h-5 w-5" />
                         </button>

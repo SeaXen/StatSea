@@ -440,14 +440,19 @@ const DockerManager: React.FC = () => {
 
     const fetchContainers = useCallback(async () => {
         try {
+            if (!localStorage.getItem('statsea_cache_containers')) {
+                setLoading(true);
+            }
             const response = await axiosInstance.get(API_CONFIG.ENDPOINTS.DOCKER.CONTAINERS);
-            setContainers(Array.isArray(response.data) ? response.data : []);
-            setLoading(false);
+            const data = Array.isArray(response.data) ? response.data : [];
+            setContainers(data);
+            localStorage.setItem('statsea_cache_containers', JSON.stringify(data));
         } catch (error) {
             console.error("Error fetching containers:", error);
+        } finally {
             setLoading(false);
         }
-    }, []);
+    }, [containers]);
 
     const fetchLogs = useCallback(async (containerId: string) => {
         if (!containerId) return;
@@ -518,6 +523,12 @@ const DockerManager: React.FC = () => {
     }, [fetchContainers]);
 
     useEffect(() => {
+        // Load from cache initially
+        const cachedContainers = localStorage.getItem('statsea_cache_containers');
+        if (cachedContainers) {
+            setContainers(JSON.parse(cachedContainers));
+            setLoading(false);
+        }
         fetchContainers();
         const interval = setInterval(fetchContainers, 3000);
         return () => clearInterval(interval);

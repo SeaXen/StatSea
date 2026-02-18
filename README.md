@@ -2,6 +2,52 @@
 
 StatSea is a premium, real-time network monitoring dashboard designed for home enthusiasts and developers. It uses Scapy for deep packet inspection and a React-based glassmorphism UI for a stunning visual experience.
 
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    subgraph Frontend [Frontend (React + Vite)]
+        UI[React UI]
+        State[Zustand/Context]
+        WS_Client[WebSocket Client]
+    end
+
+    subgraph Backend [Backend (FastAPI + Python)]
+        API[REST API]
+        WS_Server[WebSocket Server]
+        Auth[Auth Service]
+        
+        subgraph Core [Core Engines]
+            Collector[Packet Collector]
+            AI[AI Predictor]
+            Monitor[Docker Monitor]
+        end
+    end
+
+    subgraph Infrastructure
+        DB[(SQLite/Postgres)]
+        Docker[Docker Engine]
+        Network[Network Interface]
+    end
+
+    UI -->|HTTP| API
+    WS_Client <-->|WebSocket| WS_Server
+    API --> Auth
+    API --> DB
+    
+    Collector -->|Scapy| Network
+    Collector -->|SQLAlchemy| DB
+    Collector -->|Broadcast| WS_Server
+    
+    Monitor -->|Docker SDK| Docker
+    Monitor --> DB
+    
+    AI --> DB
+```
+
 ---
 
 ## 🚀 Deployment Guide (Linux Mint / CasaOS)

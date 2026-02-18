@@ -1,5 +1,5 @@
-from scapy.all import sniff, conf, get_if_list, get_working_if
-import time
+
+from scapy.all import conf, get_if_list, get_working_if, sniff
 
 print(f"Scapy version: {conf.version}")
 print(f"PCAP provider available: {conf.use_pcap}")

@@ -70,7 +70,14 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
                 }
             };
 
+            let lastUpdate = 0;
+            const THROTTLE_MS = 500; // Max 2 updates per second
+
             ws.onmessage = (event) => {
+                const now = Date.now();
+                if (now - lastUpdate < THROTTLE_MS) return;
+                lastUpdate = now;
+
                 try {
                     const data = JSON.parse(event.data);
                     setWsData(prev => {

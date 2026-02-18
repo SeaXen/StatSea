@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import axiosInstance from '../config/axiosInstance';
 import {
     Users,
@@ -32,20 +33,97 @@ export const UserManagement: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [formData, setFormData] = useState({
+        username: '',
+        email: '',
+        full_name: '',
+        password: '',
+        is_admin: false,
+        is_active: true
+    });
 
     useEffect(() => {
+        // Load from cache initially
+        const cachedUsers = localStorage.getItem('statsea_cache_users');
+        if (cachedUsers) {
+            setUsers(JSON.parse(cachedUsers));
+            setIsLoading(false);
+        }
         fetchUsers();
     }, []);
 
     const fetchUsers = async () => {
         try {
-            setIsLoading(true);
+            if (!localStorage.getItem('statsea_cache_users')) {
+                setIsLoading(true);
+            }
             const response = await axiosInstance.get('/admin/users');
             setUsers(response.data);
+            localStorage.setItem('statsea_cache_users', JSON.stringify(response.data));
         } catch (error) {
-            toast.error('Failed to fetch users');
+            console.error('Failed to fetch users:', error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleOpenModal = (mode: 'add' | 'edit', user?: User) => {
+        setModalMode(mode);
+        if (mode === 'edit' && user) {
+            setSelectedUser(user);
+            setFormData({
+                username: user.username,
+                email: user.email,
+                full_name: user.full_name || '',
+                password: '', // Password remains empty unless changing
+                is_admin: user.is_admin,
+                is_active: user.is_active
+            });
+        } else {
+            setSelectedUser(null);
+            setFormData({
+                username: '',
+                email: '',
+                full_name: '',
+                password: '',
+                is_admin: false,
+                is_active: true
+            });
+        }
+        setIsModalOpen(true);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            if (modalMode === 'add') {
+                await axiosInstance.post('/admin/users', formData);
+                toast.success('User created successfully');
+            } else if (selectedUser) {
+                const updateData: Partial<typeof formData> & { password?: string } = {
+                    email: formData.email,
+                    full_name: formData.full_name,
+                    is_admin: formData.is_admin,
+                    is_active: formData.is_active
+                };
+                if (formData.password) {
+                    updateData.password = formData.password;
+                }
+                await axiosInstance.put(`/admin/users/${selectedUser.id}`, updateData);
+                toast.success('User updated successfully');
+            }
+            setIsModalOpen(false);
+            fetchUsers();
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.detail || `Failed to ${modalMode} user`);
+            } else {
+                toast.error(errorMessage);
+            }
         }
     };
 
@@ -109,7 +187,7 @@ export const UserManagement: React.FC = () => {
                 </div>
                 <button
                     className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all active:scale-95 text-sm font-medium"
-                    onClick={() => toast.info('New user creation is handled by registration or manual DB entry in this version.')}
+                    onClick={() => handleOpenModal('add')}
                 >
                     <UserPlus className="w-4 h-4" />
                     Add User
@@ -220,7 +298,7 @@ export const UserManagement: React.FC = () => {
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all"
-                                                onClick={() => toast.info('Edit details functionality coming soon.')}
+                                                onClick={() => handleOpenModal('edit', user)}
                                             >
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
@@ -255,6 +333,140 @@ export const UserManagement: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Modal */}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
+                        >
+                            <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+                                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                    {modalMode === 'add' ? <UserPlus className="w-5 h-5 text-blue-500" /> : <Edit2 className="w-5 h-5 text-blue-500" />}
+                                    {modalMode === 'add' ? 'Add New User' : 'Edit User'}
+                                </h2>
+                                <button
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="text-slate-500 hover:text-white transition-colors"
+                                >
+                                    <XCircle className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Username</label>
+                                    <input
+                                        type="text"
+                                        disabled={modalMode === 'edit'}
+                                        required
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        value={formData.username}
+                                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                        placeholder="johndoe"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Full Name</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                                        value={formData.full_name}
+                                        onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                        placeholder="John Doe"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Email Address</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        placeholder="john@example.com"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                        {modalMode === 'add' ? 'Password' : 'New Password (Optional)'}
+                                    </label>
+                                    <input
+                                        type="password"
+                                        required={modalMode === 'add'}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between py-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                                            <Shield className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium text-white">Administrator Access</div>
+                                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Elevated Permissions</div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, is_admin: !formData.is_admin })}
+                                        className={`w-12 h-6 rounded-full transition-all relative ${formData.is_admin ? 'bg-blue-600' : 'bg-slate-800'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${formData.is_admin ? 'right-1' : 'left-1'}`} />
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center justify-between py-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                                            <CheckCircle2 className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium text-white">Account Status</div>
+                                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Active / Disabled</div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                                        className={`w-12 h-6 rounded-full transition-all relative ${formData.is_active ? 'bg-emerald-600' : 'bg-slate-800'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${formData.is_active ? 'right-1' : 'left-1'}`} />
+                                    </button>
+                                </div>
+
+                                <div className="pt-4 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2.5 rounded-xl text-sm font-medium transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-medium shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                                    >
+                                        {modalMode === 'add' ? 'Create User' : 'Save Changes'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

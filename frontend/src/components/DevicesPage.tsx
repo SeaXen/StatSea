@@ -8,7 +8,8 @@ import { DeviceDetail } from './DeviceDetail';
 import { Device, DeviceGroup } from '../types';
 import { Skeleton, TableRowSkeleton } from './skeletons/WidgetSkeleton';
 import { GroupManager } from './GroupManager';
-import { Layers, Folder } from 'lucide-react';
+import { Layers, Folder, Search as SearchIcon } from 'lucide-react';
+import { EmptyState } from './EmptyState';
 
 export function DevicesPage() {
     const [devices, setDevices] = useState<Device[]>([]);
@@ -26,6 +27,12 @@ export function DevicesPage() {
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
     useEffect(() => {
+        // Load from cache initially
+        const cachedDevices = localStorage.getItem('statsea_cache_devices');
+        const cachedGroups = localStorage.getItem('statsea_cache_groups');
+        if (cachedDevices) setDevices(JSON.parse(cachedDevices));
+        if (cachedGroups) setGroups(JSON.parse(cachedGroups));
+
         const fetchDevices = async () => {
             try {
                 const [devicesRes, groupsRes] = await Promise.all([
@@ -35,6 +42,10 @@ export function DevicesPage() {
 
                 setDevices(devicesRes.data);
                 setGroups(groupsRes.data);
+
+                // Update cache
+                localStorage.setItem('statsea_cache_devices', JSON.stringify(devicesRes.data));
+                localStorage.setItem('statsea_cache_groups', JSON.stringify(groupsRes.data));
             } catch (error) {
                 console.error("Error fetching data:", error);
             } finally {
@@ -295,8 +306,12 @@ export function DevicesPage() {
                             </tbody>
                         </table>
                         {filteredDevices.length === 0 && (
-                            <div className="p-8 text-center text-gray-500">
-                                No devices found matching your criteria.
+                            <div className="p-8">
+                                <EmptyState
+                                    icon={SearchIcon}
+                                    title="No devices found"
+                                    description="No devices match your search criteria or filters."
+                                />
                             </div>
                         )}
                     </div>
@@ -379,8 +394,12 @@ export function DevicesPage() {
                         </AnimatePresence>
                         {
                             filteredDevices.length === 0 && (
-                                <div className="col-span-full p-12 text-center text-gray-500 border border-white/5 rounded-xl border-dashed">
-                                    No devices found matching your criteria.
+                                <div className="col-span-full">
+                                    <EmptyState
+                                        icon={SearchIcon}
+                                        title="No devices found"
+                                        description="No devices match your search criteria or filters."
+                                    />
                                 </div>
                             )
                         }

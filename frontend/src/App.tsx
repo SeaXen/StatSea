@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Activity, Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -7,16 +7,8 @@ import { motion } from 'framer-motion';
 import { TopDevicesWidget } from './components/TopDevicesWidget';
 import { ActiveConnectionsWidget } from './components/ActiveConnectionsWidget';
 import { CommandPalette } from './components/CommandPalette';
-import { DevicesPage } from './components/DevicesPage';
-import { NetworkMap } from './components/NetworkMap';
 import { SecurityAlertsWidget } from './components/SecurityAlertsWidget';
 import { ConnectionGlobe } from './components/ConnectionGlobe';
-import DockerManager from './components/DockerManager';
-import { UserManagement } from './components/UserManagement';
-
-import AnalyticsDashboard from './components/AnalyticsDashboard';
-import SpeedtestPage from './components/SpeedtestPage';
-import SettingsPage from './components/SettingsPage';
 import TopStatsRow from './components/TopStatsRow';
 import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -26,6 +18,17 @@ import ServerStatusCard from './components/ServerStatusCard';
 import SystemDetailOverlay from './components/SystemDetailOverlay';
 import { Sidebar } from './components/Sidebar';
 import { BottomNav } from './components/BottomNav';
+import ErrorBoundary from './components/ErrorBoundary';
+import { OnboardingTour } from './components/OnboardingTour';
+
+// Lazy loaded components
+const DevicesPage = lazy(() => import('./components/DevicesPage').then(m => ({ default: m.DevicesPage })));
+const NetworkMap = lazy(() => import('./components/NetworkMap').then(m => ({ default: m.NetworkMap })));
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
+const DockerManager = lazy(() => import('./components/DockerManager'));
+const UserManagement = lazy(() => import('./components/UserManagement').then(m => ({ default: m.UserManagement })));
+const SpeedtestPage = lazy(() => import('./components/SpeedtestPage'));
+const SettingsPage = lazy(() => import('./components/SettingsPage'));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const { token, isLoading } = useAuth();
@@ -158,20 +161,22 @@ const Dashboard = () => {
 
 export default function App() {
     return (
-        <BrowserRouter>
-            <AuthProvider>
-                <WebSocketProvider>
-                    <Routes>
-                        <Route path="/login" element={<LoginPage />} />
-                        <Route path="/*" element={
-                            <ProtectedRoute>
-                                <AppContent />
-                            </ProtectedRoute>
-                        } />
-                    </Routes>
-                </WebSocketProvider>
-            </AuthProvider>
-        </BrowserRouter>
+        <ErrorBoundary>
+            <BrowserRouter>
+                <AuthProvider>
+                    <WebSocketProvider>
+                        <Routes>
+                            <Route path="/login" element={<LoginPage />} />
+                            <Route path="/*" element={
+                                <ProtectedRoute>
+                                    <AppContent />
+                                </ProtectedRoute>
+                            } />
+                        </Routes>
+                    </WebSocketProvider>
+                </AuthProvider>
+            </BrowserRouter>
+        </ErrorBoundary>
     );
 }
 
@@ -205,62 +210,70 @@ function AppContent() {
                     onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 />
 
+                <OnboardingTour />
+
                 {/* Main Content */}
                 <main className="flex-1 w-full max-w-[1920px] mx-auto bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-background to-background relative overflow-x-hidden mb-16 md:mb-0">
                     <div className="relative h-full">
-                        {/* Dashboard - Always rendered for immediate access */}
-                        <div className={`${activeTab === 'dashboard' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                            <Dashboard />
-                        </div>
-
-                        {/* Lazy Loaded Components with Keep-Alive */}
-                        {activeTab === 'devices' && (
-                            <div className={`${activeTab === 'devices' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                <DevicesPage />
+                        <Suspense fallback={
+                            <div className="flex items-center justify-center h-[200px]">
+                                <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
                             </div>
-                        )}
-
-                        {activeTab === 'network' && (
-                            <div className={`${activeTab === 'network' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                <NetworkMap />
+                        }>
+                            {/* Dashboard - Always rendered for immediate access */}
+                            <div className={`${activeTab === 'dashboard' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                <Dashboard />
                             </div>
-                        )}
 
-                        {activeTab === 'geo' && (
-                            <div className={`${activeTab === 'geo' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                <ConnectionGlobe />
-                            </div>
-                        )}
+                            {/* Lazy Loaded Components with Keep-Alive */}
+                            {activeTab === 'devices' && (
+                                <div className={`${activeTab === 'devices' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                    <DevicesPage />
+                                </div>
+                            )}
 
-                        {activeTab === 'analytics' && (
-                            <div className={`${activeTab === 'analytics' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                <AnalyticsDashboard />
-                            </div>
-                        )}
+                            {activeTab === 'network' && (
+                                <div className={`${activeTab === 'network' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                    <NetworkMap />
+                                </div>
+                            )}
 
-                        {activeTab === 'containers' && (
-                            <div className={`${activeTab === 'containers' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                <DockerManager />
-                            </div>
-                        )}
+                            {activeTab === 'geo' && (
+                                <div className={`${activeTab === 'geo' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                    <ConnectionGlobe />
+                                </div>
+                            )}
 
-                        {activeTab === 'speedtest' && (
-                            <div className={`${activeTab === 'speedtest' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                <SpeedtestPage />
-                            </div>
-                        )}
+                            {activeTab === 'analytics' && (
+                                <div className={`${activeTab === 'analytics' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                    <AnalyticsDashboard />
+                                </div>
+                            )}
 
-                        {activeTab === 'users' && (
-                            <div className={`${activeTab === 'users' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                <UserManagement />
-                            </div>
-                        )}
+                            {activeTab === 'containers' && (
+                                <div className={`${activeTab === 'containers' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                    <DockerManager />
+                                </div>
+                            )}
 
-                        {activeTab === 'settings' && (
-                            <div className={`${activeTab === 'settings' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                <SettingsPage />
-                            </div>
-                        )}
+                            {activeTab === 'speedtest' && (
+                                <div className={`${activeTab === 'speedtest' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                    <SpeedtestPage />
+                                </div>
+                            )}
+
+                            {activeTab === 'users' && (
+                                <div className={`${activeTab === 'users' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                    <UserManagement />
+                                </div>
+                            )}
+
+                            {activeTab === 'settings' && (
+                                <div className={`${activeTab === 'settings' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                    <SettingsPage />
+                                </div>
+                            )}
+                        </Suspense>
                     </div>
                 </main>
                 <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
