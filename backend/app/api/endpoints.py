@@ -17,6 +17,8 @@ from ..core.system_monitor import system_monitor # Import system_monitor
 from ..core.security import security_engine
 from ..core.scheduler import scheduler
 from ..core.speedtest_service import speedtest_service
+from ..core.system_stats import system_stats # Import system_stats
+from ..core.collector import global_collector # Import global_collector
 from fastapi import WebSocketDisconnect
 
 router = APIRouter()
@@ -196,6 +198,43 @@ def get_docker_container_history(container_id: str, minutes: int = 60, db: Sessi
         for m in metrics
     ]
 
+@router.get("/docker/{container_id}/usage")
+def get_docker_container_usage(container_id: str, db: Session = Depends(get_db)):
+    """Returns aggregated usage statistics (Daily, Monthly, Yearly, All-time)."""
+    from datetime import datetime, timedelta
+    from sqlalchemy import func
+    
+    now = datetime.now()
+    periods = {
+        "daily": now - timedelta(days=1),
+        "monthly": now - timedelta(days=30),
+        "yearly": now - timedelta(days=365),
+        "all_time": datetime(2000, 1, 1) # way back
+    }
+    
+    result = {}
+    for period_name, since in periods.items():
+        # Get min and max RX/TX for calculate the delta (since these are cumulative counters)
+        stats = db.query(
+            func.min(models.DockerContainerMetric.net_rx).label("min_rx"),
+            func.max(models.DockerContainerMetric.net_rx).label("max_rx"),
+            func.min(models.DockerContainerMetric.net_tx).label("min_tx"),
+            func.max(models.DockerContainerMetric.net_tx).label("max_tx")
+        ).filter(
+            models.DockerContainerMetric.container_id.like(f"{container_id}%"),
+            models.DockerContainerMetric.timestamp >= since
+        ).first()
+        
+        if stats and stats.max_rx is not None:
+            result[period_name] = {
+                "rx": (stats.max_rx - stats.min_rx) if stats.max_rx >= stats.min_rx else 0,
+                "tx": (stats.max_tx - stats.min_tx) if stats.max_tx >= stats.min_tx else 0
+            }
+        else:
+            result[period_name] = {"rx": 0, "tx": 0}
+            
+    return result
+
 @router.get("/system/network/history")
 def get_system_network_history(hours: int = 24, db: Session = Depends(get_db)):
     """Returns total system network usage history (vnstat-like)."""
@@ -217,6 +256,51 @@ def get_system_network_history(hours: int = 24, db: Session = Depends(get_db)):
         }
         for h in history
     ]
+
+
+@router.get("/system/info")
+def get_system_info():
+    """Returns host-level metrics for the dashboard."""
+    info = system_stats.get_info()
+    info["active_devices"] = len(global_collector.active_devices)
+    return info
+
+@router.get("/system/processes")
+def get_system_processes():
+    """Returns top resource consuming processes (Host + Docker)."""
+    # 1. Get host processes
+    top_procs = system_stats.get_top_processes(limit=15)
+    
+    # 2. Get docker stats
+    docker_stats = docker_monitor.get_stats()
+    
+    # 3. Combine and normalize
+    # RAM in system_stats is bytes (RSS), in docker it's MB.
+    # We'll normalize to MB for the UI.
+    combined = []
+    
+    for p in top_procs:
+        combined.append({
+            "id": f"p-{p['id']}",
+            "name": p['name'],
+            "cpu": round(p['cpu'], 1),
+            "ram": round(p['ram'] / (1024 * 1024), 1),
+            "type": "Process",
+            "status": "running"
+        })
+        
+    for c in docker_stats:
+        combined.append({
+            "id": f"d-{c['id']}",
+            "name": c['name'],
+            "cpu": round(c['cpu_pct'], 1),
+            "ram": round(c['mem_usage'], 1),
+            "type": "Container",
+            "status": c['status']
+        })
+        
+    # Sort the final combined list by CPU then RAM
+    return sorted(combined, key=lambda x: (x['cpu'], x['ram']), reverse=True)
 
 
 @router.get("/docker/containers/{container_id}/logs")

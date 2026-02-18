@@ -6,13 +6,13 @@ import {
     Globe,
     Box,
     Activity,
-    Settings as SettingsIcon,
     Search,
-    Wifi,
     Zap,
-    Bell
+    Bell,
+    ChevronDown,
+    Menu
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TopNavProps {
     activeTab: string;
@@ -32,37 +32,49 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setActiveTab, setComm
         { id: 'speedtest', label: 'Speed', icon: Zap }, // Changed icon for variety
     ];
 
+    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+
     return (
         <div className="sticky top-0 z-50 w-full border-b border-white/5 bg-black/50 backdrop-blur-xl">
             {/* Tier 1: Context & Global Actions */}
             <div className="flex h-12 items-center justify-between px-4 lg:px-6 border-b border-white/5">
                 <div className="flex items-center gap-4">
                     {/* Brand / Logo Area */}
-                    <div className="flex items-center gap-2 group cursor-pointer">
+                    <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setActiveTab('dashboard')}>
                         <div className="relative flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/20">
                             <Activity className="h-4 w-4 text-blue-400" />
                             <div className="absolute inset-0 animate-pulse rounded-lg bg-blue-500/20 ring-1 ring-inset ring-blue-500/40" />
                         </div>
                         <span className="font-semibold tracking-tight text-gray-200">Statsea</span>
-                        <span className="text-xs text-gray-600">/</span>
-                        <span className="text-xs font-medium text-gray-400">Network Intelligence</span>
+                        <span className="text-xs text-gray-600 hidden sm:inline">/</span>
+                        <span className="text-xs font-medium text-gray-400 hidden sm:inline">Network Intelligence</span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
+                    {/* Mobile Menu Toggle */}
+                    <button
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className="flex md:hidden items-center gap-2 px-3 py-1.5 rounded-md bg-white/5 border border-white/5 text-[13px] font-medium text-gray-300 hover:text-white transition-all"
+                    >
+                        <Menu className="h-4 w-4" />
+                        <span>Modules</span>
+                        <ChevronDown className={`h-3 w-3 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
                     {/* Search Trigger */}
                     <button
                         onClick={() => setCommandOpen(true)}
-                        className="group flex items-center gap-2 rounded-md border border-white/5 bg-white/5 px-2 py-1 text-xs text-gray-400 hover:border-white/10 hover:bg-white/10 hover:text-gray-200 transition-all"
+                        className="group flex items-center gap-2 rounded-md border border-white/5 bg-white/5 px-2 py-1.5 text-xs text-gray-400 hover:border-white/10 hover:bg-white/10 hover:text-gray-200 transition-all"
                     >
-                        <Search className="h-3 w-3" />
+                        <Search className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">Search...</span>
-                        <kbd className="hidden sm:inline-flex h-4 items-center gap-1 rounded border border-white/10 bg-white/5 px-1 font-mono text-[10px] text-gray-500">
+                        <kbd className="hidden lg:inline-flex h-4 items-center gap-1 rounded border border-white/10 bg-white/5 px-1 font-mono text-[10px] text-gray-500">
                             ⌘K
                         </kbd>
                     </button>
 
-                    <div className="h-4 w-px bg-white/10 mx-1" />
+                    <div className="hidden sm:block h-4 w-px bg-white/10 mx-1" />
 
                     <button className="relative rounded-md p-1.5 text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
                         <Bell className="h-4 w-4" />
@@ -78,8 +90,8 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setActiveTab, setComm
                 </div>
             </div>
 
-            {/* Tier 2: Module Tabs */}
-            <div className="flex h-10 items-center gap-1 px-4 lg:px-6 overflow-x-auto no-scrollbar">
+            {/* Tier 2: Desktop Module Tabs */}
+            <div className="hidden md:flex h-10 items-center gap-1 px-4 lg:px-6 overflow-x-auto no-scrollbar">
                 {navItems.map((item) => {
                     const isActive = activeTab === item.id;
                     const Icon = item.icon;
@@ -89,8 +101,8 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setActiveTab, setComm
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
                             className={`relative flex items-center gap-2 px-3 py-1.5 text-[13px] font-medium transition-colors rounded-md ${isActive
-                                    ? 'text-white'
-                                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                                ? 'text-white'
+                                : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
                                 }`}
                         >
                             <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-blue-400' : 'text-gray-500 group-hover:text-gray-400'}`} />
@@ -107,6 +119,44 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setActiveTab, setComm
                     );
                 })}
             </div>
+
+            {/* Mobile Dropdown Menu */}
+            <AnimatePresence>
+                {isMenuOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute top-full left-0 right-0 bg-black/90 backdrop-blur-2xl border-b border-white/5 py-2 md:hidden z-50 overflow-hidden shadow-2xl"
+                    >
+                        <div className="grid grid-cols-2 gap-1 px-4">
+                            {navItems.map((item) => {
+                                const isActive = activeTab === item.id;
+                                const Icon = item.icon;
+
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => {
+                                            setActiveTab(item.id);
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
+                                            ? 'bg-blue-500/10 text-white'
+                                            : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                                            }`}
+                                    >
+                                        <div className={`p-2 rounded-lg ${isActive ? 'bg-blue-500/20' : 'bg-white/5'}`}>
+                                            <Icon className={`h-4 w-4 ${isActive ? 'text-blue-400' : 'text-gray-500'}`} />
+                                        </div>
+                                        <span className="text-sm font-medium">{item.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

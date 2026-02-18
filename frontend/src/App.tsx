@@ -15,11 +15,21 @@ import NetworkHealth from './components/NetworkHealth';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import SpeedtestPage from './components/SpeedtestPage';
 import SettingsPage from './components/SettingsPage';
+import { TopStatsRow } from './components/TopStatsRow';
 import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
 import { TopNav } from './components/TopNav';
+import ServerStatusCard from './components/ServerStatusCard';
+import SystemDetailOverlay from './components/SystemDetailOverlay';
 
 const Dashboard = ({ loading }: { loading: boolean }) => {
     const { wsData, isConnected } = useWebSocket();
+    const [overlayOpen, setOverlayOpen] = useState(false);
+    const [overlayType, setOverlayType] = useState<'cpu' | 'ram' | 'disk' | 'all'>('all');
+
+    const handleDetailClick = (type: 'cpu' | 'ram' | 'disk' | 'all') => {
+        setOverlayType(type);
+        setOverlayOpen(true);
+    };
 
     return (
         <motion.div
@@ -35,7 +45,6 @@ const Dashboard = ({ loading }: { loading: boolean }) => {
                     <p className="text-gray-400 text-sm mt-0.5">Real-time network overview</p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <NetworkHealth />
                     <div className={`px-2.5 py-1 rounded-full flex items-center gap-2 border ${isConnected ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
                         <span className="relative flex h-2 w-2">
                             <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></span>
@@ -45,6 +54,8 @@ const Dashboard = ({ loading }: { loading: boolean }) => {
                     </div>
                 </div>
             </header>
+
+            <TopStatsRow />
 
             {/* Live Traffic Widget */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -96,46 +107,14 @@ const Dashboard = ({ loading }: { loading: boolean }) => {
                     )}
                 </div>
 
-                {/* Top Stats Widget */}
-                <div className="glass-card rounded-lg p-4 flex flex-col border border-white/5 bg-black/40 backdrop-blur-xl shadow-xl h-[350px]">
-                    <h3 className="text-sm font-semibold mb-4 text-gray-200">Network Status</h3>
-                    <div className="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
-                        {loading ? (
-                            <>
-                                <div className="h-12 w-full bg-white/5 animate-pulse rounded-lg" />
-                                <div className="h-12 w-full bg-white/5 animate-pulse rounded-lg" />
-                                <div className="h-12 w-full bg-white/5 animate-pulse rounded-lg" />
-                            </>
-                        ) : (
-                            <>
-                                <div className="flex justify-between items-center p-3 rounded-lg bg-white/[0.03] border border-white/5 hover:bg-white/[0.07] transition-colors group">
-                                    <span className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">Total Download</span>
-                                    <span className="text-base font-mono text-blue-400 font-bold group-hover:text-blue-300 transition-colors">1.2 TB</span>
-                                </div>
-                                <div className="flex justify-between items-center p-3 rounded-lg bg-white/[0.03] border border-white/5 hover:bg-white/[0.07] transition-colors group">
-                                    <span className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">Total Upload</span>
-                                    <span className="text-base font-mono text-emerald-400 font-bold group-hover:text-emerald-300 transition-colors">230 GB</span>
-                                </div>
-                                <div className="flex justify-between items-center p-3 rounded-lg bg-white/[0.03] border border-white/5 hover:bg-white/[0.07] transition-colors group">
-                                    <span className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">Active Devices</span>
-                                    <span className="text-base font-mono text-purple-400 font-bold group-hover:text-purple-300 transition-colors">14</span>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-white/5">
-                        <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Quick Actions</h4>
-                        <div className="grid grid-cols-2 gap-2">
-                            <button onClick={() => toast.error("Device Blocking Simulated")} className="p-1.5 text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/20 rounded-md hover:bg-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                                Block Device
-                            </button>
-                            <button onClick={() => toast.info("Speedtest Started...")} className="p-1.5 text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md hover:bg-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                                Run Speedtest
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <ServerStatusCard onDetailClick={handleDetailClick} />
             </div>
+
+            <SystemDetailOverlay
+                isOpen={overlayOpen}
+                onClose={() => setOverlayOpen(false)}
+                initialType={overlayType}
+            />
 
             {/* Bottom Widgets Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

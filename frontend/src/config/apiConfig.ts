@@ -17,10 +17,16 @@ export const API_CONFIG = {
         DOCKER: {
             CONTAINERS: '/docker/containers',
             LOGS: (id: string) => `/docker/containers/${id}/logs`,
+            HISTORY: (id: string) => `/docker/${id}/history`,
+            USAGE: (id: string) => `/docker/${id}/usage`,
         },
         DEVICES: '/devices',
         SPEEDTEST: '/speedtest',
         SETTINGS: '/settings',
+        SYSTEM: {
+            INFO: '/system/info',
+            PROCESSES: '/system/processes',
+        },
     }
 } as const; // Add 'as const' to infer literal types correctly
 

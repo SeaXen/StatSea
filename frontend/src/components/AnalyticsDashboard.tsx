@@ -122,22 +122,22 @@ function formatNumber(num: number): string {
 const StatCard = ({ label, value, icon: Icon, color, sub, trend }: {
     label: string; value: string | number; icon: any; color: string; sub?: string; trend?: 'up' | 'down' | 'neutral';
 }) => (
-    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4 flex flex-col gap-1 relative overflow-hidden group hover:border-gray-700 transition-all duration-300 hover:shadow-lg" style={{ '--glow': color } as React.CSSProperties}>
+    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 flex flex-col gap-0.5 relative overflow-hidden group hover:border-gray-700 transition-all duration-300 hover:shadow-lg" style={{ '--glow': color } as React.CSSProperties}>
         <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">{label}</span>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color}15` }}>
-                <Icon className="h-4 w-4" style={{ color }} />
+            <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">{label}</span>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110" style={{ background: `${color}15` }}>
+                <Icon className="h-3.5 w-3.5" style={{ color }} />
             </div>
         </div>
-        <span className="text-2xl font-bold text-white font-mono">{value}</span>
+        <span className="text-xl font-bold text-white font-mono leading-tight">{value}</span>
         {sub && (
             <div className="flex items-center gap-1">
-                {trend === 'up' && <TrendingUp className="w-3 h-3 text-emerald-400" />}
-                {trend === 'down' && <TrendingUp className="w-3 h-3 text-red-400 rotate-180" />}
-                <span className="text-[11px] text-gray-500">{sub}</span>
+                {trend === 'up' && <TrendingUp className="w-2.5 h-2.5 text-emerald-400" />}
+                {trend === 'down' && <TrendingUp className="w-2.5 h-2.5 text-red-400 rotate-180" />}
+                <span className="text-[10px] text-gray-500 truncate">{sub}</span>
             </div>
         )}
-        <div className="absolute bottom-0 left-0 h-[2px] w-full opacity-50" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
+        <div className="absolute bottom-0 left-0 h-[1.5px] w-full opacity-30 group-hover:opacity-50 transition-opacity" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
     </div>
 );
 
@@ -347,11 +347,11 @@ const AnalyticsDashboard = () => {
             {/* ─── Header ─── */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                        <Activity className="w-8 h-8 text-cyan-400" />
+                    <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+                        <Activity className="w-7 h-7 text-cyan-400" />
                         Traffic Analyzer
                     </h1>
-                    <p className="text-gray-400 mt-1 text-sm">Real-time packet monitoring and deep analysis</p>
+                    <p className="text-gray-400 mt-0.5 text-xs">Real-time packet monitoring and deep analysis</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900/60 border border-gray-800 rounded-lg">
@@ -359,11 +359,11 @@ const AnalyticsDashboard = () => {
                         <span className="text-xs text-gray-400">{paused ? 'Paused' : 'Capturing'}</span>
                     </div>
                     <button onClick={() => setPaused(!paused)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${paused
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${paused
                             ? 'bg-green-500/10 text-green-400 border border-green-500/30 hover:bg-green-500/20'
                             : 'bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20'
                             }`}>
-                        {paused ? <><Play className="w-4 h-4" /> Resume</> : <><Pause className="w-4 h-4" /> Pause</>}
+                        {paused ? <><Play className="w-3.5 h-3.5" /> Resume</> : <><Pause className="w-3.5 h-3.5" /> Pause</>}
                     </button>
                 </div>
             </div>
@@ -383,11 +383,11 @@ const AnalyticsDashboard = () => {
             {/* ─── Live Bandwidth Timeline + Gauges + Protocol Filters ─── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Live Bandwidth Timeline */}
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5">
-                    <h3 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-cyan-400" /> Live Bandwidth
+                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                    <h3 className="text-xs font-medium text-gray-400 mb-2 flex items-center gap-2">
+                        <TrendingUp className="w-3.5 h-3.5 text-cyan-400" /> Live Bandwidth
                     </h3>
-                    <div className="h-[120px]">
+                    <div className="h-[100px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={analyticsData.bandwidth_history || []}>
                                 <defs>
@@ -415,14 +415,14 @@ const AnalyticsDashboard = () => {
                 </div>
 
                 {/* Gauges */}
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 flex items-center justify-center gap-10">
+                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4 flex items-center justify-center gap-6">
                     <CircularGauge percentage={downPct} rate={formatBytes(analyticsData.download_rate) + '/s'} label="Download" color="#22d3ee" dotColor="#22d3ee" />
                     <CircularGauge percentage={upPct} rate={formatBytes(analyticsData.upload_rate) + '/s'} label="Upload" color="#34d399" dotColor="#34d399" />
                 </div>
 
                 {/* Protocol Filters */}
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5">
-                    <h3 className="text-sm font-medium text-gray-400 mb-3">Protocol Filters</h3>
+                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                    <h3 className="text-xs font-medium text-gray-400 mb-2">Protocol Filters</h3>
                     <div className="flex flex-wrap gap-2">
                         {allProtocols.map(p => (
                             <ProtocolBadge key={p} proto={p} active={activeProtocols.has(p)} onClick={() => toggleProtocol(p)} />
@@ -450,7 +450,7 @@ const AnalyticsDashboard = () => {
             <div className="flex gap-1 border-b border-gray-800">
                 {(['live', 'statistics', 'connections', 'security', 'history'] as const).map(tab => (
                     <button key={tab} onClick={() => setActiveView(tab)}
-                        className={`px-5 py-2.5 text-sm font-medium capitalize transition-all rounded-t-lg ${activeView === tab
+                        className={`px-4 py-2 text-xs font-medium capitalize transition-all rounded-t-lg ${activeView === tab
                             ? 'text-cyan-400 bg-gray-900/60 border border-gray-800 border-b-transparent -mb-px'
                             : 'text-gray-500 hover:text-gray-300'
                             }`}>
@@ -464,13 +464,13 @@ const AnalyticsDashboard = () => {
                 <div className="space-y-4">
                     {/* Search */}
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
                         <input
                             type="text"
                             placeholder="Search by IP, port, or protocol..."
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full bg-gray-900/60 border border-gray-800 rounded-xl pl-10 pr-4 py-3 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                            className="w-full bg-gray-900/60 border border-gray-800 rounded-lg pl-9 pr-4 py-2 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
                         />
                     </div>
 
@@ -480,12 +480,12 @@ const AnalyticsDashboard = () => {
                             <table className="w-full text-sm">
                                 <thead className="sticky top-0 bg-gray-900/95 border-b border-gray-800 z-10">
                                     <tr>
-                                        <th className="text-left text-gray-500 font-medium px-4 py-3 text-xs">TIME</th>
-                                        <th className="text-left text-gray-500 font-medium px-4 py-3 text-xs">PROTO</th>
-                                        <th className="text-left text-gray-500 font-medium px-4 py-3 text-xs">SOURCE</th>
-                                        <th className="text-center text-gray-500 font-medium px-2 py-3 text-xs"></th>
-                                        <th className="text-left text-gray-500 font-medium px-4 py-3 text-xs">DESTINATION</th>
-                                        <th className="text-right text-gray-500 font-medium px-4 py-3 text-xs">SIZE</th>
+                                        <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">TIME</th>
+                                        <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">PROTO</th>
+                                        <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">SOURCE</th>
+                                        <th className="text-center text-gray-500 font-medium px-1 py-2 text-[10px]"></th>
+                                        <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">DESTINATION</th>
+                                        <th className="text-right text-gray-500 font-medium px-3 py-2 text-[10px]">SIZE</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -494,19 +494,19 @@ const AnalyticsDashboard = () => {
                                     ) : (
                                         filteredLog.map((pkt, i) => (
                                             <tr key={i} className={`border-b border-gray-800/30 hover:bg-gray-800/30 transition-colors ${pkt.suspicious ? 'bg-red-500/5' : ''}`}>
-                                                <td className="px-4 py-2.5 font-mono text-gray-500 text-xs">{pkt.time}</td>
-                                                <td className="px-4 py-2.5">
-                                                    <span className="px-2 py-0.5 rounded text-xs font-bold" style={{
+                                                <td className="px-3 py-1.5 font-mono text-gray-500 text-[10px]">{pkt.time}</td>
+                                                <td className="px-3 py-1.5">
+                                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{
                                                         color: PROTO_COLORS[pkt.proto] || '#9ca3af',
                                                         background: `${PROTO_COLORS[pkt.proto] || '#6b7280'}20`
                                                     }}>
                                                         {pkt.proto}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-2.5 font-mono text-gray-300 text-xs">{pkt.src}</td>
-                                                <td className="px-2 py-2.5 text-gray-600 text-center">→</td>
-                                                <td className="px-4 py-2.5 font-mono text-gray-300 text-xs">{pkt.dst}</td>
-                                                <td className="px-4 py-2.5 font-mono text-gray-400 text-xs text-right">{pkt.size} bytes</td>
+                                                <td className="px-3 py-1.5 font-mono text-gray-300 text-[10px]">{pkt.src}</td>
+                                                <td className="px-1 py-1.5 text-gray-600 text-center text-[10px]">→</td>
+                                                <td className="px-3 py-1.5 font-mono text-gray-300 text-[10px]">{pkt.dst}</td>
+                                                <td className="px-3 py-1.5 font-mono text-gray-400 text-[10px] text-right">{pkt.size} B</td>
                                             </tr>
                                         ))
                                     )}
@@ -523,8 +523,8 @@ const AnalyticsDashboard = () => {
                     {/* Row 1: Bandwidth + Latency */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Bandwidth Chart */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5">
-                            <h3 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
                                 <Activity className="w-4 h-4 text-emerald-400" /> Bandwidth Usage
                             </h3>
                             <div className="h-[250px]">
@@ -552,8 +552,8 @@ const AnalyticsDashboard = () => {
                         </div>
 
                         {/* Latency Chart */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5">
-                            <h3 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
                                 <Wifi className="w-4 h-4 text-amber-400" /> Network Latency
                             </h3>
                             <div className="h-[250px]">
@@ -573,8 +573,8 @@ const AnalyticsDashboard = () => {
                     {/* Row 2: Protocol Distribution + Top Devices */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Protocol Distribution */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5">
-                            <h3 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
                                 <Server className="w-4 h-4 text-purple-400" /> Protocol Distribution
                             </h3>
                             <div className="h-[250px] flex items-center">
@@ -602,8 +602,8 @@ const AnalyticsDashboard = () => {
                         </div>
 
                         {/* Top Devices */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5">
-                            <h3 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
                                 <Monitor className="w-4 h-4 text-cyan-400" /> Top Devices by Traffic
                             </h3>
                             <div className="h-[250px]">
@@ -629,8 +629,8 @@ const AnalyticsDashboard = () => {
                     {/* Row 3: Packet Size Distribution + Bytes per Protocol */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Packet Size Distribution */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5">
-                            <h3 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
                                 <Layers className="w-4 h-4 text-amber-400" /> Packet Size Distribution
                             </h3>
                             <div className="h-[220px]">
@@ -655,8 +655,8 @@ const AnalyticsDashboard = () => {
                         </div>
 
                         {/* Bytes per Protocol */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5">
-                            <h3 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
+                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
                                 <BarChart3 className="w-4 h-4 text-blue-400" /> Traffic Volume by Protocol
                             </h3>
                             <div className="h-[220px]">
@@ -686,9 +686,9 @@ const AnalyticsDashboard = () => {
             {/* ═══════════════════ CONNECTIONS ═══════════════════ */}
             {activeView === 'connections' && (
                 <div className="bg-gray-900/60 border border-gray-800 rounded-xl overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-800 flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-blue-400" />
-                        <h3 className="text-sm font-medium text-white">External Connections</h3>
+                    <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+                        <Globe className="w-3.5 h-3.5 text-blue-400" />
+                        <h3 className="text-xs font-medium text-white">External Connections</h3>
                         <span className="ml-auto text-xs text-gray-500">{externalConnections.length} destinations</span>
                     </div>
                     <div className="h-[400px] overflow-y-auto custom-scrollbar">
@@ -724,11 +724,11 @@ const AnalyticsDashboard = () => {
 
             {/* ═══════════════════ SECURITY ═══════════════════ */}
             {activeView === 'security' && (
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Shield className="h-5 w-5 text-indigo-400" />
-                        <h3 className="text-lg font-semibold text-white">Security Events</h3>
-                        <span className="ml-auto text-xs text-gray-500">{securityEvents.length} events</span>
+                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Shield className="h-4 w-4 text-indigo-400" />
+                        <h3 className="text-sm font-semibold text-white">Security Events</h3>
+                        <span className="ml-auto text-[10px] text-gray-500">{securityEvents.length} events</span>
                     </div>
                     <div className="h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                         {securityEvents.length === 0 ? (
@@ -739,7 +739,7 @@ const AnalyticsDashboard = () => {
                         ) : (
                             <div className="space-y-3">
                                 {securityEvents.map((event) => (
-                                    <div key={event.id} className="flex items-start justify-between p-4 rounded-lg bg-gray-800/40 border border-gray-700/50 hover:border-gray-600/50 transition-colors">
+                                    <div key={event.id} className="flex items-start justify-between p-3 rounded-lg bg-gray-800/40 border border-gray-700/50 hover:border-gray-600/50 transition-colors">
                                         <div className="flex items-start gap-3">
                                             <AlertTriangle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${event.severity === 'CRITICAL' ? 'text-red-500' :
                                                 event.severity === 'HIGH' ? 'text-orange-500' : 'text-yellow-500'
@@ -770,10 +770,10 @@ const AnalyticsDashboard = () => {
             )}
             {/* ═══════════════════ HISTORY ═══════════════════ */}
             {activeView === 'history' && (
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5">
-                    <div className="flex items-center gap-2 mb-6">
-                        <Activity className="h-5 w-5 text-emerald-400" />
-                        <h3 className="text-lg font-semibold text-white">System Network History (24 Hours)</h3>
+                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Activity className="h-4 w-4 text-emerald-400" />
+                        <h3 className="text-sm font-semibold text-white">System Network History (24 Hours)</h3>
                     </div>
 
                     {historyLoading ? (

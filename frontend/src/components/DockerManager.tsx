@@ -1,25 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Box,
-    Cpu,
-    Database,
-    RefreshCw,
     Layers,
     Container,
-    RotateCcw,
     Search,
-    Play,
-    Square,
     Activity,
-    X,
     Clock,
-    Shield,
-    MoreVertical
+    ChevronRight,
+    ArrowLeft,
+    RotateCw,
+    Terminal,
+    RefreshCw
 } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import { API_CONFIG } from '../config/apiConfig';
+
+// --- Interfaces ---
 
 interface ContainerHistoryPoint {
     timestamp: string;
@@ -29,10 +27,16 @@ interface ContainerHistoryPoint {
     net_tx: number;
 }
 
-interface ContainerHistory {
-    cpu: number[];
-    memory?: number[];
-    network?: { rx: number[], tx: number[] };
+interface UsageStats {
+    rx: number;
+    tx: number;
+}
+
+interface ContainerUsage {
+    daily: UsageStats;
+    monthly: UsageStats;
+    yearly: UsageStats;
+    all_time: UsageStats;
 }
 
 interface DockerContainer {
@@ -44,7 +48,6 @@ interface DockerContainer {
     mem_usage: number;
     net_rx: number;
     net_tx: number;
-    // History is now fetched separately, but we might keep this for sparklines in list view if available
     history?: ContainerHistory;
     state?: {
         Running: boolean;
@@ -58,14 +61,12 @@ interface DockerContainer {
         StartedAt: string;
         FinishedAt: string;
     };
-    mounts?: any[];
-    ports?: any;
-    env?: string[];
 }
 
-// Helper functions (Top level)
+// --- Utilities ---
+
 const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 B';
+    if (!bytes || bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -82,304 +83,332 @@ const getStatusColor = (status: string) => {
     }
 };
 
-interface InspectorProps {
-    container: DockerContainer;
-    logs: string[];
-    logsLoading: boolean;
-    actionLoading: string | null;
-    onAction: (id: string, action: string) => void;
-    onClose: () => void;
-    onRefreshLogs: (id: string) => void;
+// --- Sub-components (Externalized for stability) ---
+
+interface ContainerListProps {
+    containers: DockerContainer[];
+    searchQuery: string;
+    setSearchQuery: (v: string) => void;
+    onSelect: (id: string) => void;
+    loading: boolean;
 }
 
-const ContainerInspector = React.memo(({
-    container,
-    logs,
-    logsLoading,
-    actionLoading,
-    onAction,
-    onClose,
-    onRefreshLogs
-}: InspectorProps) => {
-    if (!container) return null;
-
-    const [history, setHistory] = useState<ContainerHistoryPoint[]>([]);
-
-    // Fetch detailed history when inspector opens
-    useEffect(() => {
-        const fetchHistory = async () => {
-            try {
-                const res = await fetch(`${API_CONFIG.BASE_URL}/docker/${container.id}/history?minutes=60`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setHistory(data);
-                }
-            } catch (e) {
-                console.error("Failed to fetch container history", e);
-            }
-        };
-        fetchHistory();
-        // Poll for history updates every 10s
-        const interval = setInterval(fetchHistory, 10000);
-        return () => clearInterval(interval);
-    }, [container.id]);
-
-    const ports = container.ports || {};
-    const mounts = container.mounts || [];
-
-    const state = container.state || {
-        Running: false,
-        Paused: false,
-        Restarting: false,
-        OOMKilled: false,
-        Dead: false,
-        Pid: 0,
-        ExitCode: 0,
-        Error: '',
-        StartedAt: '',
-        FinishedAt: ''
-    };
+const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, setSearchQuery, onSelect, loading }) => {
+    const filteredContainers = useMemo(() =>
+        containers.filter(c =>
+            c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            c.image.toLowerCase().includes(searchQuery.toLowerCase())
+        ), [containers, searchQuery]
+    );
 
     return (
         <motion.div
-            key="inspector-root"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex justify-end"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-3"
         >
-            {/* Backdrop */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-
-            {/* Panel */}
-            <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="relative h-full w-full max-w-2xl bg-gray-950 border-l border-gray-800 shadow-2xl overflow-y-auto flex flex-col"
-            >
-                {/* Inspector Header */}
-                <div className="sticky top-0 z-20 bg-gray-950/80 backdrop-blur-md border-b border-gray-800 p-6 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-xl border ${getStatusColor(container.status)}`}>
-                            <Container className="w-6 h-6" />
-                        </div>
-                        <div className="min-w-0">
-                            <h2 className="text-xl font-bold text-white tracking-tight uppercase truncate">{container.name}</h2>
-                            <p className="text-xs text-gray-500 font-mono opacity-60 truncate">ID: {container.id}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => onRefreshLogs(container.id)}
-                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all"
-                            title="Refresh Logs"
-                        >
-                            <RefreshCw className={`w-5 h-5 ${logsLoading ? 'animate-spin' : ''}`} />
-                        </button>
-                        <button
-                            onClick={onClose}
-                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                        <Box className="w-6 h-6 text-blue-500" />
+                        Docker Manager
+                    </h1>
+                    <p className="text-[11px] text-gray-400 mt-0.5 uppercase tracking-[0.15em] font-bold">Manage system containers</p>
                 </div>
 
-                <div className="p-6 space-y-8 flex-1">
-                    {/* Action Bar */}
-                    <div className="flex items-center gap-3 p-4 bg-gray-900/50 rounded-2xl border border-gray-800/50">
-                        <button
-                            disabled={!!actionLoading}
-                            onClick={() => onAction(container.id, 'start')}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold text-sm uppercase transition-all disabled:opacity-50"
-                        >
-                            {actionLoading === `${container.id}-start` ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                            Start
-                        </button>
-                        <button
-                            disabled={!!actionLoading}
-                            onClick={() => onAction(container.id, 'stop')}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl font-bold text-sm uppercase transition-all disabled:opacity-50"
-                        >
-                            {actionLoading === `${container.id}-stop` ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
-                            Stop
-                        </button>
-                        <button
-                            disabled={!!actionLoading}
-                            onClick={() => onAction(container.id, 'restart')}
-                            className="p-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl transition-all disabled:opacity-50"
-                        >
-                            {actionLoading === `${container.id}-restart` ? <RefreshCw className="w-5 h-5 animate-spin" /> : <RotateCcw className="w-5 h-5" />}
-                        </button>
+                <div className="flex items-center gap-3">
+                    <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="Search containers..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="bg-gray-900/50 border border-gray-800 rounded-lg py-1.5 pl-9 pr-4 text-xs text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all w-full md:w-48 placeholder:text-gray-600"
+                        />
                     </div>
+                </div>
+            </div>
 
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-gray-900/40 border border-gray-800/50 rounded-2xl p-4">
-                            <div className="flex items-center gap-2 mb-3 text-xs text-blue-400 font-bold uppercase">
-                                <Cpu className="w-4 h-4" /> CPU Pulse
+            <div className="grid grid-cols-1 gap-3">
+                {filteredContainers.map((container) => (
+                    <div
+                        key={container.id}
+                        onClick={() => onSelect(container.id)}
+                        className="group relative bg-gray-900/40 backdrop-blur-xl border border-gray-800/50 rounded-2xl p-4 cursor-pointer hover:border-blue-500/30 hover:bg-gray-900/60 transition-all"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className={`p-2.5 rounded-xl border ${getStatusColor(container.status)} shadow-lg shrink-0`}>
+                                <Container className="w-4.5 h-4.5" />
                             </div>
-                            <div className="text-3xl font-mono font-bold text-white mb-2">{container.cpu_pct.toFixed(2)}%</div>
-                            <div className="h-32 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={history}>
-                                        <YAxis domain={[0, 100]} hide />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }}
-                                            itemStyle={{ color: '#e5e7eb' }}
-                                            labelStyle={{ color: '#9ca3af' }}
-                                            labelFormatter={(label) => new Date(label).toLocaleTimeString()}
-                                        />
-                                        <Area type="monotone" dataKey="cpu_pct" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-0.5">
+                                    <h3 className="text-base font-bold text-white truncate group-hover:text-blue-400 transition-colors uppercase tracking-tight">
+                                        {container.name}
+                                    </h3>
+                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full border border-current font-black uppercase tracking-[0.1em] ${getStatusColor(container.status)}`}>
+                                        {container.status}
+                                    </span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 font-mono truncate opacity-60">
+                                    {container.image.split('/').pop()}
+                                </p>
                             </div>
-                        </div>
-                        <div className="bg-gray-900/40 border border-gray-800/50 rounded-2xl p-4">
-                            <div className="flex items-center gap-2 mb-3 text-xs text-purple-400 font-bold uppercase">
-                                <Database className="w-4 h-4" /> Memory Isolation
-                            </div>
-                            <div className="text-3xl font-mono font-bold text-white mb-2">{container.mem_usage}MB</div>
-                            <div className="h-32 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={history}>
-                                        <YAxis domain={[0, 'auto']} hide />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }}
-                                            itemStyle={{ color: '#e5e7eb' }}
-                                            labelStyle={{ color: '#9ca3af' }}
-                                            labelFormatter={(label) => new Date(label).toLocaleTimeString()}
-                                        />
-                                        <Area type="monotone" dataKey="mem_usage" stroke="#a855f7" fill="#a855f7" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+                            <div className="flex items-center gap-8 shrink-0">
+                                <div className="hidden sm:flex flex-col items-end">
+                                    <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-1">CPU</span>
+                                    <span className="font-mono text-xs text-blue-400 font-bold">{(container.cpu_pct || 0).toFixed(1)}%</span>
+                                </div>
+                                <div className="hidden sm:flex flex-col items-end">
+                                    <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-1">MEM</span>
+                                    <span className="font-mono text-xs text-purple-400 font-bold">{container.mem_usage || 0}MB</span>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white transition-colors" />
                             </div>
                         </div>
                     </div>
+                ))}
+            </div>
 
-                    {/* Details Details */}
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1">Network & Status</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {filteredContainers.length === 0 && !loading && (
+                <div className="py-20 text-center text-gray-600 border border-dashed border-gray-800 rounded-3xl">
+                    <Layers className="w-12 h-12 mx-auto mb-4 opacity-10" />
+                    <p className="font-bold">No containers found</p>
+                </div>
+            )}
+        </motion.div>
+    );
+};
+
+interface ContainerDetailProps {
+    container: DockerContainer;
+    onBack: () => void;
+    onAction: (id: string, action: string) => void;
+    actionLoading: string | null;
+    logs: string[];
+    logsLoading: boolean;
+}
+
+const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHistoryPoint[], usage: ContainerUsage | null }> = ({
+    container, onBack, onAction, actionLoading, logs, logsLoading, history, usage
+}) => {
+    const cpuData = useMemo(() => history.map(h => ({ v: h.cpu_pct })), [history]);
+    const memData = useMemo(() => history.map(h => ({ v: h.mem_usage })), [history]);
+    const netData = useMemo(() => history.map(h => ({
+        rx: h.net_rx,
+        tx: h.net_tx,
+        timestamp: h.timestamp
+    })), [history]);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="space-y-6"
+        >
+            <header className="flex items-center gap-4">
+                <button
+                    onClick={onBack}
+                    className="p-2 bg-gray-900 border border-gray-800 rounded-xl text-gray-400 hover:text-white hover:border-gray-700 transition-all"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                </button>
+                <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-white uppercase tracking-tight">{container.name}</h2>
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full border border-current font-black uppercase ${getStatusColor(container.status)}`}>
+                            {container.status}
+                        </span>
+                    </div>
+                    <p className="text-[10px] text-gray-500 font-mono mt-0.5">ID: {container.id?.substring(0, 12)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        disabled={!!actionLoading}
+                        onClick={() => onAction(container.id, 'start')}
+                        className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+                    >
+                        Start
+                    </button>
+                    <button
+                        disabled={!!actionLoading}
+                        onClick={() => onAction(container.id, 'stop')}
+                        className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+                    >
+                        Stop
+                    </button>
+                    <button
+                        disabled={!!actionLoading}
+                        onClick={() => onAction(container.id, 'restart')}
+                        className="p-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl transition-all disabled:opacity-50"
+                    >
+                        <RotateCw className={`w-4 h-4 ${actionLoading?.includes('restart') ? 'animate-spin' : ''}`} />
+                    </button>
+                </div>
+            </header>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1 space-y-4">
+                    <div className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4">
+                        <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Node Configuration</h3>
+                        <div className="space-y-4">
                             {[
-                                { label: 'Status', value: container.status, icon: Activity, color: getStatusColor(container.status).split(' ')[0] },
-                                { label: 'Uptime', value: state.StartedAt ? new Date(state.StartedAt).toLocaleString() : 'Not running', icon: Clock },
-                                { label: 'Exit Code', value: state.ExitCode ?? '0', icon: Shield },
-                                { label: 'Image Tag', value: container.image.split(':')[1] || 'latest', icon: Container }
+                                { label: 'Image', value: container.image, icon: Box },
+                                { label: 'Started', value: container.state?.StartedAt ? new Date(container.state.StartedAt).toLocaleString() : 'N/A', icon: Clock },
+                                { label: 'Network Rx', value: formatBytes(container.net_rx || 0), icon: Activity },
+                                { label: 'Network Tx', value: formatBytes(container.net_tx || 0), icon: Activity },
                             ].map((item, i) => (
-                                <div key={i} className="flex items-center gap-3 p-3 bg-gray-900/40 rounded-xl border border-gray-800/30">
-                                    <div className="p-2 bg-gray-950 rounded-lg">
-                                        <item.icon className={`w-4 h-4 ${item.color || 'text-gray-500'}`} />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="text-[10px] text-gray-500 uppercase font-bold">{item.label}</div>
-                                        <div className="text-xs font-mono text-white mt-0.5 truncate">{item.value.toString()}</div>
+                                <div key={i} className="flex gap-3">
+                                    <item.icon className="w-4 h-4 text-gray-600 mt-0.5" />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">{item.label}</p>
+                                        <p className="text-xs text-gray-200 mt-0.5 break-all font-mono truncate">{item.value}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Network Transmissions */}
-                    <div className="p-4 bg-gray-900/40 rounded-2xl border border-gray-800/50">
-                        <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Network Transmissions</h3>
-                        <div className="grid grid-cols-2 gap-8">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 bg-emerald-500/10 rounded-lg"><RotateCcw className="w-4 h-4 text-emerald-400 rotate-180" /></div>
-                                <div>
-                                    <div className="text-[10px] text-gray-500 font-bold uppercase">Received</div>
-                                    <div className="text-lg font-mono font-bold text-white">{formatBytes(container.net_rx)}</div>
-                                </div>
+                    <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/5 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Activity className="w-4 h-4 text-blue-400" />
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Real-time Load</span>
+                        </div>
+                        <div className="flex justify-between items-end gap-2">
+                            <div>
+                                <p className="text-[9px] text-gray-500 font-black uppercase">CPU</p>
+                                <p className="text-2xl font-black text-white">{(container.cpu_pct || 0).toFixed(2)}%</p>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 bg-blue-500/10 rounded-lg"><RotateCcw className="w-4 h-4 text-blue-400" /></div>
-                                <div>
-                                    <div className="text-[10px] text-gray-500 font-bold uppercase">Sent</div>
-                                    <div className="text-lg font-mono font-bold text-white">{formatBytes(container.net_tx)}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Logs */}
-                    <div className="flex flex-col h-[400px] bg-black rounded-2xl border border-gray-800 overflow-hidden">
-                        <div className="px-4 py-2 bg-gray-900 border-b border-gray-800 flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Live Logs</span>
-                            <span className="flex h-2 w-2 relative">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 font-mono text-[10px] leading-relaxed space-y-1">
-                            {logs && logs.length > 0 ? logs.map((log, i) => (
-                                <div key={i} className="text-gray-400 break-all border-l border-gray-800 pl-3">
-                                    <span className="text-gray-700 mr-2">[{i + 1}]</span>
-                                    {log}
-                                </div>
-                            )) : (
-                                <div className="h-full flex items-center justify-center text-gray-600 italic">
-                                    {logsLoading ? 'Streaming logs...' : 'No logs available'}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Network Mapping & Mounts */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 bg-gray-900/40 rounded-2xl border border-gray-800/50">
-                            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Port Mappings</h3>
-                            <div className="space-y-2">
-                                {Object.keys(ports || {}).length > 0 ? (
-                                    Object.entries(ports).map(([p, b]: any) => (
-                                        <div key={p} className="flex items-center justify-between text-xs bg-black/30 p-2 rounded-lg border border-gray-800/30">
-                                            <span className="text-blue-400 font-mono">{p}</span>
-                                            <span className="text-emerald-400 font-mono">
-                                                {Array.isArray(b) ? b.map((x: any) => `${x.HostIp}:${x.HostPort}`).join(', ') : 'Direct'}
-                                            </span>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-xs text-gray-600 italic">No ports exposed</div>
-                                )}
-                            </div>
-                        </div>
-                        <div className="p-4 bg-gray-900/40 rounded-2xl border border-gray-800/50">
-                            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Mount Storage</h3>
-                            <div className="space-y-2">
-                                {mounts && mounts.length > 0 ? (
-                                    mounts.map((m: any, i: number) => (
-                                        <div key={i} className="text-[10px] bg-black/30 p-2 rounded-lg border border-gray-800/30">
-                                            <div className="text-gray-500 uppercase mb-1">{m.Type || 'Mount'}</div>
-                                            <div className="text-white font-mono break-all">{m.Source || m.Name || 'Unknown'}</div>
-                                            <div className="text-blue-400 font-mono mt-1">→ {m.Destination}</div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-xs text-gray-600 italic">No volumes mounted</div>
-                                )}
+                            <div>
+                                <p className="text-[9px] text-gray-500 font-black uppercase text-right">MEM</p>
+                                <p className="text-2xl font-black text-white text-right">{container.mem_usage || 0}<span className="text-xs ml-0.5">MB</span></p>
                             </div>
                         </div>
                     </div>
                 </div>
-            </motion.div>
+
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-black/40 border border-white/5 rounded-2xl p-4 h-[200px] flex flex-col">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Processor Intensity</span>
+                                <span className="text-xs font-mono text-blue-400 font-bold">{(container.cpu_pct || 0).toFixed(1)}%</span>
+                            </div>
+                            <div className="flex-1 min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={cpuData}>
+                                        <Area type="monotone" dataKey="v" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                        <div className="bg-black/40 border border-white/5 rounded-2xl p-4 h-[200px] flex flex-col">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Memory Isolation</span>
+                                <span className="text-xs font-mono text-purple-400 font-bold">{container.mem_usage || 0}MB</span>
+                            </div>
+                            <div className="flex-1 min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={memData}>
+                                        <Area type="monotone" dataKey="v" stroke="#a855f7" fill="#a855f7" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-black/40 border border-white/5 rounded-2xl p-4 h-[200px] flex flex-col">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Network Throughput (RX/TX)</span>
+                            <div className="flex gap-3 text-[9px] font-bold">
+                                <span className="text-blue-400">RX</span>
+                                <span className="text-emerald-400">TX</span>
+                            </div>
+                        </div>
+                        <div className="flex-1 min-h-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={netData}>
+                                    <Area type="monotone" dataKey="rx" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
+                                    <Area type="monotone" dataKey="tx" stroke="#10b981" fill="#10b981" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {usage && (
+                        <div className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4">
+                            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Historical Usage Table</h3>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-gray-800">
+                                            <th className="py-2 text-[9px] font-black text-gray-500 uppercase tracking-widest">Period</th>
+                                            <th className="py-2 text-[9px] font-black text-gray-500 uppercase tracking-widest">Received (RX)</th>
+                                            <th className="py-2 text-[9px] font-black text-gray-500 uppercase tracking-widest">Transmitted (TX)</th>
+                                            <th className="py-2 text-[9px] font-black text-gray-500 uppercase tracking-widest text-right">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-800/50">
+                                        {[
+                                            { label: 'Today (24h)', stats: usage.daily },
+                                            { label: 'Monthly', stats: usage.monthly },
+                                            { label: 'Yearly', stats: usage.yearly },
+                                            { label: 'All-time', stats: usage.all_time },
+                                        ].map((row, i) => (
+                                            <tr key={i} className="hover:bg-white/5 transition-colors">
+                                                <td className="py-2 text-xs font-bold text-gray-400">{row.label}</td>
+                                                <td className="py-2 text-xs font-mono text-blue-400">{formatBytes(row.stats.rx)}</td>
+                                                <td className="py-2 text-xs font-mono text-emerald-400">{formatBytes(row.stats.tx)}</td>
+                                                <td className="py-2 text-xs font-mono text-white text-right font-bold">{formatBytes(row.stats.rx + row.stats.tx)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col h-[300px]">
+                        <div className="px-4 py-3 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Terminal className="w-3.5 h-3.5 text-emerald-500" />
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Console Stream</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {logsLoading && <RefreshCw className="w-3 h-3 text-gray-500 animate-spin" />}
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 font-mono text-[10px] leading-relaxed text-gray-400 bg-black/40 custom-scrollbar">
+                            {logs && Array.isArray(logs) && logs.length > 0 ? logs.map((log, i) => (
+                                <div key={i} className="mb-1 border-l border-white/5 pl-3 hover:bg-white/5 transition-colors">
+                                    <span className="text-gray-700 mr-3 select-none">{String(i + 1).padStart(3, '0')}</span>
+                                    {typeof log === 'string' ? log : JSON.stringify(log)}
+                                </div>
+                            )) : (
+                                <div className="h-full flex items-center justify-center text-gray-700 italic">
+                                    {logsLoading ? 'Synchronizing stream...' : 'Waiting for telemetry...'}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </motion.div>
     );
-});
+};
+
+// --- Main DockerManager Component ---
 
 const DockerManager: React.FC = () => {
     const [containers, setContainers] = useState<DockerContainer[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
-    const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-    const [selectedContainerId, setSelectedContainerId] = useState<string | null>(null);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [history, setHistory] = useState<ContainerHistoryPoint[]>([]);
+    const [usage, setUsage] = useState<ContainerUsage | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
     const [logsLoading, setLogsLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -387,12 +416,17 @@ const DockerManager: React.FC = () => {
     const fetchContainers = useCallback(async () => {
         try {
             const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.CONTAINERS}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("Oops! Received non-JSON response from server.");
+            }
             const data = await response.json();
-            setContainers(data);
-            setLastUpdated(new Date());
+            setContainers(Array.isArray(data) ? data : []);
             setLoading(false);
         } catch (error) {
             console.error("Error fetching containers:", error);
+            setLoading(false);
         }
     }, []);
 
@@ -401,12 +435,35 @@ const DockerManager: React.FC = () => {
         setLogsLoading(true);
         try {
             const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.LOGS(containerId)}?tail=100`);
+            if (!response.ok) throw new Error("Log fetch failed");
             const data = await response.json();
             setLogs(data.logs || []);
         } catch (error) {
             console.error("Failed to fetch logs:", error);
         } finally {
             setLogsLoading(false);
+        }
+    }, []);
+
+    const fetchHistory = useCallback(async (containerId: string) => {
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.HISTORY(containerId)}?minutes=60`);
+            if (!response.ok) throw new Error("History fetch failed");
+            const data = await response.json();
+            setHistory(data || []);
+        } catch (error) {
+            console.error("Failed to fetch history:", error);
+        }
+    }, []);
+
+    const fetchUsage = useCallback(async (containerId: string) => {
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.USAGE(containerId)}`);
+            if (!response.ok) throw new Error("Usage fetch failed");
+            const data = await response.json();
+            setUsage(data);
+        } catch (error) {
+            console.error("Failed to fetch usage:", error);
         }
     }, []);
 
@@ -439,254 +496,55 @@ const DockerManager: React.FC = () => {
     }, [fetchContainers]);
 
     useEffect(() => {
-        if (selectedContainerId) {
-            fetchLogs(selectedContainerId);
-            const logInterval = setInterval(() => fetchLogs(selectedContainerId), 5000);
-            return () => clearInterval(logInterval);
+        if (selectedId) {
+            fetchLogs(selectedId);
+            fetchHistory(selectedId);
+            fetchUsage(selectedId);
+
+            const intervals = [
+                setInterval(() => fetchLogs(selectedId), 5000),
+                setInterval(() => fetchHistory(selectedId), 10000),
+                setInterval(() => fetchUsage(selectedId), 60000)
+            ];
+
+            return () => intervals.forEach(clearInterval);
         } else {
             setLogs([]);
+            setHistory([]);
+            setUsage(null);
         }
-    }, [selectedContainerId, fetchLogs]);
+    }, [selectedId, fetchLogs, fetchHistory, fetchUsage]);
 
-    const selectedContainer = containers.find(c => c.id === selectedContainerId) || null;
-
-    const filteredContainers = containers.filter(c =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.image.toLowerCase().includes(searchQuery.toLowerCase())
+    const selectedContainer = useMemo(() =>
+        containers.find(c => c.id === selectedId), [containers, selectedId]
     );
 
     return (
-        <div className="space-y-6">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
-                        <Box className="w-8 h-8 text-blue-500" />
-                        Docker Containers
-                    </h1>
-                    <p className="text-gray-400 mt-1">Real-time resource isolation and monitoring</p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="relative group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Search containers..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-gray-900/50 border border-gray-800 rounded-xl py-2 pl-10 pr-4 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all w-full md:w-64"
-                        />
-                    </div>
-                    <button
-                        onClick={fetchContainers}
-                        className="p-2 bg-gray-900/50 border border-gray-800 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-all"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    </button>
-                    <div className="text-[10px] text-gray-500 font-mono uppercase tracking-wider hidden lg:block">
-                        Updated: {lastUpdated.toLocaleTimeString()}
-                    </div>
-                </div>
-            </header>
-
-            <div className="grid grid-cols-1 gap-4">
-                <AnimatePresence mode='popLayout'>
-                    {filteredContainers.map((container, idx) => {
-                        const isHighUsage = container.cpu_pct > 80 || container.mem_usage > 1000;
-                        const isRunning = container.status.toLowerCase() === 'running';
-
-                        return (
-                            <motion.div
-                                key={container.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.98 }}
-                                transition={{ delay: idx * 0.05 }}
-                                onClick={() => setSelectedContainerId(container.id)}
-                                className={`
-                                    bg-gray-900/40 backdrop-blur-xl border border-gray-800/50 rounded-2xl p-4 md:p-6 
-                                    overflow-hidden relative group cursor-pointer hover:border-blue-500/30 transition-all
-                                    ${isHighUsage ? 'ring-1 ring-rose-500/20 shadow-2xl shadow-rose-500/5' : ''}
-                                `}
-                            >
-                                {/* Pulse Effect for high usage */}
-                                {isHighUsage && (
-                                    <motion.div
-                                        animate={{ opacity: [0.1, 0.3, 0.1] }}
-                                        transition={{ duration: 2, repeat: Infinity }}
-                                        className="absolute inset-0 bg-gradient-to-r from-rose-500/5 via-transparent to-rose-500/5 pointer-events-none"
-                                    />
-                                )}
-
-                                <div className="flex flex-col lg:flex-row lg:items-center gap-6 relative z-10">
-                                    {/* Name & Info */}
-                                    <div className="flex items-start gap-4 lg:w-1/4">
-                                        <div className={`
-                                            p-3 rounded-xl border ${getStatusColor(container.status)} 
-                                            shadow-lg shadow-black/20 relative
-                                        `}>
-                                            <Container className="w-6 h-6" />
-                                            {isRunning && (
-                                                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <h3 className="text-lg font-semibold text-white truncate group-hover:text-blue-400 transition-colors uppercase tracking-tight">
-                                                {container.name}
-                                            </h3>
-                                            <p className="text-xs text-gray-500 font-mono truncate opacity-60">IMG: {container.image.split('/').pop()}</p>
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <span className={`text-[10px] px-2 py-0.5 rounded-full border border-current font-bold uppercase tracking-widest ${getStatusColor(container.status)}`}>
-                                                    {container.status}
-                                                </span>
-                                                <span className="text-[10px] text-gray-600 font-mono">ID: {container.id.substring(0, 8)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* CPU Sparkline */}
-                                    <div className="flex-1 min-w-[120px]">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                                                <Cpu className={`w-3.5 h-3.5 ${container.cpu_pct > 50 ? 'text-amber-400' : 'text-blue-400'}`} />
-                                                <span>Processor</span>
-                                            </div>
-                                            <span className={`text-xs font-mono font-bold ${container.cpu_pct > 80 ? 'text-rose-400' : 'text-white'}`}>
-                                                {container.cpu_pct.toFixed(1)}%
-                                            </span>
-                                        </div>
-                                        <div className="h-10 w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                { /* Sparklines in list view still use the real-time mock/simulated history from parent or empty */}
-                                                <AreaChart data={(container.history?.cpu || []).map((val: number) => ({ val }))}>
-
-
-                                                    <defs>
-                                                        <linearGradient id={`grad-cpu-${container.id}`} x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor={container.cpu_pct > 80 ? "#f43f5e" : "#3b82f6"} stopOpacity={0.3} />
-                                                            <stop offset="95%" stopColor={container.cpu_pct > 80 ? "#f43f5e" : "#3b82f6"} stopOpacity={0} />
-                                                        </linearGradient>
-                                                    </defs>
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="val"
-                                                        stroke={container.cpu_pct > 80 ? "#f43f5e" : "#3b82f6"}
-                                                        strokeWidth={2}
-                                                        fillOpacity={1}
-                                                        fill={`url(#grad-cpu-${container.id})`}
-                                                        isAnimationActive={false}
-                                                    />
-                                                </AreaChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </div>
-
-                                    {/* Memory Sparkline */}
-                                    <div className="flex-1 min-w-[120px]">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                                                <Database className="w-3.5 h-3.5 text-purple-400" />
-                                                <span>Memory Isolation</span>
-                                            </div>
-                                            <span className="text-xs font-mono font-bold text-white">{container.mem_usage} MB</span>
-                                        </div>
-                                        <div className="h-10 w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <AreaChart data={(container.history?.memory || []).map((val: number) => ({ val }))}>
-                                                    <defs>
-                                                        <linearGradient id={`grad-mem-${container.id}`} x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
-                                                            <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
-                                                        </linearGradient>
-                                                    </defs>
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="val"
-                                                        stroke="#a855f7"
-                                                        strokeWidth={2}
-                                                        fillOpacity={1}
-                                                        fill={`url(#grad-mem-${container.id})`}
-                                                        isAnimationActive={false}
-                                                    />
-                                                </AreaChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="lg:w-1/4 flex items-center justify-end gap-2 pr-2">
-                                        {isRunning ? (
-                                            <motion.button
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.95 }}
-                                                onClick={(e) => { e.stopPropagation(); handleAction(container.id, 'stop'); }}
-                                                disabled={!!actionLoading}
-                                                className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-[10px] font-bold uppercase transition-all"
-                                            >
-                                                {actionLoading === `${container.id}-stop` ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Square className="w-3 h-3" />}
-                                                Stop
-                                            </motion.button>
-                                        ) : (
-                                            <motion.button
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.95 }}
-                                                onClick={(e) => { e.stopPropagation(); handleAction(container.id, 'start'); }}
-                                                disabled={!!actionLoading}
-                                                className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg text-[10px] font-bold uppercase transition-all"
-                                            >
-                                                {actionLoading === `${container.id}-start` ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
-                                                Start
-                                            </motion.button>
-                                        )}
-                                        <motion.button
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={(e) => { e.stopPropagation(); handleAction(container.id, 'restart'); }}
-                                            disabled={!!actionLoading}
-                                            className="p-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-lg transition-all"
-                                            title="Restart"
-                                        >
-                                            {actionLoading === `${container.id}-restart` ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
-                                        </motion.button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); setSelectedContainerId(container.id); }}
-                                            className="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white transition-all border border-gray-700/50"
-                                        >
-                                            <MoreVertical className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        );
-                    })}
-                </AnimatePresence>
-            </div>
-
-            {/* Inspector Slide-over */}
-            <AnimatePresence>
-                {selectedContainerId && selectedContainer && (
-                    <ContainerInspector
+        <div className="relative">
+            <AnimatePresence mode="wait">
+                {selectedId && selectedContainer ? (
+                    <ContainerDetail
+                        key="detail"
                         container={selectedContainer}
+                        onBack={() => setSelectedId(null)}
+                        onAction={handleAction}
+                        actionLoading={actionLoading}
                         logs={logs}
                         logsLoading={logsLoading}
-                        actionLoading={actionLoading}
-                        onAction={handleAction}
-                        onClose={() => setSelectedContainerId(null)}
-                        onRefreshLogs={fetchLogs}
+                        history={history}
+                        usage={usage}
+                    />
+                ) : (
+                    <ContainerList
+                        key="list"
+                        containers={containers}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        onSelect={setSelectedId}
+                        loading={loading}
                     />
                 )}
             </AnimatePresence>
-
-            {filteredContainers.length === 0 && !loading && (
-                <div className="flex flex-col items-center justify-center py-20 bg-gray-900/20 border border-dashed border-gray-800 rounded-3xl text-gray-600">
-                    <Layers className="w-16 h-16 mb-4 opacity-20" />
-                    <p className="text-lg font-medium">No containers found</p>
-                    <p className="text-sm">Try adjusting your search or check Docker status</p>
-                </div>
-            )}
         </div>
     );
 };
