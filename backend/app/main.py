@@ -10,8 +10,17 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from .api import endpoints
+from .api import endpoints, audit, billing, api_keys, saas_extras
 from .core.collector import global_collector
+
+# ... imports ...
+
+
+# ... app setup ...
+
+
+
+
 from .core.config import settings
 from .core.docker_monitor import docker_monitor
 from .core.limiter import limiter
@@ -30,10 +39,20 @@ logger = get_logger("main")
 Base.metadata.create_all(bind=engine)
 
 
-# Seed default admin user
-def seed_admin():
+# Seed default data
+def seed_initial_data():
     db = SessionLocal()
     try:
+        # 1. Create default Organization
+        org = db.query(models.Organization).filter(models.Organization.name == "Default Organization").first()
+        if not org:
+            org = models.Organization(name="Default Organization", plan_tier="enterprise")
+            db.add(org)
+            db.commit()
+            db.refresh(org)
+            print("Default Organization created.")
+
+        # 2. Create Admin User
         admin = db.query(models.User).filter(models.User.username == "admin").first()
         if not admin:
             admin = models.User(
@@ -45,12 +64,26 @@ def seed_admin():
             )
             db.add(admin)
             db.commit()
+            db.refresh(admin)
             print("Default admin user created: admin / admin123")
+        
+        # 3. Add Admin to Organization
+        member = db.query(models.OrganizationMember).filter(
+            models.OrganizationMember.user_id == admin.id, 
+            models.OrganizationMember.organization_id == org.id
+        ).first()
+        
+        if not member:
+            member = models.OrganizationMember(user_id=admin.id, organization_id=org.id, role="owner")
+            db.add(member)
+            db.commit()
+            print("Admin added to Default Organization.")
+
     finally:
         db.close()
 
 
-seed_admin()
+seed_initial_data()
 
 
 @asynccontextmanager
@@ -146,6 +179,12 @@ async def add_security_headers(request: Request, call_next):
 
 
 app.include_router(endpoints.router, prefix="/api")
+app.include_router(audit.router, prefix="/api/audit", tags=["Audit"])
+app.include_router(billing.router, prefix="/api/billing", tags=["Billing"])
+app.include_router(api_keys.router, prefix="/api/keys", tags=["API Keys"])
+app.include_router(saas_extras.notifications_router, prefix="/api/notifications", tags=["Notifications"])
+app.include_router(saas_extras.status_page_router, prefix="/api/status-settings", tags=["Status Page"])
+app.include_router(saas_extras.public_status_router, prefix="/status", tags=["Public Status"])
 
 
 @app.get("/")

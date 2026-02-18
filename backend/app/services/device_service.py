@@ -12,13 +12,13 @@ logger = get_logger("DeviceService")
 
 class DeviceService:
     @staticmethod
-    def get_devices(db: Session, skip: int = 0, limit: int = 100) -> list[models.Device]:
+    def get_devices(db: Session, organization_id: int, skip: int = 0, limit: int = 100) -> list[models.Device]:
         """
-        Retrieves devices from the database with pagination.
+        Retrieves devices from the database with pagination for a specific organization.
         If empty, seeds mock devices for initial setup.
         """
         try:
-            devices = db.query(models.Device).offset(skip).limit(limit).all()
+            devices = db.query(models.Device).filter(models.Device.organization_id == organization_id).offset(skip).limit(limit).all()
             if not devices and skip == 0:
                 logger.info("Seeding initial mock devices")
                 defaults = [
@@ -29,6 +29,7 @@ class DeviceService:
                         vendor="Apple",
                         type="Mobile",
                         is_online=True,
+                        organization_id=organization_id,
                     ),
                     models.Device(
                         mac_address="AA:BB:CC:DD:EE:02",
@@ -37,6 +38,7 @@ class DeviceService:
                         vendor="Samsung",
                         type="Mobile",
                         is_online=False,
+                        organization_id=organization_id,
                     ),
                     models.Device(
                         mac_address="AA:BB:CC:DD:EE:03",
@@ -45,6 +47,7 @@ class DeviceService:
                         vendor="Microsoft",
                         type="PC",
                         is_online=True,
+                        organization_id=organization_id,
                     ),
                 ]
                 db.add_all(defaults)
@@ -57,10 +60,54 @@ class DeviceService:
             return []
 
     @staticmethod
-    def wake_host(mac: str) -> bool:
+    def get_device(db: Session, device_id: int, organization_id: int) -> models.Device:
+        """
+        Retrieves a specific device by ID, ensuring it belongs to the organization.
+        """
+        device = db.query(models.Device).filter(models.Device.id == device_id, models.Device.organization_id == organization_id).first()
+        if not device:
+            raise DeviceNotFoundException(str(device_id))
+        return device
+
+    @staticmethod
+    def update_device(
+        db: Session, device_id: int, organization_id: int, device_update: schemas.DeviceUpdate
+    ) -> models.Device:
+        """
+        Updates a device's information.
+        """
+        device = db.query(models.Device).filter(models.Device.id == device_id, models.Device.organization_id == organization_id).first()
+        if not device:
+            raise DeviceNotFoundException(str(device_id))
+
+        if device_update.hostname is not None:
+            device.hostname = device_update.hostname
+        if device_update.nickname is not None:
+            device.nickname = device_update.nickname
+        if device_update.notes is not None:
+            device.notes = device_update.notes
+        # if device_update.tags is not None:
+        #    device.tags = device_update.tags
+        if device_update.type is not None:
+            device.type = device_update.type
+        if device_update.group_id is not None:
+            device.group_id = device_update.group_id    
+
+        db.commit()
+        db.refresh(device)
+        return device
+
+    @staticmethod
+    def wake_host(db: Session, mac: str, organization_id: int) -> bool:
         """
         Sends a Wake-on-LAN magic packet to the specified MAC address.
+        First verifies that the device belongs to the user's organization.
         """
+        device = db.query(models.Device).filter(models.Device.mac_address == mac, models.Device.organization_id == organization_id).first()
+        if not device:
+            logger.warning(f"Unauthorized wake attempt for {mac} by org {organization_id}")
+            raise DeviceNotFoundException(mac)
+
         logger.info(f"Sending WoL packet to {mac}")
         success = wake_device(mac)
         if not success:
@@ -69,7 +116,12 @@ class DeviceService:
         return True
 
     @staticmethod
-    def get_quota(db: Session, device_id: int) -> models.BandwidthQuota:
+    def get_quota(db: Session, device_id: int, organization_id: int) -> models.BandwidthQuota:
+        # Check ownership
+        device = db.query(models.Device).filter(models.Device.id == device_id, models.Device.organization_id == organization_id).first()
+        if not device:
+            raise DeviceNotFoundException(str(device_id))
+
         quota = (
             db.query(models.BandwidthQuota)
             .filter(models.BandwidthQuota.device_id == device_id)
@@ -81,12 +133,12 @@ class DeviceService:
 
     @staticmethod
     def set_quota(
-        db: Session, device_id: int, quota_data: schemas.BandwidthQuotaBase
+        db: Session, device_id: int, organization_id: int, quota_data: schemas.BandwidthQuotaBase
     ) -> models.BandwidthQuota:
         """
         Sets or updates a bandwidth quota for a specific device.
         """
-        device = db.query(models.Device).filter(models.Device.id == device_id).first()
+        device = db.query(models.Device).filter(models.Device.id == device_id, models.Device.organization_id == organization_id).first()
         if not device:
             logger.warning(f"Cannot set quota: Device {device_id} not found")
             raise DeviceNotFoundException(str(device_id))
@@ -114,10 +166,15 @@ class DeviceService:
             raise StatSeaException("Could not set quota", status_code=500) from e
 
     @staticmethod
-    def delete_quota(db: Session, device_id: int):
+    def delete_quota(db: Session, device_id: int, organization_id: int):
         """
         Removes a bandwidth quota from a device.
         """
+        # Check ownership
+        device = db.query(models.Device).filter(models.Device.id == device_id, models.Device.organization_id == organization_id).first()
+        if not device:
+            raise DeviceNotFoundException(str(device_id))
+
         quota = (
             db.query(models.BandwidthQuota)
             .filter(models.BandwidthQuota.device_id == device_id)

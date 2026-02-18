@@ -35,11 +35,11 @@ TestingSessionLocal = async_sessionmaker(
     autocommit=False, autoflush=False, bind=engine, expire_on_commit=False
 )
 
-@pytest_asyncio.fixture(scope="session")
-def event_loop():
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+# @pytest_asyncio.fixture(scope="session")
+# def event_loop():
+#     loop = asyncio.get_event_loop_policy().new_event_loop()
+#     yield loop
+#     loop.close()
 
 @pytest.fixture(scope="session", autouse=True)
 def mock_services():
@@ -100,7 +100,7 @@ async def auth_client(client):
     # Note: seed_admin in main.py runs on import, but separate DB session.
     # We need to ensure the user exists in the *test* DB session.
     from app.models.models import User
-    from app.core.security import create_access_token
+    from app.core.auth_jwt import create_access_token
     
     # Create admin user in test DB
     admin = User(
@@ -122,7 +122,7 @@ async def auth_client(client):
 @pytest_asyncio.fixture(scope="function")
 async def auth_client(client, db_session):
     from app.models.models import User
-    from app.core.security import create_access_token
+    from app.core.auth_jwt import create_access_token
     
     admin = User(
         username="testadmin",

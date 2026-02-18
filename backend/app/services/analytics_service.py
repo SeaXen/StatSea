@@ -42,15 +42,16 @@ class AnalyticsService:
             return []
 
     @staticmethod
-    def get_topology(db: Session) -> dict[str, Any]:
+    def get_topology(db: Session, organization_id: int) -> dict[str, Any]:
         """
         Generates nodes and edges for the network topology graph with caching.
         """
-        if "data" in topology_cache:
-            return topology_cache["data"]
+        cache_key = f"topology_{organization_id}"
+        if cache_key in topology_cache:
+            return topology_cache[cache_key]
 
         try:
-            devices = db.query(models.Device).all()
+            devices = db.query(models.Device).filter(models.Device.organization_id == organization_id).all()
             nodes = [
                 {
                     "id": "router",
@@ -75,7 +76,7 @@ class AnalyticsService:
                 edges.append({"from": "router", "to": str(device.id), "value": 1})
 
             result = {"nodes": nodes, "edges": edges}
-            topology_cache["data"] = result
+            topology_cache[cache_key] = result
             return result
         except sqlalchemy.exc.SQLAlchemyError:
             logger.exception("Database error generating topology")

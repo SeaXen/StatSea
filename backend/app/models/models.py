@@ -16,6 +16,54 @@ from sqlalchemy.sql import func
 from ..db.database import Base
 
 
+
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    plan_tier = Column(String, default="free")  # free, pro, enterprise
+    subscription_status = Column(String, default="active")  # active, past_due, canceled
+    stripe_customer_id = Column(String, nullable=True)
+    logo_url = Column(String, nullable=True)
+    primary_color = Column(String, default="#000000")
+    secondary_color = Column(String, default="#ffffff")
+    custom_domain = Column(String, nullable=True, unique=True)
+    default_language = Column(String, default="en")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    members = relationship("OrganizationMember", back_populates="organization", cascade="all, delete-orphan")
+    devices = relationship("Device", back_populates="organization")
+    api_keys = relationship("ApiKey", back_populates="organization")
+
+
+class OrganizationMember(Base):
+    __tablename__ = "organization_members"
+
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), primary_key=True)
+    role = Column(String, default="member")  # owner, admin, member, viewer
+
+    user = relationship("User", back_populates="organizations")
+    organization = relationship("Organization", back_populates="members")
+
+
+class ApiKey(Base):
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key_hash = Column(String, index=True)
+    name = Column(String)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    organization_id = Column(Integer, ForeignKey("organizations.id"))
+    permissions = Column(String, default="read")  # simple permission string or json
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_used = Column(DateTime(timezone=True), nullable=True)
+
+    user = relationship("User")
+    organization = relationship("Organization", back_populates="api_keys")
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -28,10 +76,13 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_login = Column(DateTime(timezone=True), nullable=True)
+    preferred_language = Column(String, default="en")
 
     refresh_tokens = relationship(
         "RefreshToken", back_populates="user", cascade="all, delete-orphan"
     )
+    organizations = relationship("OrganizationMember", back_populates="user", cascade="all, delete-orphan")
+    push_subscriptions = relationship("PushSubscription", back_populates="user", cascade="all, delete-orphan")
 
     def verify_password(self, password: str):
         return bcrypt.checkpw(password.encode("utf-8"), self.hashed_password.encode("utf-8"))
@@ -80,8 +131,10 @@ class Device(Base):
     notes = Column(String, nullable=True)
     tags = Column(String, nullable=True)  # JSON list of strings
     group_id = Column(Integer, ForeignKey("device_groups.id"), nullable=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 
     group = relationship("DeviceGroup", back_populates="devices")
+    organization = relationship("Organization", back_populates="devices")
     traffic_logs = relationship("TrafficLog", back_populates="device")
     daily_summaries = relationship("DeviceDailySummary", back_populates="device")
     quota = relationship(
@@ -144,6 +197,7 @@ class SecurityEvent(Base):
     source_ip = Column(String, nullable=True)
     mac_address = Column(String, nullable=True)
     resolved = Column(Boolean, default=False)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 
 
 class TrafficLog(Base):
@@ -179,6 +233,7 @@ class SecurityAlert(Base):
     description = Column(String)
     device_id = Column(Integer, ForeignKey("devices.id"), nullable=True, index=True)
     is_resolved = Column(Boolean, default=False)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 
     device = relationship("Device")
 
@@ -205,6 +260,7 @@ class SpeedtestResult(Base):
     server_country = Column(String, nullable=True)
     provider = Column(String, default="ookla")  # ookla, cloudflare
     isp = Column(String, nullable=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 
 
 class DockerContainerMetric(Base):
@@ -218,6 +274,7 @@ class DockerContainerMetric(Base):
     mem_usage = Column(Float)  # MB
     net_rx = Column(BigInteger)
     net_tx = Column(BigInteger)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 
 
 class DeviceStatusLog(Base):
@@ -256,6 +313,7 @@ class DnsLog(Base):
     device_id = Column(Integer, ForeignKey("devices.id"), nullable=True)
     query_domain = Column(String, index=True)
     record_type = Column(String)  # A, AAAA, CNAME, etc.
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 
     device = relationship("Device")
 
@@ -320,4 +378,65 @@ class DeviceYearlySummary(Base):
     upload_bytes = Column(BigInteger, default=0)
     download_bytes = Column(BigInteger, default=0)
 
+
     device = relationship("Device")
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    actor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    action = Column(String, index=True)  # CREATE, UPDATE, DELETE, LOGIN
+    resource_type = Column(String, index=True)  # DEVICE, USER, ORG
+    resource_id = Column(String, nullable=True)
+    details = Column(String, nullable=True)  # JSON or text
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+    actor = relationship("User")
+    organization = relationship("Organization")
+
+
+class NotificationChannel(Base):
+    __tablename__ = "notification_channels"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    type = Column(String)  # email, slack, discord, webhook
+    config = Column(String)  # JSON: webhook_url, email_address, etc.
+    events = Column(String, default="[]")  # JSON list: trigger events
+    is_enabled = Column(Boolean, default=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    organization = relationship("Organization")
+
+
+class StatusPage(Base):
+    __tablename__ = "status_pages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String, unique=True, index=True)  # public url slug
+    title = Column(String)
+    description = Column(String, nullable=True)
+    is_public = Column(Boolean, default=False)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), unique=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    organization = relationship("Organization")
+
+
+class PushSubscription(Base):
+    """Stores Web Push API subscriptions for PWA notifications"""
+    __tablename__ = "push_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    endpoint = Column(String, unique=True, index=True)
+    keys = Column(String)  # JSON string {"auth": "...", "p256dh": "..."}
+    user_agent = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="push_subscriptions")
+

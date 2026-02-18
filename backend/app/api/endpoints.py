@@ -29,7 +29,27 @@ from ..services.user_service import UserService
 from ..services.log_service import LogService
 from ..services.email_service import EmailService
 
+from ..services.email_service import EmailService
+
 router = APIRouter()
+
+
+def get_current_org_id(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> int:
+    """
+    Dependency to get the current user's active organization ID.
+    For now, it returns the first organization found.
+    """
+    member = (
+        db.query(models.OrganizationMember)
+        .filter(models.OrganizationMember.user_id == current_user.id)
+        .first()
+    )
+    if not member:
+        raise HTTPException(status_code=403, detail="User is not a member of any organization")
+    return member.organization_id
 
 
 class ConnectionManager:
@@ -69,9 +89,9 @@ def list_devices(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
 ):
-    return DeviceService.get_devices(db, skip, limit)
+    return DeviceService.get_devices(db, org_id, skip, limit)
 
 
 @router.get(
@@ -83,9 +103,9 @@ def list_devices(
 def get_device(
     device_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
 ):
-    return DeviceService.get_device(db, device_id)
+    return DeviceService.get_device(db, device_id, org_id)
 
 
 @router.put(
@@ -98,9 +118,9 @@ def update_device(
     device_id: int,
     device_update: schemas.DeviceUpdate,
     db: Session = Depends(get_db),
-    admin_user: models.User = Depends(get_current_admin_user),
+    org_id: int = Depends(get_current_org_id),
 ):
-    return DeviceService.update_device(db, device_id, device_update)
+    return DeviceService.update_device(db, device_id, org_id, device_update)
 
 
 @router.post(
@@ -108,8 +128,12 @@ def update_device(
     summary="Wake on LAN",
     description="Send a Wake-on-LAN magic packet to the device.",
 )
-async def wake_host(mac: str, admin_user: models.User = Depends(get_current_admin_user)):
-    DeviceService.wake_host(mac)
+async def wake_host(
+    mac: str,
+    db: Session = Depends(get_db),
+    org_id: int = Depends(get_current_org_id),
+):
+    DeviceService.wake_host(db, mac, org_id)
     return {"status": "success", "message": f"Magic packet sent to {mac}"}
 
 
@@ -125,9 +149,9 @@ async def wake_host(mac: str, admin_user: models.User = Depends(get_current_admi
 def get_device_quota(
     device_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
 ):
-    return DeviceService.get_quota(db, device_id)
+    return DeviceService.get_quota(db, device_id, org_id)
 
 
 @router.put(
@@ -140,9 +164,9 @@ def set_device_quota(
     device_id: int,
     quota_data: schemas.BandwidthQuotaBase,
     db: Session = Depends(get_db),
-    admin_user: models.User = Depends(get_current_admin_user),
+    org_id: int = Depends(get_current_org_id),
 ):
-    return DeviceService.set_quota(db, device_id, quota_data)
+    return DeviceService.set_quota(db, device_id, org_id, quota_data)
 
 
 @router.delete(
@@ -153,9 +177,9 @@ def set_device_quota(
 def delete_device_quota(
     device_id: int,
     db: Session = Depends(get_db),
-    admin_user: models.User = Depends(get_current_admin_user),
+    org_id: int = Depends(get_current_org_id),
 ):
-    DeviceService.delete_quota(db, device_id)
+    DeviceService.delete_quota(db, device_id, org_id)
     return {"status": "success"}
 
 
@@ -182,9 +206,10 @@ def get_network_history(
     description="Retrieve network topology data.",
 )
 async def get_network_topology(
-    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db),
+    org_id: int = Depends(get_current_org_id),
 ):
-    return AnalyticsService.get_topology(db)
+    return AnalyticsService.get_topology(db, org_id)
 
 
 @router.get(
