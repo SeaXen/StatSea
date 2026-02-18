@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Globe } from 'lucide-react';
+import axiosInstance from '../config/axiosInstance';
+import { API_CONFIG } from '../config/apiConfig';
 
 interface DnsLog {
     id: number;
@@ -23,12 +25,12 @@ const DnsQueryLog: React.FC = () => {
     const fetchDnsData = async () => {
         try {
             const [logsRes, topRes] = await Promise.all([
-                fetch('http://localhost:8000/network/dns?limit=50'),
-                fetch('http://localhost:8000/network/dns/top?limit=5')
+                axiosInstance.get(`${API_CONFIG.ENDPOINTS.DNS.LOGS}?limit=50`),
+                axiosInstance.get(`${API_CONFIG.ENDPOINTS.DNS.TOP}?limit=5`)
             ]);
 
-            if (logsRes.ok) setLogs(await logsRes.json());
-            if (topRes.ok) setTopDomains(await topRes.json());
+            setLogs(logsRes.data);
+            setTopDomains(topRes.data);
         } catch (error) {
             console.error("Failed to fetch DNS data", error);
         } finally {

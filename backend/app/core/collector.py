@@ -51,7 +51,7 @@ class PacketCollector:
         self._last_pps_time = time.time()
         self._pps_packet_count = 0
         self.packet_log: List[Dict] = []  # ring buffer for live stream
-        self.PACKET_LOG_SIZE = 200
+        self.PACKET_LOG_SIZE = 1000
         # --- Extended Analytics ---
         self.bandwidth_history: List[Dict] = []  # ring buffer of {time, up, down}
         self.BANDWIDTH_HISTORY_SIZE = 60  # 60 snapshots = ~2 minutes at 2s interval
@@ -123,10 +123,16 @@ class PacketCollector:
             proto = "OTHER"
             src_port = 0
             dst_port = 0
+            flags = None
+
             if packet.haslayer(TCP):
                 proto = "TCP"
                 src_port = packet[TCP].sport
                 dst_port = packet[TCP].dport
+                # Extract flags (S, A, F, R, P, U, E, C)
+                # packet[TCP].flags is a FlagValue object, cast to str
+                flags = str(packet[TCP].flags)
+                
                 # Refine by well-known ports
                 if dst_port == 443 or src_port == 443:
                     proto = "HTTPS"
@@ -194,7 +200,8 @@ class PacketCollector:
                     "proto": proto,
                     "src": f"{src_ip}:{src_port}" if src_port else src_ip,
                     "dst": f"{dst_ip}:{dst_port}" if dst_port else dst_ip,
-                    "size": packet_len
+                    "size": packet_len,
+                    "flags": flags
                 }
                 self.packet_log.append(log_entry)
                 if len(self.packet_log) > self.PACKET_LOG_SIZE:
@@ -668,6 +675,37 @@ class PacketCollector:
                 "connection_types": dict(self.connection_types),
                 "bytes_per_protocol": dict(self.bytes_per_protocol)
             }
+
+    def get_packet_log(self, limit: int = 100, protocol: str = None, ip: str = None, port: int = None, flags: str = None) -> List[Dict]:
+        """Returns filtered packet logs."""
+        with self.stats_lock:
+            # Start with a copy of the log to avoid modification during iteration
+            # Slice to max size first if no filters to speed up? 
+            # No, we need to filter first then slice.
+            
+            filtered = self.packet_log
+            
+            if protocol:
+                protocol = protocol.upper()
+                filtered = [p for p in filtered if p["proto"] == protocol]
+                
+            if ip:
+                # Check src or dst
+                filtered = [p for p in filtered if ip in p["src"] or ip in p["dst"]]
+                
+            if port:
+                port_str = str(port)
+                # Check src or dst port (format is IP:PORT)
+                filtered = [p for p in filtered if f":{port_str}" in p["src"] or f":{port_str}" in p["dst"]]
+                
+            if flags:
+                flags = flags.upper()
+                # Check if packet has flags and if they match (contain) req flags? 
+                # Or exact match? Let's do contains for now (e.g. search "S" finds "SA")
+                filtered = [p for p in filtered if p.get("flags") and flags in p["flags"]]
+
+            # Return latest N
+            return list(filtered[-limit:])
 
     def _flush_dns_logs(self):
         """Persists buffered DNS logs to valid database entries."""

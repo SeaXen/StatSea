@@ -8,9 +8,12 @@ import {
 import {
     Shield, AlertTriangle, Activity, Zap, Pause, Play, Search, Globe, Wifi, Server,
     Database, Radio, Layers, BarChart3, TrendingUp, Monitor, Network, Settings,
-    ArrowRightLeft
+    Flag
 } from 'lucide-react';
 import { API_CONFIG } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
+import PredictionWidget from './PredictionWidget';
+import YearlyStatsView from './YearlyStatsView';
 
 
 // ─── Protocol Color Map ───
@@ -56,6 +59,7 @@ interface AnalyticsData {
         src: string;
         dst: string;
         size: number;
+        flags?: string;
         suspicious?: boolean;
     }>;
     active_device_count: number;
@@ -99,12 +103,6 @@ interface ExternalConnection {
     country: string;
 }
 
-interface SystemHistoryPoint {
-    timestamp: string;
-    interface: string;
-    bytes_sent: number;
-    bytes_recv: number;
-}
 
 interface DashboardConfig {
     showStatsRow: boolean;
@@ -210,9 +208,9 @@ const AnalyticsDashboard = () => {
     const [latencyData, setLatencyData] = useState<LatencyPoint[]>([]);
     const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
     const [externalConnections, setExternalConnections] = useState<ExternalConnection[]>([]);
-    const [systemHistory, setSystemHistory] = useState<SystemHistoryPoint[]>([]); // New state
+    const [packetLogs, setPacketLogs] = useState<any[]>([]); // New state for packet logs
+    const [flagFilter, setFlagFilter] = useState(''); // New state for flag filter
     const [loading, setLoading] = useState(true);
-    const [historyLoading, setHistoryLoading] = useState(false);
     const [paused, setPaused] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeProtocols, setActiveProtocols] = useState<Set<string>>(new Set(['TCP', 'UDP', 'HTTP', 'HTTPS', 'DNS', 'ICMP', 'SSH', 'FTP']));
@@ -253,26 +251,27 @@ const AnalyticsDashboard = () => {
             if (paused) return;
             try {
                 const [analyticsRes, netRes, secRes, connRes] = await Promise.all([
-                    fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ANALYTICS.SUMMARY}`),
-                    fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY}`),
-                    fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SECURITY.EVENTS}`),
-                    fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.NETWORK.CONNECTIONS}`)
+                    axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.SUMMARY),
+                    axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY),
+                    axiosInstance.get(API_CONFIG.ENDPOINTS.SECURITY.EVENTS),
+                    axiosInstance.get(API_CONFIG.ENDPOINTS.NETWORK.CONNECTIONS)
                 ]);
 
-                if (analyticsRes.ok) setAnalyticsData(await analyticsRes.json());
-                if (netRes.ok) {
-                    const netData = await netRes.json();
-                    setBandwidthData(netData.bandwidth.map((i: any) => ({
-                        ...i, timestamp: new Date(i.timestamp).toLocaleTimeString()
-                    })).reverse());
-                    setLatencyData(netData.latency.map((i: any) => ({
-                        ...i, timestamp: new Date(i.timestamp).toLocaleTimeString()
-                    })).reverse());
-                }
-                if (secRes.ok) setSecurityEvents(await secRes.json());
-                if (connRes.ok) setExternalConnections(await connRes.json());
+                setAnalyticsData(analyticsRes.data);
+
+                const netData = netRes.data;
+                setBandwidthData(netData.bandwidth.map((i: any) => ({
+                    ...i, timestamp: new Date(i.timestamp).toLocaleTimeString()
+                })).reverse());
+                setLatencyData(netData.latency.map((i: any) => ({
+                    ...i, timestamp: new Date(i.timestamp).toLocaleTimeString()
+                })).reverse());
+
+                setSecurityEvents(secRes.data);
+                setExternalConnections(connRes.data);
             } catch (error) {
                 console.error("Failed to fetch analytics data", error);
+                // toast.error("Failed to load dashboard data"); // Too frequent, maybe skip for 2s interval
             } finally {
                 setLoading(false);
             }
@@ -283,26 +282,42 @@ const AnalyticsDashboard = () => {
         return () => clearInterval(interval);
     }, [paused]);
 
-    // Fetch history when view changes to history
+    // Fetch packet logs separately for live view
     useEffect(() => {
-        if (activeView === 'history') {
-            const fetchHistory = async () => {
-                setHistoryLoading(true);
-                try {
-                    const res = await fetch(`${API_CONFIG.BASE_URL}/system/network/history?hours=24`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        setSystemHistory(data);
+        if (activeView !== 'live' || paused) return;
+
+        const fetchPacketLogs = async () => {
+            try {
+                const params = new URLSearchParams();
+                params.append('limit', '100');
+
+                if (searchQuery) {
+                    const q = searchQuery.trim();
+                    if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(q)) {
+                        params.append('ip', q);
+                    } else if (/^\d+$/.test(q)) {
+                        params.append('port', q);
+                    } else {
+                        params.append('protocol', q);
                     }
-                } catch (e) {
-                    console.error("Failed to fetch system history", e);
-                } finally {
-                    setHistoryLoading(false);
                 }
-            };
-            fetchHistory();
-        }
-    }, [activeView]);
+
+                if (flagFilter) {
+                    params.append('flags', flagFilter);
+                }
+
+                const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.PACKETS, { params });
+                setPacketLogs(res.data);
+            } catch (error) {
+                console.error("Error fetching packet logs:", error);
+            }
+        };
+
+        fetchPacketLogs();
+        const interval = setInterval(fetchPacketLogs, 1000);
+        return () => clearInterval(interval);
+    }, [activeView, paused, searchQuery, flagFilter]);
+
 
     // Auto-scroll live stream
     useEffect(() => {
@@ -364,11 +379,16 @@ const AnalyticsDashboard = () => {
     }));
 
     // Filtered packet log
-    const filteredLog = (analyticsData.packet_log || []).filter(pkt => {
+    const sourceLogs = (activeView === 'live' && packetLogs.length > 0) ? packetLogs : (analyticsData.packet_log || []);
+    const filteredLog = sourceLogs.filter(pkt => {
         if (!activeProtocols.has(pkt.proto)) return false;
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
-            return pkt.src.toLowerCase().includes(q) || pkt.dst.toLowerCase().includes(q) || pkt.proto.toLowerCase().includes(q);
+            if (!(pkt.src.toLowerCase().includes(q) || pkt.dst.toLowerCase().includes(q) || pkt.proto.toLowerCase().includes(q))) return false;
+        }
+        if (flagFilter) {
+            const f = flagFilter.toUpperCase();
+            if (!pkt.flags || !pkt.flags.includes(f)) return false;
         }
         return true;
     });
@@ -437,6 +457,9 @@ const AnalyticsDashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* AI Predictions & Anomalies */}
+            <PredictionWidget />
 
             {/* ─── Stats Row (8 cards) ─── */}
             {dashboardConfig.showStatsRow && (
@@ -540,16 +563,28 @@ const AnalyticsDashboard = () => {
             {/* ═══════════════════ LIVE STREAM ═══════════════════ */}
             {activeView === 'live' && (
                 <div className="space-y-4">
-                    {/* Search */}
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
-                        <input
-                            type="text"
-                            placeholder="Search by IP, port, or protocol..."
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full bg-gray-900/60 border border-gray-800 rounded-lg pl-9 pr-4 py-2 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
-                        />
+                    {/* Search and Filters */}
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+                            <input
+                                type="text"
+                                placeholder="Search by IP, port, or protocol..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="w-full bg-gray-900/60 border border-gray-800 rounded-lg pl-9 pr-4 py-2 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                            />
+                        </div>
+                        <div className="relative w-48">
+                            <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+                            <input
+                                type="text"
+                                placeholder="Filter Flags (e.g. syn)"
+                                value={flagFilter}
+                                onChange={e => setFlagFilter(e.target.value)}
+                                className="w-full bg-gray-900/60 border border-gray-800 rounded-lg pl-9 pr-4 py-2 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                            />
+                        </div>
                     </div>
 
                     {/* Live Packet Table */}
@@ -560,6 +595,7 @@ const AnalyticsDashboard = () => {
                                     <tr>
                                         <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">TIME</th>
                                         <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">PROTO</th>
+                                        <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">FLAGS</th>
                                         <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">SOURCE</th>
                                         <th className="text-center text-gray-500 font-medium px-1 py-2 text-[10px]"></th>
                                         <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">DESTINATION</th>
@@ -568,7 +604,7 @@ const AnalyticsDashboard = () => {
                                 </thead>
                                 <tbody>
                                     {filteredLog.length === 0 ? (
-                                        <tr><td colSpan={6} className="text-center text-gray-600 py-12">No packets matching filters</td></tr>
+                                        <tr><td colSpan={7} className="text-center text-gray-600 py-12">No packets matching filters</td></tr>
                                     ) : (
                                         filteredLog.map((pkt, i) => (
                                             <tr key={i} className={`border-b border-gray-800/30 hover:bg-gray-800/30 transition-colors ${pkt.suspicious ? 'bg-red-500/5' : ''}`}>
@@ -580,6 +616,13 @@ const AnalyticsDashboard = () => {
                                                     }}>
                                                         {pkt.proto}
                                                     </span>
+                                                </td>
+                                                <td className="px-3 py-1.5 font-mono text-gray-400 text-[10px]">
+                                                    {pkt.flags && pkt.flags !== 'None' ? (
+                                                        <span className="text-xs text-cyan-600">{pkt.flags}</span>
+                                                    ) : (
+                                                        <span className="text-gray-800">-</span>
+                                                    )}
                                                 </td>
                                                 <td className="px-3 py-1.5 font-mono text-gray-300 text-[10px]">{pkt.src}</td>
                                                 <td className="px-1 py-1.5 text-gray-600 text-center text-[10px]">→</td>
@@ -854,55 +897,7 @@ const AnalyticsDashboard = () => {
             )}
             {/* ═══════════════════ HISTORY ═══════════════════ */}
             {activeView === 'history' && (
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Activity className="h-4 w-4 text-emerald-400" />
-                        <h3 className="text-sm font-semibold text-white">System Network History (24 Hours)</h3>
-                    </div>
-
-                    {historyLoading ? (
-                        <div className="h-[400px] flex items-center justify-center text-gray-500 animate-pulse">
-                            Loading history data...
-                        </div>
-                    ) : systemHistory.length === 0 ? (
-                        <div className="h-[400px] flex items-center justify-center text-gray-500">
-                            No history data available yet.
-                        </div>
-                    ) : (
-                        <div className="h-[400px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={systemHistory}>
-                                    <defs>
-                                        <linearGradient id="histDown" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.4} />
-                                            <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
-                                        </linearGradient>
-                                        <linearGradient id="histUp" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#34d399" stopOpacity={0.4} />
-                                            <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                                    <XAxis
-                                        dataKey="timestamp"
-                                        stroke="#4b5563"
-                                        fontSize={10}
-                                        tickFormatter={(t) => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    />
-                                    <YAxis stroke="#4b5563" fontSize={10} tickFormatter={(v) => formatBytes(v)} />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }}
-                                        itemStyle={{ color: '#e5e7eb' }}
-                                        labelFormatter={(l) => new Date(l).toLocaleString()}
-                                        formatter={(value: number) => formatBytes(value)}
-                                    />
-                                    <Area type="monotone" dataKey="bytes_recv" name="Download" stroke="#22d3ee" strokeWidth={2} fillOpacity={1} fill="url(#histDown)" />
-                                    <Area type="monotone" dataKey="bytes_sent" name="Upload" stroke="#34d399" strokeWidth={2} fillOpacity={1} fill="url(#histUp)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
-                    )}
-                </div>
+                <YearlyStatsView />
             )}
 
             {/* ═══════════════════ DNS LOGS ═══════════════════ */}

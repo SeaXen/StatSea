@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Activity } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Activity, Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Toaster } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TopDevicesWidget } from './components/TopDevicesWidget';
 import { ActiveConnectionsWidget } from './components/ActiveConnectionsWidget';
 import { CommandPalette } from './components/CommandPalette';
@@ -17,10 +18,31 @@ import SpeedtestPage from './components/SpeedtestPage';
 import SettingsPage from './components/SettingsPage';
 import TopStatsRow from './components/TopStatsRow';
 import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginPage from './pages/LoginPage';
 import { TopNav } from './components/TopNav';
 import ServerStatusCard from './components/ServerStatusCard';
 import SystemDetailOverlay from './components/SystemDetailOverlay';
 import { Sidebar } from './components/Sidebar';
+import { BottomNav } from './components/BottomNav';
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+    const { token, isLoading } = useAuth();
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-[#0f1014] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+            </div>
+        );
+    }
+
+    if (!token) {
+        return <Navigate to="/login" replace />;
+    }
+
+    return <>{children}</>;
+};
 
 const Dashboard = () => {
     const { wsData, isConnected } = useWebSocket();
@@ -135,9 +157,20 @@ const Dashboard = () => {
 
 export default function App() {
     return (
-        <WebSocketProvider>
-            <AppContent />
-        </WebSocketProvider>
+        <BrowserRouter>
+            <AuthProvider>
+                <WebSocketProvider>
+                    <Routes>
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/*" element={
+                            <ProtectedRoute>
+                                <AppContent />
+                            </ProtectedRoute>
+                        } />
+                    </Routes>
+                </WebSocketProvider>
+            </AuthProvider>
+        </BrowserRouter>
     );
 }
 
@@ -172,7 +205,7 @@ function AppContent() {
                 />
 
                 {/* Main Content */}
-                <main className="flex-1 w-full max-w-[1920px] mx-auto bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-background to-background relative overflow-x-hidden">
+                <main className="flex-1 w-full max-w-[1920px] mx-auto bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-background to-background relative overflow-x-hidden mb-16 md:mb-0">
                     <div className="relative h-full">
                         {/* Dashboard - Always rendered for immediate access */}
                         <div className={`${activeTab === 'dashboard' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
@@ -223,6 +256,7 @@ function AppContent() {
                         )}
                     </div>
                 </main>
+                <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
             </div>
         </div>
     );

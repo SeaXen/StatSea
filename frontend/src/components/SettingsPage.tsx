@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Save, Sun, Bell, Activity, Terminal, Database, Trash2, ShieldCheck, Cpu, User, Check, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import axiosInstance from '../config/axiosInstance';
+import { API_CONFIG } from '../config/apiConfig';
 import { presets, accentColors, legacyThemes, ThemeConfig, ThemeMode } from '../lib/themes';
 
 interface Setting {
@@ -75,13 +77,10 @@ export default function Settings() {
 
     const fetchSettings = async () => {
         try {
-            const res = await fetch(`http://${window.location.hostname}:21081/api/settings`);
-            if (res.ok) {
-                const data: Setting[] = await res.json();
-                const settingsMap: Record<string, string> = {};
-                data.forEach(s => settingsMap[s.key] = s.value);
-                setSettings(settingsMap);
-            }
+            const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.SETTINGS);
+            const settingsMap: Record<string, string> = {};
+            res.data.forEach((s: Setting) => settingsMap[s.key] = s.value);
+            setSettings(settingsMap);
         } catch (e) {
             console.error("Failed to fetch settings", e);
             toast.error("Failed to load backend settings");
@@ -90,17 +89,9 @@ export default function Settings() {
 
     const saveSetting = async (key: string, value: string, type: string = 'string') => {
         try {
-            const res = await fetch(`http://${window.location.hostname}:21081/api/settings`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key, value, type })
-            });
-            if (res.ok) {
-                setSettings(prev => ({ ...prev, [key]: value }));
-                toast.success("Setting saved");
-            } else {
-                throw new Error("Failed to save");
-            }
+            await axiosInstance.post(API_CONFIG.ENDPOINTS.SETTINGS, { key, value, type });
+            setSettings(prev => ({ ...prev, [key]: value }));
+            toast.success("Setting saved");
         } catch (e) {
             toast.error("Failed to save setting");
         }
@@ -169,29 +160,24 @@ export default function Settings() {
     const handleExport = async () => {
         setIsExporting(true);
         try {
-            const res = await fetch(`http://${window.location.hostname}:21081/api/settings/export`);
-            if (res.ok) {
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                // Content-Disposition header should provide filename, but fallback just in case
-                const contentDisposition = res.headers.get('Content-Disposition');
-                let filename = 'statsea-backup.json';
-                if (contentDisposition) {
-                    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
-                    if (filenameMatch && filenameMatch.length === 2)
-                        filename = filenameMatch[1];
-                }
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                toast.success("Export completed successfully");
-            } else {
-                throw new Error("Export failed");
+            const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.SETTINGS + '/export', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(res.data);
+            const a = document.createElement('a');
+            a.href = url;
+            // Content-Disposition header should provide filename, but fallback just in case
+            const contentDisposition = res.headers['content-disposition'];
+            let filename = 'statsea-backup.json';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                if (filenameMatch && filenameMatch.length === 2)
+                    filename = filenameMatch[1];
             }
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success("Export completed successfully");
         } catch (e) {
             console.error("Export error:", e);
             toast.error("Failed to export data");
@@ -630,11 +616,11 @@ export default function Settings() {
                                                 <div className="space-y-2 text-xs font-mono text-muted-foreground">
                                                     <div className="flex justify-between">
                                                         <span>API Base:</span>
-                                                        <span className="text-foreground">{window.location.hostname}:21081</span>
+                                                        <span className="text-foreground">{API_CONFIG.BASE_URL}</span>
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span>WS Endpoint:</span>
-                                                        <span className="text-foreground">wss://{window.location.hostname}:21081</span>
+                                                        <span className="text-foreground">{API_CONFIG.WS_URL}</span>
                                                     </div>
                                                 </div>
                                             </div>

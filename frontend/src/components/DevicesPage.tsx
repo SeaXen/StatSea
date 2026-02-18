@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Search, Smartphone, Globe, Router, Laptop, Wifi, MoreVertical, LayoutGrid, LayoutList, Power } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_CONFIG } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
 import { DeviceDetail } from './DeviceDetail';
 import { Device, DeviceGroup } from '../types';
 import { Skeleton, TableRowSkeleton } from './skeletons/WidgetSkeleton';
@@ -27,19 +29,12 @@ export function DevicesPage() {
         const fetchDevices = async () => {
             try {
                 const [devicesRes, groupsRes] = await Promise.all([
-                    fetch('/api/devices'),
-                    fetch('/api/groups')
+                    axiosInstance.get(API_CONFIG.ENDPOINTS.DEVICES.LIST),
+                    axiosInstance.get(API_CONFIG.ENDPOINTS.DEVICES.GROUPS)
                 ]);
 
-                if (!devicesRes.ok) throw new Error('Failed to fetch devices');
-
-                const devicesData = await devicesRes.json();
-                setDevices(devicesData);
-
-                if (groupsRes.ok) {
-                    const groupsData = await groupsRes.json();
-                    setGroups(groupsData);
-                }
+                setDevices(devicesRes.data);
+                setGroups(groupsRes.data);
             } catch (error) {
                 console.error("Error fetching data:", error);
             } finally {
@@ -61,22 +56,15 @@ export function DevicesPage() {
     const wakeDevice = async (e: React.MouseEvent, mac: string) => {
         e.stopPropagation();
         try {
-            const response = await fetch(`/api/devices/${mac}/wake`, {
-                method: 'POST'
-            });
-            const data = await response.json();
+            await axiosInstance.post(API_CONFIG.ENDPOINTS.DEVICES.WAKE(mac));
 
-            if (response.ok) {
-                toast.success('Wake-on-LAN packet sent', {
-                    description: `Magic packet sent to ${mac}`
-                });
-            } else {
-                throw new Error(data.detail || 'Failed to wake device');
-            }
-        } catch (error) {
+            toast.success('Wake-on-LAN packet sent', {
+                description: `Magic packet sent to ${mac}`
+            });
+        } catch (error: any) {
             console.error("WoL Error:", error);
             toast.error('Failed to wake device', {
-                description: error instanceof Error ? error.message : 'Unknown error'
+                description: error.response?.data?.detail || error.message || 'Unknown error'
             });
         }
     };

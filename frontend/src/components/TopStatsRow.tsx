@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowDown, ArrowUp, Laptop, Activity } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
 import { API_CONFIG } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
 import { StatCardSkeleton } from './skeletons/StatCardSkeleton';
 
 interface TopStatsData {
@@ -26,9 +27,8 @@ const TopStatsRow = () => {
 
     const fetchStats = async () => {
         try {
-            const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SYSTEM.INFO}`);
-            const data = await res.json();
-            setStats(data);
+            const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.SYSTEM.INFO);
+            setStats(res.data);
         } catch (error) {
             console.error('Failed to fetch stats:', error);
         }
@@ -36,9 +36,8 @@ const TopStatsRow = () => {
 
     const fetchHealth = async () => {
         try {
-            const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.HEALTH}`);
-            const data = await res.json();
-            setHealth(data);
+            const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.HEALTH);
+            setHealth(res.data);
         } catch (error) {
             console.error('Failed to fetch health:', error);
         }
@@ -46,11 +45,8 @@ const TopStatsRow = () => {
 
     const fetchHistory = async () => {
         try {
-            const res = await fetch(`${API_CONFIG.BASE_URL}/api/network/history?limit=30`);
-            if (res.ok) {
-                const data = await res.json();
-                setHistory(data);
-            }
+            const res = await axiosInstance.get(`${API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY}?limit=30`);
+            setHistory(res.data);
         } catch (error) {
             console.error('Failed to fetch history:', error);
         }

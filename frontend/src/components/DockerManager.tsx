@@ -17,6 +17,7 @@ import {
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import { API_CONFIG } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
 
 // --- Interfaces ---
 
@@ -439,14 +440,8 @@ const DockerManager: React.FC = () => {
 
     const fetchContainers = useCallback(async () => {
         try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.CONTAINERS}`);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                throw new Error("Oops! Received non-JSON response from server.");
-            }
-            const data = await response.json();
-            setContainers(Array.isArray(data) ? data : []);
+            const response = await axiosInstance.get(API_CONFIG.ENDPOINTS.DOCKER.CONTAINERS);
+            setContainers(Array.isArray(response.data) ? response.data : []);
             setLoading(false);
         } catch (error) {
             console.error("Error fetching containers:", error);
@@ -458,10 +453,8 @@ const DockerManager: React.FC = () => {
         if (!containerId) return;
         setLogsLoading(true);
         try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.LOGS(containerId)}?tail=100`);
-            if (!response.ok) throw new Error("Log fetch failed");
-            const data = await response.json();
-            setLogs(data.logs || []);
+            const response = await axiosInstance.get(`${API_CONFIG.ENDPOINTS.DOCKER.LOGS(containerId)}?tail=100`);
+            setLogs(response.data.logs || []);
         } catch (error) {
             console.error("Failed to fetch logs:", error);
         } finally {
@@ -471,10 +464,8 @@ const DockerManager: React.FC = () => {
 
     const fetchHistory = useCallback(async (containerId: string) => {
         try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.HISTORY(containerId)}?minutes=60`);
-            if (!response.ok) throw new Error("History fetch failed");
-            const data = await response.json();
-            setHistory(data || []);
+            const response = await axiosInstance.get(`${API_CONFIG.ENDPOINTS.DOCKER.HISTORY(containerId)}?minutes=60`);
+            setHistory(response.data || []);
         } catch (error) {
             console.error("Failed to fetch history:", error);
         }
@@ -482,10 +473,8 @@ const DockerManager: React.FC = () => {
 
     const fetchUsage = useCallback(async (containerId: string) => {
         try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.USAGE(containerId)}`);
-            if (!response.ok) throw new Error("Usage fetch failed");
-            const data = await response.json();
-            setUsage(data);
+            const response = await axiosInstance.get(API_CONFIG.ENDPOINTS.DOCKER.USAGE(containerId));
+            setUsage(response.data);
         } catch (error) {
             console.error("Failed to fetch usage:", error);
         }
@@ -494,17 +483,12 @@ const DockerManager: React.FC = () => {
     const handleAction = useCallback(async (containerId: string, action: string) => {
         setActionLoading(`${containerId}-${action}`);
         try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.CONTAINERS}/${containerId}/action`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action })
-            });
-            const data = await response.json();
-            if (data.status === "success") {
+            const response = await axiosInstance.post(`${API_CONFIG.ENDPOINTS.DOCKER.CONTAINERS}/${containerId}/action`, { action });
+            if (response.data.status === "success") {
                 toast.success(`Container ${action}ed successfully`);
                 fetchContainers();
             } else {
-                toast.error(data.message || `Failed to ${action} container`);
+                toast.error(response.data.message || `Failed to ${action} container`);
             }
         } catch (error) {
             toast.error(`Error performing ${action}`);
@@ -518,13 +502,8 @@ const DockerManager: React.FC = () => {
 
         const toastId = toast.loading("Pruning stopped containers...");
         try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCKER.PRUNE}`, {
-                method: 'POST',
-            });
-
-            if (!response.ok) throw new Error('Prune failed');
-
-            const result = await response.json();
+            const response = await axiosInstance.post(API_CONFIG.ENDPOINTS.DOCKER.PRUNE);
+            const result = response.data;
             if (result.error) throw new Error(result.error);
 
             const deletedCount = result.ContainersDeleted?.length || 0;

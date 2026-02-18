@@ -7,6 +7,7 @@ from .notifications import notification_service
 from .cleanup import run_cleanup_job
 from .quotas import check_quotas
 from .uptime import check_device_availability
+from .aggregator import run_aggregation_job
 import logging
 import json
 
@@ -29,6 +30,9 @@ class SchedulerService:
         # Schedule uptime check every 1 minute
         self.schedule_uptime_check()
 
+        # Schedule aggregation every hour
+        self.schedule_aggregation()
+
     def schedule_uptime_check(self):
         """Schedules the device uptime/offline check."""
         if not self.scheduler.get_job("uptime_monitor"):
@@ -40,6 +44,18 @@ class SchedulerService:
                 replace_existing=True
             )
             logger.info("Uptime monitor scheduled (Every 1 min).")
+
+    def schedule_aggregation(self):
+        """Schedules the daily aggregation job."""
+        if not self.scheduler.get_job("daily_aggregation"):
+            self.scheduler.add_job(
+                run_aggregation_job,
+                'interval',
+                hours=1,
+                id="daily_aggregation",
+                replace_existing=True
+            )
+            logger.info("Daily aggregation scheduled (Every 1 hour).")
 
     def schedule_quota_check(self):
         """Schedules the bandwidth quota check."""

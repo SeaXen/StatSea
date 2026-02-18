@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,8 +19,39 @@ from .models import models
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
+# Seed default admin user
+from .db.database import SessionLocal
+def seed_admin():
+    db = SessionLocal()
+    try:
+        admin = db.query(models.User).filter(models.User.username == "admin").first()
+        if not admin:
+            admin = models.User(
+                username="admin",
+                email="admin@statsea.local",
+                hashed_password=models.User.get_password_hash("admin123"),
+                full_name="StatSea Admin",
+                is_admin=True
+            )
+            db.add(admin)
+            db.commit()
+            print("Default admin user created: admin / admin123")
+    finally:
+        db.close()
+
+seed_admin()
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Security check: Warn if using default JWT secret
+    jwt_secret = os.getenv("JWT_SECRET_KEY")
+    if not jwt_secret or jwt_secret == "statsea-jwt-secret-key-change-me-at-least-thirty-two-chars":
+        print("\n" + "!" * 80)
+        print("WARNING: SECURITY RISK DETECTED")
+        print("You are using the default JWT_SECRET_KEY. This is highly insecure.")
+        print("Please set a secure JWT_SECRET_KEY in your environment variables.")
+        print("!" * 80 + "\n")
+
     # Start services
     global_collector.start()
     docker_monitor.start()

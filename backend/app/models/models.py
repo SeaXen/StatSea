@@ -2,6 +2,26 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, B
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..db.database import Base
+import bcrypt
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    full_name = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    def verify_password(self, password: str):
+        return bcrypt.checkpw(password.encode('utf-8'), self.hashed_password.encode('utf-8'))
+
+    @staticmethod
+    def get_password_hash(password: str):
+        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 class DeviceGroup(Base):
     __tablename__ = "device_groups"
@@ -186,6 +206,59 @@ class DnsLog(Base):
     device_id = Column(Integer, ForeignKey("devices.id"), nullable=True)
     query_domain = Column(String, index=True)
     record_type = Column(String) # A, AAAA, CNAME, etc.
+    
+    device = relationship("Device")
+
+class SystemDailySummary(Base):
+    """Aggregated daily usage for the whole system"""
+    __tablename__ = "system_daily_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, index=True, unique=True)
+    bytes_sent = Column(BigInteger, default=0)
+    bytes_recv = Column(BigInteger, default=0)
+    packets_sent = Column(BigInteger, default=0)
+    packets_recv = Column(BigInteger, default=0)
+
+class SystemMonthlySummary(Base):
+    """Aggregated monthly usage for the whole system"""
+    __tablename__ = "system_monthly_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    month = Column(String, index=True) # YYYY-MM
+    bytes_sent = Column(BigInteger, default=0)
+    bytes_recv = Column(BigInteger, default=0)
+
+class SystemYearlySummary(Base):
+    """Aggregated yearly usage for the whole system"""
+    __tablename__ = "system_yearly_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    year = Column(Integer, index=True) # YYYY
+    bytes_sent = Column(BigInteger, default=0)
+    bytes_recv = Column(BigInteger, default=0)
+
+class DeviceMonthlySummary(Base):
+    """Aggregated monthly usage for a device"""
+    __tablename__ = "device_monthly_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(Integer, ForeignKey("devices.id"))
+    month = Column(String, index=True) # YYYY-MM
+    upload_bytes = Column(BigInteger, default=0)
+    download_bytes = Column(BigInteger, default=0)
+    
+    device = relationship("Device")
+
+class DeviceYearlySummary(Base):
+    """Aggregated yearly usage for a device"""
+    __tablename__ = "device_yearly_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(Integer, ForeignKey("devices.id"))
+    year = Column(Integer, index=True) # YYYY
+    upload_bytes = Column(BigInteger, default=0)
+    download_bytes = Column(BigInteger, default=0)
     
     device = relationship("Device")
 

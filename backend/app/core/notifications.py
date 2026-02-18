@@ -1,7 +1,7 @@
 import requests
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 class NotificationService:
     def __init__(self):
@@ -73,7 +73,7 @@ class NotificationService:
             "title": f"🛡️ Statsea Security Alert: {title}",
             "description": description,
             "color": color_map.get(severity.upper(), 3447003),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "footer": {"text": "Statsea Network Intelligence"},
         }
 

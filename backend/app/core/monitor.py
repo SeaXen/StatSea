@@ -114,10 +114,7 @@ class NetworkMonitor:
         try:
             print("Network Monitor: Loop started.")
             while self.running:
-                # 1. Capture bandwidth
-                self.capture_bandwidth(db)
-
-                # 2. Capture latency & check anomalies
+                # 1. Capture latency & check anomalies
                 await self.log_latency(db)
 
                 # 3. Security Checks (every loop for now, maybe throttle later)

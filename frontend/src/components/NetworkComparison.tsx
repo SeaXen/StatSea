@@ -6,9 +6,10 @@ import {
 } from 'recharts';
 import {
     ArrowRightLeft, Calendar, TrendingUp, TrendingDown, Activity,
-    ArrowUp, ArrowDown, Timer
+    Timer
 } from 'lucide-react';
 import { API_CONFIG } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
 
 interface HistoryPoint {
     timestamp: string;
@@ -44,7 +45,7 @@ const NetworkComparison: React.FC = () => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
-    const getRangeDates = (range: string, offset: boolean = false) => {
+    const getRangeDates = (range: string) => {
         const end = new Date();
         const start = new Date();
 
@@ -83,14 +84,15 @@ const NetworkComparison: React.FC = () => {
 
             // Fetch concurrently
             const [resA, resB] = await Promise.all([
-                fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SYSTEM_NETWORK_HISTORY}?start=${datesA.start.toISOString()}&end=${datesA.end.toISOString()}`),
-                fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SYSTEM_NETWORK_HISTORY}?start=${datesB.start.toISOString()}&end=${datesB.end.toISOString()}`)
+                axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY_SYSTEM, {
+                    params: { start: datesA.start.toISOString(), end: datesA.end.toISOString() }
+                }),
+                axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY_SYSTEM, {
+                    params: { start: datesB.start.toISOString(), end: datesB.end.toISOString() }
+                })
             ]);
 
-            const dataA = await resA.json();
-            const dataB = await resB.json();
-
-            setData({ periodA: dataA, periodB: dataB });
+            setData({ periodA: resA.data, periodB: resB.data });
         } catch (error) {
             console.error("Failed to fetch comparison data", error);
         } finally {
@@ -297,7 +299,7 @@ const NetworkComparison: React.FC = () => {
                                     contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '8px' }}
                                     itemStyle={{ color: '#e5e7eb' }}
                                     formatter={(value: number) => formatBytes(value)}
-                                    labelFormatter={(label) => `Data Point`}
+                                    labelFormatter={() => `Data Point`}
                                 />
                                 <Legend />
                                 <Area

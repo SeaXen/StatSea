@@ -1,4 +1,5 @@
 import { API_CONFIG } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
 
 // Raw response from backend (matches SQLAlchemy model)
 interface SpeedtestResultDTO {
@@ -55,27 +56,13 @@ class SpeedtestService {
     }
 
     async getHistory(): Promise<SpeedtestResult[]> {
-        const response = await fetch(`${API_CONFIG.BASE_URL}/speedtest`);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch history: ${response.statusText}`);
-        }
-        const data: SpeedtestResultDTO[] = await response.json();
-        return data.map(this.mapToDomain);
+        const response = await axiosInstance.get(API_CONFIG.ENDPOINTS.SPEEDTEST);
+        return response.data.map(this.mapToDomain);
     }
 
     async runSpeedtest(provider: 'ookla' | 'cloudflare'): Promise<SpeedtestResult> {
-        const response = await fetch(`${API_CONFIG.BASE_URL}/speedtest?provider=${provider}`, {
-            method: 'POST',
-        });
-
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.detail || `Speedtest failed: ${response.statusText}`);
-        }
-
-        const data: SpeedtestResultDTO = await response.json();
-        return this.mapToDomain(data);
+        const response = await axiosInstance.post(`${API_CONFIG.ENDPOINTS.SPEEDTEST}?provider=${provider}`);
+        return this.mapToDomain(response.data);
     }
 }
 

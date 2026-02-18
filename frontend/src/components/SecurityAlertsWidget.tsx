@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, AlertTriangle, Info, CheckCircle, Bell, X, Check, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import axiosInstance from '../config/axiosInstance';
 import { API_CONFIG } from '../config/apiConfig';
 
 interface SecurityAlert {
@@ -27,11 +28,8 @@ export function SecurityAlertsWidget() {
             if (filterSeverity !== 'all') params.append('severity', filterSeverity);
             if (filterTimeframe !== 'all') params.append('timeframe', filterTimeframe);
 
-            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SECURITY.ALERTS}?${params.toString()}`);
-            if (response.ok) {
-                const data = await response.json();
-                setAlerts(data);
-            }
+            const response = await axiosInstance.get(`${API_CONFIG.ENDPOINTS.SECURITY.ALERTS}?${params.toString()}`);
+            setAlerts(response.data);
         } catch (error) {
             console.error("Error fetching alerts:", error);
         } finally {
@@ -48,15 +46,10 @@ export function SecurityAlertsWidget() {
     const handleResolve = async (id: number, e: React.MouseEvent) => {
         e.stopPropagation();
         try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SECURITY.RESOLVE(id)}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' } // Add auth header if needed later
-            });
-            if (response.ok) {
-                setAlerts(prev => prev.map(a => a.id === id ? { ...a, is_resolved: true } : a));
-                if (selectedAlert?.id === id) {
-                    setSelectedAlert(prev => prev ? { ...prev, is_resolved: true } : null);
-                }
+            await axiosInstance.patch(API_CONFIG.ENDPOINTS.SECURITY.RESOLVE(id));
+            setAlerts(prev => prev.map(a => a.id === id ? { ...a, is_resolved: true } : a));
+            if (selectedAlert?.id === id) {
+                setSelectedAlert(prev => prev ? { ...prev, is_resolved: true } : null);
             }
         } catch (error) {
             console.error("Error resolving alert:", error);

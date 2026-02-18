@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Settings, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import axiosInstance from '../config/axiosInstance';
+import { API_CONFIG } from '../config/apiConfig';
 
 interface QuotaManagerProps {
     deviceId: number;
@@ -18,16 +20,9 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
     useEffect(() => {
         const fetchQuota = async () => {
             try {
-                const res = await fetch(`/api/quotas/${deviceId}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setDailyLimit(data.daily_limit_bytes);
-                    setMonthlyLimit(data.monthly_limit_bytes);
-                } else if (res.status === 404) {
-                    // No quota set
-                    setDailyLimit(null);
-                    setMonthlyLimit(null);
-                }
+                const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.QUOTA.BY_ID(deviceId));
+                setDailyLimit(res.data.daily_limit_bytes);
+                setMonthlyLimit(res.data.monthly_limit_bytes);
             } catch (err) {
                 console.error("Failed to fetch quota", err);
             } finally {
@@ -40,16 +35,11 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
     const handleSave = async () => {
         setSaving(true);
         try {
-            const res = await fetch(`/api/quotas/${deviceId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    daily_limit_bytes: dailyLimit,
-                    monthly_limit_bytes: monthlyLimit,
-                    device_id: deviceId
-                })
+            await axiosInstance.put(API_CONFIG.ENDPOINTS.QUOTA.BY_ID(deviceId), {
+                daily_limit_bytes: dailyLimit,
+                monthly_limit_bytes: monthlyLimit,
+                device_id: deviceId
             });
-            if (!res.ok) throw new Error("Failed to save quota");
             toast.success("Quota updated successfully");
         } catch (err) {
             toast.error("Failed to update quota");

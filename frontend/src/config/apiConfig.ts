@@ -9,6 +9,12 @@ export const API_CONFIG = {
         ANALYTICS: {
             SUMMARY: '/analytics/summary',
             HISTORY: '/network/history',
+            PACKETS: '/analytics/packets',
+            PREDICTION: '/analytics/prediction',
+            ANOMALIES: '/analytics/anomalies',
+            HISTORY_SYSTEM: '/analytics/history/system',
+            HISTORY_DEVICE: (mac: string) => `/analytics/history/device/${mac}`,
+            YEARLY: '/analytics/yearly',
         },
         SECURITY: {
             EVENTS: '/security/events',
@@ -25,13 +31,29 @@ export const API_CONFIG = {
             USAGE: (id: string) => `/docker/${id}/usage`,
             PRUNE: '/docker/prune',
         },
-        DEVICES: '/devices',
+        DEVICES: {
+            LIST: '/devices',
+            GROUPS: '/groups',
+            WAKE: (mac: string) => `/devices/${mac}/wake`,
+        },
         SPEEDTEST: '/speedtest',
         SETTINGS: '/settings',
         SYSTEM: {
             INFO: '/system/info',
             PROCESSES: '/system/processes',
         },
+        DNS: {
+            LOGS: '/network/dns',
+            TOP: '/network/dns/top',
+        },
+        QUOTA: {
+            BASE: '/quotas',
+            BY_ID: (id: number) => `/quotas/${id}`,
+        },
+        AUTH: {
+            LOGOUT: '/auth/logout',
+            ME: '/auth/me',
+        }
     }
 } as const; // Add 'as const' to infer literal types correctly
 
