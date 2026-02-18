@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Activity, Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Toaster } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { TopDevicesWidget } from './components/TopDevicesWidget';
 import { ActiveConnectionsWidget } from './components/ActiveConnectionsWidget';
 import { CommandPalette } from './components/CommandPalette';
@@ -12,6 +12,7 @@ import { NetworkMap } from './components/NetworkMap';
 import { SecurityAlertsWidget } from './components/SecurityAlertsWidget';
 import { ConnectionGlobe } from './components/ConnectionGlobe';
 import DockerManager from './components/DockerManager';
+import { UserManagement } from './components/UserManagement';
 
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import SpeedtestPage from './components/SpeedtestPage';
@@ -246,6 +247,12 @@ function AppContent() {
                         {activeTab === 'speedtest' && (
                             <div className={`${activeTab === 'speedtest' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
                                 <SpeedtestPage />
+                            </div>
+                        )}
+
+                        {activeTab === 'users' && (
+                            <div className={`${activeTab === 'users' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
+                                <UserManagement />
                             </div>
                         )}
 

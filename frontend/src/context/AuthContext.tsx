@@ -13,7 +13,8 @@ interface User {
 interface AuthContextType {
     user: User | null;
     token: string | null;
-    login: (token: string) => Promise<void>;
+    refreshToken: string | null;
+    login: (token: string, refreshToken: string) => Promise<void>;
     logout: () => void;
     isLoading: boolean;
 }
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(localStorage.getItem('statsea_token'));
+    const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem('statsea_refresh_token'));
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchUser = async () => {
@@ -47,22 +49,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, [token]);
 
-    const login = async (newToken: string) => {
+    const login = async (newToken: string, newRefreshToken: string) => {
         localStorage.setItem('statsea_token', newToken);
+        localStorage.setItem('statsea_refresh_token', newRefreshToken);
         setToken(newToken);
-        // We don't await fetchUser here because useEffect will trigger it 
-        // once token state changes, but for immediate UI response:
+        setRefreshToken(newRefreshToken);
         await fetchUser();
     };
 
     const logout = () => {
         localStorage.removeItem('statsea_token');
+        localStorage.removeItem('statsea_refresh_token');
         setToken(null);
+        setRefreshToken(null);
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, token, refreshToken, login, logout, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

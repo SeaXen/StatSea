@@ -3,6 +3,7 @@ import { Save, Sun, Bell, Activity, Terminal, Database, Trash2, ShieldCheck, Cpu
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import axiosInstance from '../config/axiosInstance';
+import { useAuth } from '../context/AuthContext';
 import { API_CONFIG } from '../config/apiConfig';
 import { presets, accentColors, legacyThemes, ThemeConfig, ThemeMode } from '../lib/themes';
 
@@ -16,9 +17,15 @@ interface Setting {
 export default function Settings() {
     const [settings, setSettings] = useState<Record<string, string>>({});
     const [activeSection, setActiveSection] = useState('appearance');
-    const [themeConfig, setThemeConfig] = useState<ThemeConfig>({ mode: 'dark', accent: accentColors[0].value });
     const [devMode, setDevMode] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+
+    // Password change state
+    const { user } = useAuth();
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
 
     // Initial Load & Migration
     useEffect(() => {
@@ -186,6 +193,35 @@ export default function Settings() {
         }
     };
 
+    const handleChangePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newPassword !== confirmPassword) {
+            toast.error("New passwords do not match");
+            return;
+        }
+        if (newPassword.length < 6) {
+            toast.error("Password must be at least 6 characters");
+            return;
+        }
+
+        setIsChangingPassword(true);
+        try {
+            await axiosInstance.post('/auth/change-password', {
+                current_password: currentPassword,
+                new_password: newPassword
+            });
+            toast.success("Password changed successfully");
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error: any) {
+            const detail = error.response?.data?.detail || "Failed to change password";
+            toast.error(detail);
+        } finally {
+            setIsChangingPassword(false);
+        }
+    };
+
     const SidebarItem = ({ id, icon: Icon, label }: { id: string, icon: any, label: string }) => (
         <button
             onClick={() => setActiveSection(id)}
@@ -283,13 +319,71 @@ export default function Settings() {
                                                 <User className="w-10 h-10" />
                                             </div>
                                             <div>
-                                                <h2 className="text-2xl font-bold">Administrator</h2>
-                                                <p className="text-muted-foreground">Local System User</p>
+                                                <h2 className="text-2xl font-bold">{user?.full_name || user?.username || 'User'}</h2>
+                                                <p className="text-muted-foreground">{user?.email || 'No email provided'}</p>
                                                 <div className="mt-2 text-xs font-mono bg-primary/5 text-primary px-2 py-1 rounded inline-block border border-primary/10">
-                                                    ID: LOCAL-ADMIN-01
+                                                    ROLE: {user?.is_admin ? 'ADMINISTRATOR' : 'GENERAL USER'}
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    <div className="p-8 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
+                                        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                            <ShieldCheck className="w-5 h-5 text-primary" />
+                                            Security & Password
+                                        </h3>
+
+                                        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-muted-foreground">Current Password</label>
+                                                <input
+                                                    type="password"
+                                                    required
+                                                    value={currentPassword}
+                                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                                    className="w-full bg-card/50 border border-border/50 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                                                    placeholder="••••••••"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-muted-foreground">New Password</label>
+                                                <input
+                                                    type="password"
+                                                    required
+                                                    value={newPassword}
+                                                    onChange={(e) => setNewPassword(e.target.value)}
+                                                    className="w-full bg-card/50 border border-border/50 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                                                    placeholder="••••••••"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-muted-foreground">Confirm New Password</label>
+                                                <input
+                                                    type="password"
+                                                    required
+                                                    value={confirmPassword}
+                                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                                    className="w-full bg-card/50 border border-border/50 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                                                    placeholder="••••••••"
+                                                />
+                                            </div>
+
+                                            <button
+                                                type="submit"
+                                                disabled={isChangingPassword}
+                                                className="w-full bg-primary text-primary-foreground font-semibold py-3 rounded-xl hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                                            >
+                                                {isChangingPassword ? (
+                                                    <>
+                                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                                        Updating...
+                                                    </>
+                                                ) : (
+                                                    'Update Password'
+                                                )}
+                                            </button>
+                                        </form>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-50 pointer-events-none filter grayscale">

@@ -10,9 +10,11 @@ import {
     Settings,
     ChevronLeft,
     Menu,
-    LogOut
+    LogOut,
+    Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
     activeTab: string;
@@ -31,6 +33,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     isMobileOpen,
     setIsMobileOpen
 }) => {
+    const { user } = useAuth();
+
     const navItems = [
         { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
         { id: 'devices', label: 'Devices', icon: Server },
@@ -41,6 +45,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'speedtest', label: 'Speed', icon: Zap },
         { id: 'settings', label: 'Settings', icon: Settings },
     ];
+
+    // Add admin-only items
+    if (user?.is_admin) {
+        navItems.splice(navItems.length - 1, 0, { id: 'users', label: 'Users', icon: Users });
+    }
 
     const sidebarVariants = {
         expanded: { width: 240 },
@@ -168,8 +177,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <div className="flex items-center gap-3 w-full">
                                 <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 ring-1 ring-white/10" />
                                 <div className="flex flex-col items-start truncate text-left">
-                                    <span className="text-sm font-medium text-white/90">Admin User</span>
-                                    <span className="text-xs text-blue-400">Pro License</span>
+                                    <span className="text-sm font-medium text-white/90 truncate max-w-[120px]">{user?.full_name || user?.username}</span>
+                                    <span className="text-[10px] text-blue-400 capitalize">{user?.is_admin ? 'Administrator' : 'General User'}</span>
                                 </div>
                                 <div className="ml-auto text-gray-500 group-hover:text-gray-300">
                                     <LogOut className="h-4 w-4" />

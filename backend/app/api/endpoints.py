@@ -23,7 +23,7 @@ from ..core.limiter import limiter
 from ..core.wol import wake_device
 from ..core.ip_intel import get_ip_info
 from ..core.ai_predictor import ai_predictor
-from ..core.auth_jwt import create_access_token, get_current_user, get_current_admin_user
+from ..core.auth_jwt import create_access_token, create_refresh_token, get_current_user, get_current_admin_user
 from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter()
@@ -741,7 +741,11 @@ def delete_group(group_id: int, db: Session = Depends(get_db), admin_user: model
 # Authentication Endpoints
 
 @router.post("/auth/login", response_model=schemas.Token)
-async def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(
+    db: Session = Depends(get_db), 
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    remember_me: bool = Form(False)
+):
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
     if not user or not user.verify_password(form_data.password):
         raise HTTPException(
@@ -750,15 +754,141 @@ async def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestF
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer"}
+    expires_delta = None
+    if remember_me:
+        expires_delta = timedelta(days=7)
+    else:
+        expires_delta = timedelta(days=1)
+        
+    refresh_token_str, expires_at = create_refresh_token(user_id=user.id, expires_delta=expires_delta)
+    
+    # Save refresh token to DB
+    db_refresh_token = models.RefreshToken(
+        token=refresh_token_str,
+        user_id=user.id,
+        expires_at=expires_at
+    )
+    db.add(db_refresh_token)
+    
+    # Update last login
+    user.last_login = datetime.now() # timezone-aware is already handled by DB if configured, but let's be safe
+    from datetime import timezone
+    user.last_login = datetime.now(timezone.utc)
+    
+    db.commit()
+    
+    return {
+        "access_token": access_token, 
+        "refresh_token": refresh_token_str, 
+        "token_type": "bearer"
+    }
+
+@router.post("/auth/refresh", response_model=schemas.Token)
+async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
+    db_token = db.query(models.RefreshToken).filter(
+        models.RefreshToken.token == refresh_token,
+        models.RefreshToken.is_revoked == False,
+        models.RefreshToken.expires_at > datetime.now(timezone.utc) # need to ensure timezone matches
+    ).first()
+    
+    if not db_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token"
+        )
+    
+    user = db_token.user
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="User unavailable")
+        
+    # Rotate token: revoke old one, issue new ones
+    db_token.is_revoked = True
+    
+    new_access_token = create_access_token(data={"sub": user.username})
+    new_refresh_token_str, new_expires_at = create_refresh_token(user_id=user.id)
+    
+    new_db_token = models.RefreshToken(
+        token=new_refresh_token_str,
+        user_id=user.id,
+        expires_at=new_expires_at
+    )
+    db.add(new_db_token)
+    db.commit()
+    
+    return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token_str,
+        "token_type": "bearer"
+    }
 
 @router.get("/auth/me", response_model=schemas.User)
 async def get_me(current_user: models.User = Depends(get_current_user)):
     return current_user
 
+@router.post("/auth/change-password")
+async def change_password(payload: dict, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Allows a user to change their own password."""
+    current_password = payload.get("current_password")
+    new_password = payload.get("new_password")
+    
+    if not current_password or not new_password:
+        raise HTTPException(status_code=400, detail="Missing passwords")
+        
+    if not current_user.verify_password(current_password):
+        raise HTTPException(status_code=400, detail="Incorrect current password")
+        
+    current_user.hashed_password = models.User.get_password_hash(new_password)
+    db.commit()
+    return {"status": "success", "message": "Password updated successfully"}
+
 @router.post("/auth/logout")
-async def logout():
-    # In JWT, logout is primarily handled by the client discarding the token.
-    # We could implement a blacklist if needed later.
+async def logout(refresh_token: Optional[str] = None, db: Session = Depends(get_db)):
+    if refresh_token:
+        db_token = db.query(models.RefreshToken).filter(models.RefreshToken.token == refresh_token).first()
+        if db_token:
+            db_token.is_revoked = True
+            db.commit()
     return {"status": "success", "message": "Logged out successfully"}
+
+# Admin User Management
+
+@router.get("/admin/users", response_model=List[schemas.User])
+def list_users(db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
+    """Returns all users."""
+    return db.query(models.User).all()
+
+@router.put("/admin/users/{user_id}", response_model=schemas.User)
+def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
+    """Updates a user (roles, active status, etc)."""
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user_update.email is not None:
+        db_user.email = user_update.email
+    if user_update.full_name is not None:
+        db_user.full_name = user_update.full_name
+    if user_update.is_active is not None:
+        db_user.is_active = user_update.is_active
+    if user_update.is_admin is not None:
+        db_user.is_admin = user_update.is_admin
+    if user_update.password is not None:
+        db_user.hashed_password = models.User.get_password_hash(user_update.password)
+        
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+@router.delete("/admin/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
+    """Deletes a user."""
+    if user_id == admin_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+        
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    db.delete(db_user)
+    db.commit()
+    return {"status": "success"}

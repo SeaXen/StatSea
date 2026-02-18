@@ -4,12 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Lock, User, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import axiosInstance from '../config/axiosInstance';
+import { toast } from 'sonner';
 
 const LoginPage: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -21,12 +23,14 @@ const LoginPage: React.FC = () => {
         const formData = new FormData();
         formData.append('username', username);
         formData.append('password', password);
+        formData.append('remember_me', String(rememberMe));
 
         try {
             const response = await axiosInstance.post('/auth/login', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            await login(response.data.access_token);
+            const { access_token, refresh_token } = response.data;
+            await login(access_token, refresh_token);
             navigate('/');
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Invalid username or password');
@@ -94,6 +98,33 @@ const LoginPage: React.FC = () => {
                                     />
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Remember Me */}
+                        <div className="flex items-center justify-between">
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-5 h-5 bg-slate-950/50 border border-slate-800 rounded-md peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all" />
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <Shield className="w-3 h-3 text-white" />
+                                    </div>
+                                </div>
+                                <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">Remember me</span>
+                            </label>
+
+                            <button
+                                type="button"
+                                className="text-sm text-blue-500 hover:text-blue-400 transition-colors font-medium"
+                                onClick={() => toast.info("Please contact your administrator to reset password.")}
+                            >
+                                Forgot Password?
+                            </button>
                         </div>
 
                         {/* Error Message */}

@@ -156,12 +156,14 @@ class UserUpdate(BaseModel):
 class User(UserBase):
     id: int
     created_at: datetime
+    last_login: Optional[datetime] = None
 
     class Config:
         from_attributes = True
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
 
 class TokenData(BaseModel):

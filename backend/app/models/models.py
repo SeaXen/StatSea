@@ -15,6 +15,9 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_login = Column(DateTime(timezone=True), nullable=True)
+
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
 
     def verify_password(self, password: str):
         return bcrypt.checkpw(password.encode('utf-8'), self.hashed_password.encode('utf-8'))
@@ -22,6 +25,18 @@ class User(Base):
     @staticmethod
     def get_password_hash(password: str):
         return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    expires_at = Column(DateTime(timezone=True), index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    is_revoked = Column(Boolean, default=False)
+
+    user = relationship("User", back_populates="refresh_tokens")
 
 class DeviceGroup(Base):
     __tablename__ = "device_groups"
