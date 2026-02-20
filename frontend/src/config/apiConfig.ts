@@ -1,11 +1,11 @@
 /// <reference types="vite/client" />
 // Basic API Configuration
-const API_PORT = import.meta.env.VITE_API_PORT || '21081';
+const API_PORT = import.meta.env.VITE_API_PORT || '8001';
 export const API_CONFIG = {
     BASE_URL: `http://${window.location.hostname}:${API_PORT}/api`,
     WS_URL: `ws://${window.location.hostname}:${API_PORT}/api`,
     ENDPOINTS: {
-        HEALTH: '/network/health',
+        HEALTH: '/health',
         ANALYTICS: {
             SUMMARY: '/analytics/summary',
             HISTORY: '/network/history',
@@ -43,8 +43,8 @@ export const API_CONFIG = {
             PROCESSES: '/system/processes',
         },
         DNS: {
-            LOGS: '/network/dns',
-            TOP: '/network/dns/top',
+            LOGS: '/analytics/dns-logs',
+            TOP: '/analytics/dns-logs/top',
         },
         QUOTA: {
             BASE: '/quotas',

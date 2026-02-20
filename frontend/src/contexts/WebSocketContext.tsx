@@ -49,8 +49,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         let isMounted = true;
 
         const connect = () => {
-            const wsUrl = getWsUrl('/api/ws/live');
-            const eventWsUrl = getWsUrl('/api/ws/events');
+            const wsUrl = getWsUrl('/ws/live');
+            const eventWsUrl = getWsUrl('/ws/events');
 
             ws = new WebSocket(wsUrl);
             eventWs = new WebSocket(eventWsUrl);

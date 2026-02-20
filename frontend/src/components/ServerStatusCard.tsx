@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { API_CONFIG } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
 import { WidgetSkeleton } from './skeletons/WidgetSkeleton';
 
 interface SystemInfo {
@@ -36,9 +37,8 @@ const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ onDetailClick }) =>
 
     const fetchInfo = async () => {
         try {
-            const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SYSTEM.INFO}`);
-            const data = await res.json();
-            setInfo(data);
+            const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.SYSTEM.INFO);
+            setInfo(res.data);
             setLoading(false);
             setLastUpdated(new Date());
         } catch (error) {

@@ -1,20 +1,48 @@
+"""
+Tests for root and health endpoints.
+All sync — uses TestClient from conftest.
+"""
 
-def test_read_main(client):
+
+def test_root(client):
     response = client.get("/")
-    assert response.status_code == 404 # Root path not defined in main.py usually, or depends on SPA serving
-    # If SPA serving is enabled, it might return 200 with index.html.
-    # Let's check a known endpoint like /health or /api/health if exists, or just check that app is up.
-    
-def test_health_check(client):
-    # Assuming we might add a health check, but for now let's check a known endpoint
-    # that doesn't require auth or complex setup, like /api/v1/system/status if it existed.
-    # Actually, let's check /api/v1/network/status or similar if available/public.
-    # Based on endpoints.py, let's try a simple one.
-    pass
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "online"
 
-def test_root_files_serving(client):
-    # Tests that static files are being served or handled
-    response = client.get("/index.html")
-    # This might fail if static files aren't set up in the test environment correctly
-    # or if we are mocking too much.
-    pass
+
+def test_health_check(auth_client):
+    response = auth_client.get("/api/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "healthy"
+
+
+def test_unauthenticated_blocked(client):
+    """Ensure protected routes reject unauthenticated requests."""
+    response = client.get("/api/devices")
+    assert response.status_code in (401, 403)
+
+
+def test_admin_users_list(auth_client):
+    """Admin can list users."""
+    response = auth_client.get("/api/admin/users")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+def test_settings_get(auth_client):
+    response = auth_client.get("/api/settings")
+    assert response.status_code == 200
+
+
+def test_system_info(auth_client):
+    response = auth_client.get("/api/system/info")
+    assert response.status_code == 200
+
+
+def test_alerts(auth_client):
+    """Security alerts endpoint is accessible for admin users."""
+    response = auth_client.get("/api/alerts")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)

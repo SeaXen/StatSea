@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # Database
-    DATABASE_URL: str = "sqlite:///./statsea.db"
+    DATABASE_URL: str = "sqlite:///./data/statsea_saas.db"
 
     # CORS
     CORS_ORIGINS: list[str] = [

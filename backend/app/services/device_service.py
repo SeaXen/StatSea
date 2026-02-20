@@ -80,8 +80,6 @@ class DeviceService:
         if not device:
             raise DeviceNotFoundException(str(device_id))
 
-        if device_update.hostname is not None:
-            device.hostname = device_update.hostname
         if device_update.nickname is not None:
             device.nickname = device_update.nickname
         if device_update.notes is not None:

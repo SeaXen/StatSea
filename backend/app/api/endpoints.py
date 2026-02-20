@@ -2,7 +2,7 @@ import asyncio
 import time
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, WebSocket
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -29,7 +29,15 @@ from ..services.user_service import UserService
 from ..services.log_service import LogService
 from ..services.email_service import EmailService
 
-from ..services.email_service import EmailService
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+# Alias for cleaner exception handling in WebSocket routes
+class ConnectionStateError(Exception):
+    """Raised when a WebSocket is in an invalid state."""
+    pass
 
 router = APIRouter()
 

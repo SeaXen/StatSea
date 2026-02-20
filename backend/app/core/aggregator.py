@@ -1,7 +1,7 @@
 import logging
 from datetime import date, timedelta
 
-from sqlalchemy import func
+from sqlalchemy import Integer, func
 
 from ..db.database import SessionLocal
 from ..models.models import (

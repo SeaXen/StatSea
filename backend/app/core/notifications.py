@@ -39,7 +39,7 @@ class NotificationService:
         # Send to Discord if configured
         if config.get("discord_webhook_url"):
             self._send_discord(
-                "Speedtest Completed",
+                title,
                 description,
                 "INFO",
                 fields,

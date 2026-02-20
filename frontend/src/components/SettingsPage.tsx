@@ -26,6 +26,10 @@ export default function Settings() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [themeConfig, setThemeConfig] = useState<ThemeConfig>({
+        mode: 'dark',
+        accent: accentColors[0].value
+    });
 
     // Initial Load & Migration
     useEffect(() => {

@@ -9,7 +9,9 @@ from sqlalchemy.orm import Session
 
 from app.models.models import SpeedtestResult
 
+
 logger = logging.getLogger(__name__)
+
 
 
 class SpeedtestService:
@@ -40,17 +42,18 @@ class SpeedtestService:
     def run_cloudflare_speedtest(self):
         """
         Runs a speedtest using Cloudflare's speed test endpoint.
+        Returns results in BPS (bits per second).
         """
         try:
             logger.info("Starting Cloudflare speedtest...")
-            start_time = time.time()
 
             # 1. Ping / Latency
             # perform 5 pings to get average latency
             latencies = []
             for _ in range(5):
                 t0 = time.time()
-                requests.get("https://speed.cloudflare.com/__down?bytes=0", timeout=5)
+                resp = requests.get("https://speed.cloudflare.com/__down?bytes=0", timeout=5)
+                resp.raise_for_status()
                 latencies.append((time.time() - t0) * 1000)
             avg_ping = sum(latencies) / len(latencies)
 
@@ -60,28 +63,36 @@ class SpeedtestService:
             t0 = time.time()
             # 10MB = 10 * 1024 * 1024 bytes
             size_bytes = 10 * 1024 * 1024
-            requests.get(f"https://speed.cloudflare.com/__down?bytes={size_bytes}", timeout=30)
+            resp = requests.get(f"https://speed.cloudflare.com/__down?bytes={size_bytes}", stream=True, timeout=30)
+            resp.raise_for_status()
+            
+            downloaded = 0
+            for chunk in resp.iter_content(chunk_size=8192):
+                downloaded += len(chunk)
+            
             duration = time.time() - t0
-            download_bps = (size_bytes * 8) / duration
+            # Calculate actual bps based on received data
+            download_bps = (downloaded * 8) / duration
 
             # 3. Upload Speed
             # Upload 1MB of data
             t0 = time.time()
             upload_data = b"0" * (1 * 1024 * 1024)
-            requests.post("https://speed.cloudflare.com/__up", data=upload_data, timeout=30)
+            resp = requests.post("https://speed.cloudflare.com/__up", data=upload_data, timeout=30)
+            resp.raise_for_status()
             duration = time.time() - t0
             upload_bps = (len(upload_data) * 8) / duration
 
             logger.info("Cloudflare Speedtest complete.")
             return {
-                "download": download_bps / 1_000_000,  # Convert to Mbps
-                "upload": upload_bps / 1_000_000,  # Convert to Mbps
+                "download": download_bps,  # bps
+                "upload": upload_bps,      # bps
                 "ping": avg_ping,
                 "server": {
                     "id": 0,
                     "name": "Cloudflare",
                     "country": "Anycast",
-                    "cc": "Unknown",  # Was hardcoded to CL
+                    "cc": "Unknown",
                 },
                 "timestamp": datetime.now(),
                 "provider": "cloudflare",
@@ -94,21 +105,22 @@ class SpeedtestService:
     def run_ookla_speedtest(self, server_id=None):
         try:
             logger.info("Starting Ookla speedtest...")
-            st = speedtest.Speedtest()
+            # Initialize with secure=True to avoid some common connection issues
+            st = speedtest.Speedtest(secure=True)
             if server_id:
                 st.get_servers([int(server_id)])
             else:
                 st.get_best_server()
 
             logger.info("Testing download speed...")
-            download = st.download()
+            download = st.download() # Returns bps
             logger.info("Testing upload speed...")
-            upload = st.upload()
+            upload = st.upload() # Returns bps
             logger.info("Ookla Speedtest complete.")
 
             return {
-                "download": download / 1_000_000,  # Convert to Mbps
-                "upload": upload / 1_000_000,  # Convert to Mbps
+                "download": download, # bps
+                "upload": upload,     # bps
                 "ping": st.results.ping,
                 "server": st.results.server,
                 "client": st.results.client,
@@ -137,8 +149,8 @@ class SpeedtestService:
             db_item = SpeedtestResult(
                 timestamp=result["timestamp"],
                 ping=result["ping"],
-                download=result["download"],
-                upload=result["upload"],
+                download=result["download"], # Storing as bps
+                upload=result["upload"],     # Storing as bps
                 server_id=int(result["server"]["id"]),
                 server_name=f"{result['server']['name']}, {result['server']['country']}",
                 server_country=result.get("server", {}).get("country", "Unknown"),

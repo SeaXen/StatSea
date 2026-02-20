@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from app.models import models
 import secrets
@@ -48,7 +49,6 @@ class StatusPageService:
         
         # Get active outages or system health for this org
         # For now, just return basic info + recent uptime summaries if available
-        org_id = page.organization_id
         
         # Simple health check based on online devices? or Security alerts?
         # Let's return a simple "All Systems Operational" for now unless there are critical alerts

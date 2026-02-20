@@ -1,7 +1,9 @@
 services:
   backend:
     build: ./backend
-    privileged: true
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
     network_mode: host
     volumes:
       - ./backend/data:/app/data

@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Activity, Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Toaster } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TopDevicesWidget } from './components/TopDevicesWidget';
 import { ActiveConnectionsWidget } from './components/ActiveConnectionsWidget';
 import { CommandPalette } from './components/CommandPalette';
@@ -220,59 +220,25 @@ function AppContent() {
                                 <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
                             </div>
                         }>
-                            {/* Dashboard - Always rendered for immediate access */}
-                            <div className={`${activeTab === 'dashboard' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                <Dashboard />
-                            </div>
-
-                            {/* Lazy Loaded Components with Keep-Alive */}
-                            {activeTab === 'devices' && (
-                                <div className={`${activeTab === 'devices' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                    <DevicesPage />
-                                </div>
-                            )}
-
-                            {activeTab === 'network' && (
-                                <div className={`${activeTab === 'network' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                    <NetworkMap />
-                                </div>
-                            )}
-
-                            {activeTab === 'geo' && (
-                                <div className={`${activeTab === 'geo' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                    <ConnectionGlobe />
-                                </div>
-                            )}
-
-                            {activeTab === 'analytics' && (
-                                <div className={`${activeTab === 'analytics' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                    <AnalyticsDashboard />
-                                </div>
-                            )}
-
-                            {activeTab === 'containers' && (
-                                <div className={`${activeTab === 'containers' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                    <DockerManager />
-                                </div>
-                            )}
-
-                            {activeTab === 'speedtest' && (
-                                <div className={`${activeTab === 'speedtest' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                    <SpeedtestPage />
-                                </div>
-                            )}
-
-                            {activeTab === 'users' && (
-                                <div className={`${activeTab === 'users' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                    <UserManagement />
-                                </div>
-                            )}
-
-                            {activeTab === 'settings' && (
-                                <div className={`${activeTab === 'settings' ? 'block animate-in fade-in zoom-in-95 duration-200' : 'hidden'}`}>
-                                    <SettingsPage />
-                                </div>
-                            )}
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeTab}
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -12 }}
+                                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                                >
+                                    {activeTab === 'dashboard' && <Dashboard />}
+                                    {activeTab === 'devices' && <DevicesPage />}
+                                    {activeTab === 'network' && <NetworkMap />}
+                                    {activeTab === 'geo' && <ConnectionGlobe />}
+                                    {activeTab === 'analytics' && <AnalyticsDashboard />}
+                                    {activeTab === 'containers' && <DockerManager />}
+                                    {activeTab === 'speedtest' && <SpeedtestPage />}
+                                    {activeTab === 'users' && <UserManagement />}
+                                    {activeTab === 'settings' && <SettingsPage />}
+                                </motion.div>
+                            </AnimatePresence>
                         </Suspense>
                     </div>
                 </main>

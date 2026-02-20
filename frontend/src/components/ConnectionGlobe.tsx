@@ -21,6 +21,23 @@ export const ConnectionGlobe = () => {
     // Mock home location (Center of Map for demo, or detected)
     const homeLocation = { lat: 23.8103, lon: 90.4125, label: 'Statsea Hub' };
 
+    const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const { width, height } = entry.contentRect;
+                setDimensions({ width, height });
+            }
+        });
+
+        resizeObserver.observe(containerRef.current);
+        return () => resizeObserver.disconnect();
+    }, []);
+
     useEffect(() => {
         const fetchConnections = async () => {
             try {
@@ -47,8 +64,6 @@ export const ConnectionGlobe = () => {
     const displayConnections = connections.length > 0 ? connections : sampleConnections;
 
     const getCountryFlag = (countryCode: string) => {
-        // Simple helper to convert country code to flag emoji
-        // This assumes countryCode is ISO 3166-1 alpha-2 (e.g. US, DE)
         if (!countryCode) return '🌐';
         const codePoints = countryCode
             .toUpperCase()
@@ -66,7 +81,6 @@ export const ConnectionGlobe = () => {
         name: `${conn.city}, ${conn.country} (${conn.ip})`
     }));
 
-    // Combine home location with connection destinations for points
     const pointsData = [
         homeLocation,
         ...displayConnections.map(conn => ({
@@ -79,7 +93,6 @@ export const ConnectionGlobe = () => {
     const [ipInfo, setIpInfo] = useState<any | null>(null);
     const [loadingIp, setLoadingIp] = useState(false);
 
-    // Aggregate top countries
     const topCountries = displayConnections.reduce((acc, curr) => {
         const existing = acc.find(c => c.country === curr.country);
         if (existing) {
@@ -91,11 +104,10 @@ export const ConnectionGlobe = () => {
         return acc;
     }, [] as { country: string, count: number, bytes: number }[]).sort((a, b) => b.bytes - a.bytes).slice(0, 5);
 
-
     return (
-        <div className="glass-card relative overflow-hidden bg-slate-900/50 border border-white/5 backdrop-blur-xl h-[600px] rounded-xl flex">
+        <div className="glass-card relative overflow-hidden bg-slate-900/50 border border-white/5 backdrop-blur-xl h-[600px] rounded-xl flex text-slate-200">
             {/* Left: Globe Area */}
-            <div className="flex-1 relative h-full">
+            <div ref={containerRef} className="flex-1 relative h-full bg-slate-950/20">
                 <div className="absolute top-4 left-4 z-10 flex items-center gap-2 pointer-events-none">
                     <div className="p-2 bg-blue-500/20 rounded-lg backdrop-blur-md">
                         <GlobeIcon className="w-5 h-5 text-blue-400" />
@@ -118,19 +130,21 @@ export const ConnectionGlobe = () => {
                 <Globe
                     ref={globeRef}
                     backgroundColor="rgba(0,0,0,0)"
-                    width={800} // This might need responsive handling or resize observer
-                    height={600}
+                    width={dimensions.width}
+                    height={dimensions.height}
                     globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
                     pointsData={pointsData}
                     pointColor={(d: any) => d === homeLocation ? '#3b82f6' : d === selectedPoint ? '#ef4444' : '#10b981'}
                     pointAltitude={(d: any) => d === selectedPoint ? 0.3 : 0.05}
                     pointRadius={(d: any) => d === homeLocation ? 0.5 : d === selectedPoint ? 0.8 : 0.4}
-                    pointsMerge={false} // changing to false to allow individual interaction
+                    pointsMerge={false}
                     onPointClick={async (point: any) => {
                         setSelectedPoint(point);
                         setIpInfo(null);
                         setLoadingIp(true);
-                        globeRef.current.pointOfView({ lat: point.lat, lon: point.lon, altitude: 2 }, 1000);
+                        if (globeRef.current) {
+                            globeRef.current.pointOfView({ lat: point.lat, lon: point.lon, altitude: 2 }, 1000);
+                        }
 
                         try {
                             const res = await fetch(`/api/network/ip/${point.ip}`);
@@ -151,7 +165,7 @@ export const ConnectionGlobe = () => {
                     labelsData={pointsData}
                     labelLat={(d: any) => d.lat}
                     labelLng={(d: any) => d.lon}
-                    labelText={(d: any) => d === homeLocation ? d.label : ''} // Only show home label by default
+                    labelText={(d: any) => d === homeLocation ? d.label : ''}
                     labelSize={1.5}
                     labelDotRadius={0.5}
                     labelColor={() => '#3b82f6'}

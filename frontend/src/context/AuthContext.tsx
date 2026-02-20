@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axiosInstance from '../config/axiosInstance';
-import { API_CONFIG } from '../config/apiConfig';
 
 interface User {
     id: number;

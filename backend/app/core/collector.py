@@ -23,6 +23,7 @@ from ..models.models import (
     DeviceDailySummary,
     DeviceStatusLog,
     DnsLog,
+    SecurityAlert,
 )
 
 # Setup logging

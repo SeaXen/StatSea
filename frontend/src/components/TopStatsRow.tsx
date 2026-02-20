@@ -37,7 +37,10 @@ const TopStatsRow = () => {
     const fetchHealth = async () => {
         try {
             const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.HEALTH);
-            setHealth(res.data);
+            setHealth({
+                score: res.data.score ?? (res.data.status === 'healthy' ? 100 : 0),
+                status: res.data.status || 'Excellent'
+            });
         } catch (error) {
             console.error('Failed to fetch health:', error);
         }
