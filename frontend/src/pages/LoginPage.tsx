@@ -32,8 +32,9 @@ const LoginPage: React.FC = () => {
             const { access_token, refresh_token } = response.data;
             await login(access_token, refresh_token);
             navigate('/');
-        } catch (err: any) {
-            setError(err.response?.data?.detail || 'Invalid username or password');
+        } catch (err: unknown) {
+            const axiosErr = err as { response?: { data?: { detail?: string } } };
+            setError(axiosErr.response?.data?.detail || 'Invalid username or password');
         } finally {
             setIsLoading(false);
         }

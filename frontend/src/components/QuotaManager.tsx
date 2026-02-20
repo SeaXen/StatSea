@@ -41,7 +41,7 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
                 device_id: deviceId
             });
             toast.success("Quota updated successfully");
-        } catch (err) {
+        } catch {
             toast.error("Failed to update quota");
         } finally {
             setSaving(false);

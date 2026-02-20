@@ -130,7 +130,7 @@ function formatNumber(num: number): string {
 
 // ─── Stat Card ───
 const StatCard = ({ label, value, icon: Icon, color, sub, trend }: {
-    label: string; value: string | number; icon: any; color: string; sub?: string; trend?: 'up' | 'down' | 'neutral';
+    label: string; value: string | number; icon: React.ElementType; color: string; sub?: string; trend?: 'up' | 'down' | 'neutral';
 }) => (
     <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 flex flex-col gap-0.5 relative overflow-hidden group hover:border-gray-700 transition-all duration-300 hover:shadow-lg" style={{ '--glow': color } as React.CSSProperties}>
         <div className="flex items-center justify-between">
@@ -200,6 +200,17 @@ const ProtocolBadge = ({ proto, active, onClick }: { proto: string; active: bool
     </button>
 );
 
+
+interface PacketLog {
+    time: string;
+    proto: string;
+    src: string;
+    dst: string;
+    size: number;
+    flags?: string;
+    suspicious?: boolean;
+}
+
 // ─── MAIN COMPONENT ───
 const AnalyticsDashboard = () => {
     const [activeView, setActiveView] = useState<'live' | 'statistics' | 'connections' | 'security' | 'history' | 'dns' | 'comparison'>('live');
@@ -208,7 +219,7 @@ const AnalyticsDashboard = () => {
     const [latencyData, setLatencyData] = useState<LatencyPoint[]>([]);
     const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
     const [externalConnections, setExternalConnections] = useState<ExternalConnection[]>([]);
-    const [packetLogs, setPacketLogs] = useState<any[]>([]); // New state for packet logs
+    const [packetLogs, setPacketLogs] = useState<PacketLog[]>([]); // New state for packet logs
     const [flagFilter, setFlagFilter] = useState(''); // New state for flag filter
     const [loading, setLoading] = useState(true);
     const [paused, setPaused] = useState(false);
@@ -271,12 +282,12 @@ const AnalyticsDashboard = () => {
                 setAnalyticsData(analyticsRes.data);
 
                 const netData = netRes.data;
-                const formattedBandwidth = netData.bandwidth.map((i: any) => ({
+                const formattedBandwidth = netData.bandwidth.map((i: BandwidthPoint) => ({
                     ...i, timestamp: new Date(i.timestamp).toLocaleTimeString()
                 })).reverse();
 
                 setBandwidthData(formattedBandwidth);
-                setLatencyData(netData.latency.map((i: any) => ({
+                setLatencyData(netData.latency.map((i: LatencyPoint) => ({
                     ...i, timestamp: new Date(i.timestamp).toLocaleTimeString()
                 })).reverse());
 

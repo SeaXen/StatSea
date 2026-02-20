@@ -25,37 +25,37 @@ const TopStatsRow = () => {
     const [health, setHealth] = useState({ score: 0, status: 'Unknown' });
     const [history, setHistory] = useState<HistoryData[]>([]);
 
-    const fetchStats = async () => {
-        try {
-            const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.SYSTEM.INFO);
-            setStats(res.data);
-        } catch (error) {
-            console.error('Failed to fetch stats:', error);
-        }
-    };
-
-    const fetchHealth = async () => {
-        try {
-            const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.HEALTH);
-            setHealth({
-                score: res.data.score ?? (res.data.status === 'healthy' ? 100 : 0),
-                status: res.data.status || 'Excellent'
-            });
-        } catch (error) {
-            console.error('Failed to fetch health:', error);
-        }
-    };
-
-    const fetchHistory = async () => {
-        try {
-            const res = await axiosInstance.get(`${API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY}?limit=30`);
-            setHistory(res.data);
-        } catch (error) {
-            console.error('Failed to fetch history:', error);
-        }
-    };
-
     useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.SYSTEM.INFO);
+                setStats(res.data);
+            } catch (error) {
+                console.error('Failed to fetch stats:', error);
+            }
+        };
+
+        const fetchHealth = async () => {
+            try {
+                const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.HEALTH);
+                setHealth({
+                    score: res.data.score ?? (res.data.status === 'healthy' ? 100 : 0),
+                    status: res.data.status || 'Excellent'
+                });
+            } catch (error) {
+                console.error('Failed to fetch health:', error);
+            }
+        };
+
+        const fetchHistory = async () => {
+            try {
+                const res = await axiosInstance.get(`${API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY}?limit=30`);
+                setHistory(res.data);
+            } catch (error) {
+                console.error('Failed to fetch history:', error);
+            }
+        };
+
         fetchStats();
         fetchHealth();
         fetchHistory();

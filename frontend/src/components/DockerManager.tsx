@@ -452,7 +452,7 @@ const DockerManager: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [containers]);
+    }, []);
 
     const fetchLogs = useCallback(async (containerId: string) => {
         if (!containerId) return;
@@ -495,7 +495,7 @@ const DockerManager: React.FC = () => {
             } else {
                 toast.error(response.data.message || `Failed to ${action} container`);
             }
-        } catch (error) {
+        } catch {
             toast.error(`Error performing ${action}`);
         } finally {
             setActionLoading(null);

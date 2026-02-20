@@ -25,7 +25,7 @@ const YearlyStatsView = () => {
             });
 
             // Backend returns oldest first for charts usually, but we should sort just in case
-            const sortedData = res.data.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            const sortedData = res.data.sort((a: { date: string }, b: { date: string }) => new Date(a.date).getTime() - new Date(b.date).getTime());
             setData(sortedData);
         } catch (error) {
             console.error('Failed to fetch historical stats:', error);
@@ -36,6 +36,7 @@ const YearlyStatsView = () => {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [period]);
 
     const formatBytes = (bytes: number) => {

@@ -44,6 +44,7 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
 
     useEffect(() => {
         fetchLogs();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [deviceId, range]);
 
     // Process logs into segments

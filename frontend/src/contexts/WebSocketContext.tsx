@@ -12,7 +12,7 @@ export interface Notification {
 }
 
 interface WebSocketContextType {
-    wsData: any[];
+    wsData: Record<string, unknown>[];
     isConnected: boolean;
     notifications: Notification[];
     unreadCount: number;
@@ -24,7 +24,7 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
 
 export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
-    const [wsData, setWsData] = useState<any[]>([]);
+    const [wsData, setWsData] = useState<Record<string, unknown>[]>([]);
     const [isConnected, setIsConnected] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
 

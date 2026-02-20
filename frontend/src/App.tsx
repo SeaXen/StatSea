@@ -159,22 +159,26 @@ const Dashboard = () => {
     );
 };
 
+import { ThemeProvider } from './context/ThemeContext';
+
 export default function App() {
     return (
         <ErrorBoundary>
             <BrowserRouter>
-                <AuthProvider>
-                    <WebSocketProvider>
-                        <Routes>
-                            <Route path="/login" element={<LoginPage />} />
-                            <Route path="/*" element={
-                                <ProtectedRoute>
-                                    <AppContent />
-                                </ProtectedRoute>
-                            } />
-                        </Routes>
-                    </WebSocketProvider>
-                </AuthProvider>
+                <ThemeProvider>
+                    <AuthProvider>
+                        <WebSocketProvider>
+                            <Routes>
+                                <Route path="/login" element={<LoginPage />} />
+                                <Route path="/*" element={
+                                    <ProtectedRoute>
+                                        <AppContent />
+                                    </ProtectedRoute>
+                                } />
+                            </Routes>
+                        </WebSocketProvider>
+                    </AuthProvider>
+                </ThemeProvider>
             </BrowserRouter>
         </ErrorBoundary>
     );
@@ -186,10 +190,8 @@ function AppContent() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-
-
     return (
-        <div className="flex min-h-screen bg-[#0f1014] text-foreground font-sans selection:bg-blue-500/30">
+        <div className="flex min-h-screen bg-background text-foreground font-sans selection:bg-primary/30">
             <Toaster richColors position="top-right" theme="dark" />
             <CommandPalette open={commandOpen} setOpen={setCommandOpen} changeTab={setActiveTab} />
 
@@ -220,25 +222,17 @@ function AppContent() {
                                 <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
                             </div>
                         }>
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={activeTab}
-                                    initial={{ opacity: 0, y: 12 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -12 }}
-                                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                                >
-                                    {activeTab === 'dashboard' && <Dashboard />}
-                                    {activeTab === 'devices' && <DevicesPage />}
-                                    {activeTab === 'network' && <NetworkMap />}
-                                    {activeTab === 'geo' && <ConnectionGlobe />}
-                                    {activeTab === 'analytics' && <AnalyticsDashboard />}
-                                    {activeTab === 'containers' && <DockerManager />}
-                                    {activeTab === 'speedtest' && <SpeedtestPage />}
-                                    {activeTab === 'users' && <UserManagement />}
-                                    {activeTab === 'settings' && <SettingsPage />}
-                                </motion.div>
-                            </AnimatePresence>
+                            <div key={activeTab} className="page-enter">
+                                {activeTab === 'dashboard' && <Dashboard />}
+                                {activeTab === 'devices' && <DevicesPage />}
+                                {activeTab === 'network' && <NetworkMap />}
+                                {activeTab === 'geo' && <ConnectionGlobe />}
+                                {activeTab === 'analytics' && <AnalyticsDashboard />}
+                                {activeTab === 'containers' && <DockerManager />}
+                                {activeTab === 'speedtest' && <SpeedtestPage />}
+                                {activeTab === 'users' && <UserManagement />}
+                                {activeTab === 'settings' && <SettingsPage />}
+                            </div>
                         </Suspense>
                     </div>
                 </main>

@@ -72,10 +72,11 @@ export function DevicesPage() {
             toast.success('Wake-on-LAN packet sent', {
                 description: `Magic packet sent to ${mac}`
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("WoL Error:", error);
+            const err = error as { response?: { data?: { detail?: string } }; message?: string };
             toast.error('Failed to wake device', {
-                description: error.response?.data?.detail || error.message || 'Unknown error'
+                description: err.response?.data?.detail || err.message || 'Unknown error'
             });
         }
     };
@@ -100,7 +101,7 @@ export function DevicesPage() {
 
     });
 
-    const getIcon = (type: any = 'Unknown') => {
+    const getIcon = (type: string = 'Unknown') => {
         switch ((type || 'Unknown').toLowerCase()) {
             case 'mobile': return Smartphone;
             case 'pc': return Laptop; // Laptop icon for PC

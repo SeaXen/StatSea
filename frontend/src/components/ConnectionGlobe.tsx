@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useRef } from 'react';
-import Globe from 'react-globe.gl';
+import Globe, { GlobeMethods } from 'react-globe.gl';
 import { Globe as GlobeIcon } from 'lucide-react';
 import { API_CONFIG } from '../config/apiConfig';
 
@@ -12,14 +12,33 @@ interface Connection {
     lon: number;
     bytes: number;
     hits: number;
+    country_code?: string;
+}
+
+interface PointData {
+    lat: number;
+    lon: number;
+    label: string;
+    ip?: string;
+    city?: string;
+    country?: string;
+    bytes?: number;
+    hits?: number;
+    country_code?: string;
+}
+
+interface IpInfo {
+    asn: string;
+    org: string;
+    abuse_contact: string;
 }
 
 export const ConnectionGlobe = () => {
     const [connections, setConnections] = useState<Connection[]>([]);
-    const globeRef = useRef<any>();
+    const globeRef = useRef<GlobeMethods>();
 
     // Mock home location (Center of Map for demo, or detected)
-    const homeLocation = { lat: 23.8103, lon: 90.4125, label: 'Statsea Hub' };
+    const homeLocation: PointData = { lat: 23.8103, lon: 90.4125, label: 'Statsea Hub' };
 
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
     const containerRef = useRef<HTMLDivElement>(null);
@@ -81,7 +100,7 @@ export const ConnectionGlobe = () => {
         name: `${conn.city}, ${conn.country} (${conn.ip})`
     }));
 
-    const pointsData = [
+    const pointsData: PointData[] = [
         homeLocation,
         ...displayConnections.map(conn => ({
             label: `${conn.city}, ${conn.country} \n${conn.ip}`,
@@ -89,8 +108,8 @@ export const ConnectionGlobe = () => {
         }))
     ];
 
-    const [selectedPoint, setSelectedPoint] = useState<any | null>(null);
-    const [ipInfo, setIpInfo] = useState<any | null>(null);
+    const [selectedPoint, setSelectedPoint] = useState<PointData | null>(null);
+    const [ipInfo, setIpInfo] = useState<IpInfo | null>(null);
     const [loadingIp, setLoadingIp] = useState(false);
 
     const topCountries = displayConnections.reduce((acc, curr) => {
@@ -134,25 +153,30 @@ export const ConnectionGlobe = () => {
                     height={dimensions.height}
                     globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
                     pointsData={pointsData}
-                    pointColor={(d: any) => d === homeLocation ? '#3b82f6' : d === selectedPoint ? '#ef4444' : '#10b981'}
-                    pointAltitude={(d: any) => d === selectedPoint ? 0.3 : 0.05}
-                    pointRadius={(d: any) => d === homeLocation ? 0.5 : d === selectedPoint ? 0.8 : 0.4}
+                    pointColor={(d: object) => (d as PointData) === homeLocation ? '#3b82f6' : (d as PointData) === selectedPoint ? '#ef4444' : '#10b981'}
+                    pointAltitude={(d: object) => (d as PointData) === selectedPoint ? 0.3 : 0.05}
+                    pointRadius={(d: object) => (d as PointData) === homeLocation ? 0.5 : (d as PointData) === selectedPoint ? 0.8 : 0.4}
                     pointsMerge={false}
-                    onPointClick={async (point: any) => {
-                        setSelectedPoint(point);
+                    onPointClick={async (point: object) => {
+                        const p = point as PointData;
+                        setSelectedPoint(p);
                         setIpInfo(null);
                         setLoadingIp(true);
                         if (globeRef.current) {
-                            globeRef.current.pointOfView({ lat: point.lat, lon: point.lon, altitude: 2 }, 1000);
+                            globeRef.current.pointOfView({ lat: p.lat, lng: p.lon, altitude: 2 }, 1000);
                         }
 
-                        try {
-                            const res = await fetch(`/api/network/ip/${point.ip}`);
-                            const data = await res.json();
-                            setIpInfo(data);
-                        } catch (err) {
-                            console.error("IP Lookup failed", err);
-                        } finally {
+                        if (p.ip) {
+                            try {
+                                const res = await fetch(`/api/network/ip/${p.ip}`);
+                                const data = await res.json();
+                                setIpInfo(data);
+                            } catch (err) {
+                                console.error("IP Lookup failed", err);
+                            } finally {
+                                setLoadingIp(false);
+                            }
+                        } else {
                             setLoadingIp(false);
                         }
                     }}
@@ -163,9 +187,9 @@ export const ConnectionGlobe = () => {
                     arcDashAnimateTime={2000}
                     arcStroke={0.5}
                     labelsData={pointsData}
-                    labelLat={(d: any) => d.lat}
-                    labelLng={(d: any) => d.lon}
-                    labelText={(d: any) => d === homeLocation ? d.label : ''}
+                    labelLat={(d: object) => (d as PointData).lat}
+                    labelLng={(d: object) => (d as PointData).lon}
+                    labelText={(d: object) => (d as PointData) === homeLocation ? (d as PointData).label : ''}
                     labelSize={1.5}
                     labelDotRadius={0.5}
                     labelColor={() => '#3b82f6'}
@@ -198,7 +222,7 @@ export const ConnectionGlobe = () => {
                             </div>
                             <div className="text-right">
                                 <div className="text-xs text-slate-500 uppercase font-bold">Traffic</div>
-                                <div className="text-sm text-blue-400 font-mono">{(selectedPoint.bytes / 1024).toFixed(2)} KB</div>
+                                <div className="text-sm text-blue-400 font-mono">{selectedPoint.bytes ? (selectedPoint.bytes / 1024).toFixed(2) : '0.00'} KB</div>
                             </div>
                         </div>
                         <button

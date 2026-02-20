@@ -4,8 +4,9 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import axiosInstance from '../config/axiosInstance';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { API_CONFIG } from '../config/apiConfig';
-import { presets, accentColors, legacyThemes, ThemeConfig, ThemeMode } from '../lib/themes';
+import { presets, accentColors, ThemeMode } from '../lib/themes';
 
 interface Setting {
     key: string;
@@ -22,69 +23,22 @@ export default function Settings() {
 
     // Password change state
     const { user } = useAuth();
+    const { themeConfig, updateTheme } = useTheme();
+
+    // Password change state
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isChangingPassword, setIsChangingPassword] = useState(false);
-    const [themeConfig, setThemeConfig] = useState<ThemeConfig>({
-        mode: 'dark',
-        accent: accentColors[0].value
-    });
 
-    // Initial Load & Migration
+    // Initial Load
     useEffect(() => {
         // 1. Dev Mode
         const savedDevMode = localStorage.getItem('devMode') === 'true';
         setDevMode(savedDevMode);
 
-        // 2. Theme Migration & Loading
-        const savedThemeConfig = localStorage.getItem('themeConfig');
-        const legacyTheme = localStorage.getItem('theme');
-
-        if (savedThemeConfig) {
-            // New system exists, use it
-            try {
-                const parsed = JSON.parse(savedThemeConfig);
-                setThemeConfig(parsed);
-                applyTheme(parsed);
-            } catch (e) {
-                console.error("Failed to parse theme config", e);
-                setDefaultTheme();
-            }
-        } else if (legacyTheme) {
-            // Check if legacy theme matches a new preset name directly (e.g. 'cyberpunk')
-            // or if it needs mapping
-            if (presets[legacyTheme as ThemeMode]) {
-                const newConfig: ThemeConfig = {
-                    mode: legacyTheme as ThemeMode,
-                    accent: presets[legacyTheme as ThemeMode].colors['--primary']
-                };
-                setThemeConfig(newConfig);
-                applyTheme(newConfig);
-                localStorage.setItem('themeConfig', JSON.stringify(newConfig));
-                toast.info(`Theme restored: ${presets[legacyTheme as ThemeMode].name}`);
-            } else if (legacyThemes[legacyTheme]) {
-                // Map old mapped themes
-                const migrated = legacyThemes[legacyTheme];
-                setThemeConfig(migrated);
-                applyTheme(migrated);
-                localStorage.setItem('themeConfig', JSON.stringify(migrated));
-                toast.info(`Theme migrated to new system`);
-            } else {
-                setDefaultTheme();
-            }
-        } else {
-            setDefaultTheme();
-        }
-
         fetchSettings();
     }, []);
-
-    const setDefaultTheme = () => {
-        const def = { mode: 'dark' as ThemeMode, accent: accentColors[0].value };
-        setThemeConfig(def);
-        applyTheme(def);
-    };
 
     const fetchSettings = async () => {
         try {
@@ -103,54 +57,8 @@ export default function Settings() {
             await axiosInstance.post(API_CONFIG.ENDPOINTS.SETTINGS, { key, value, type });
             setSettings(prev => ({ ...prev, [key]: value }));
             toast.success("Setting saved");
-        } catch (e) {
+        } catch {
             toast.error("Failed to save setting");
-        }
-    };
-
-    const updateTheme = (updates: Partial<ThemeConfig>) => {
-        const newConfig = { ...themeConfig, ...updates };
-
-        // If switching mode, reset accent to that mode's default primary IF it's one of the unique ones? 
-        // No, let users keep their accent if they switched it. 
-        // BUT if they switch to Cyberpunk, they probably want neon yellow, not blue.
-        if (updates.mode) {
-            const preset = presets[updates.mode];
-            // Optional: Auto-switch accent to the preset's primary color for better default look
-            newConfig.accent = preset.colors['--primary'];
-        }
-
-        setThemeConfig(newConfig);
-        applyTheme(newConfig);
-        localStorage.setItem('themeConfig', JSON.stringify(newConfig));
-    };
-
-    const applyTheme = (config: ThemeConfig) => {
-        const root = document.documentElement;
-        const base = presets[config.mode];
-
-        if (!base) return;
-
-        // Apply base theme variables
-        Object.entries(base.colors).forEach(([key, value]) => {
-            if (key !== '--accent' && key !== '--accent-foreground') {
-                root.style.setProperty(key, value);
-            }
-        });
-
-        // Apply accent color override
-        // We override --primary and --ring with the chosen accent
-        root.style.setProperty('--primary', config.accent);
-        root.style.setProperty('--ring', config.accent);
-
-        // Also update standard accent vars
-        root.style.setProperty('--accent', config.accent);
-
-        // Special handling for radius if Cyberpunk
-        if (config.mode === 'cyberpunk') {
-            root.style.setProperty('--radius', '0px');
-        } else {
-            root.style.setProperty('--radius', '0.5rem');
         }
     };
 
@@ -218,15 +126,16 @@ export default function Settings() {
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
-        } catch (error: any) {
-            const detail = error.response?.data?.detail || "Failed to change password";
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { detail?: string } } };
+            const detail = err.response?.data?.detail || "Failed to change password";
             toast.error(detail);
         } finally {
             setIsChangingPassword(false);
         }
     };
 
-    const SidebarItem = ({ id, icon: Icon, label }: { id: string, icon: any, label: string }) => (
+    const SidebarItem = ({ id, icon: Icon, label }: { id: string, icon: React.ElementType, label: string }) => (
         <button
             onClick={() => setActiveSection(id)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden ${activeSection === id

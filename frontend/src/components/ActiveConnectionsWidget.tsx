@@ -19,10 +19,10 @@ export function ActiveConnectionsWidget() {
     }, []);
 
     return (
-        <div className="glass-card rounded-xl p-6 border border-white/5 bg-black/20 backdrop-blur-xl">
-            <h3 className="text-lg font-semibold mb-4 text-gray-200">Active Connections</h3>
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Active Connections</h3>
             <div className="space-y-0 text-sm">
-                <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 px-2">
+                <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 px-2">
                     <div className="col-span-1"></div>
                     <div className="col-span-5">Destination</div>
                     <div className="col-span-3">Protocol</div>
@@ -30,11 +30,11 @@ export function ActiveConnectionsWidget() {
                 </div>
                 {loading ? (
                     [...Array(5)].map((_, i) => (
-                        <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 border-b border-white/5 last:border-0 border-dashed">
-                            <div className="col-span-1 h-4 w-4 bg-white/10 animate-pulse rounded-full justify-self-center" />
-                            <div className="col-span-5 h-3 w-32 bg-white/10 animate-pulse rounded" />
-                            <div className="col-span-3 h-3 w-12 bg-white/10 animate-pulse rounded" />
-                            <div className="col-span-3 h-3 w-16 bg-white/10 animate-pulse rounded justify-self-end" />
+                        <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 border-b border-border last:border-0 border-dashed">
+                            <div className="col-span-1 h-4 w-4 bg-muted animate-pulse rounded-full justify-self-center" />
+                            <div className="col-span-5 h-3 w-32 bg-muted animate-pulse rounded" />
+                            <div className="col-span-3 h-3 w-12 bg-muted animate-pulse rounded" />
+                            <div className="col-span-3 h-3 w-16 bg-muted animate-pulse rounded justify-self-end" />
                         </div>
                     ))
                 ) : (
@@ -45,20 +45,20 @@ export function ActiveConnectionsWidget() {
                                 initial={{ opacity: 0, x: 10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.2, delay: i * 0.05 }}
-                                className="grid grid-cols-12 gap-2 items-center p-2 hover:bg-white/5 rounded-lg transition-colors border-b border-white/5 last:border-0 border-dashed"
+                                className="grid grid-cols-12 gap-2 items-center p-2 hover:bg-muted/50 rounded-lg transition-colors border-b border-border last:border-0 border-dashed"
                             >
                                 <div className="col-span-1 text-center">
                                     {conn.type === 'out' ?
-                                        <ArrowUpRight className="w-4 h-4 text-orange-400" /> :
-                                        <ArrowDownLeft className="w-4 h-4 text-emerald-400" />
+                                        <ArrowUpRight className="w-4 h-4 text-orange-500 dark:text-orange-400" /> :
+                                        <ArrowDownLeft className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                                     }
                                 </div>
                                 <div className="col-span-5 flex items-center gap-2 overflow-hidden">
-                                    <Globe className="w-3 h-3 text-gray-500 shrink-0" />
-                                    <span className="truncate text-gray-300 font-mono text-xs">{conn.dst}</span>
+                                    <Globe className="w-3 h-3 text-muted-foreground shrink-0" />
+                                    <span className="truncate text-foreground font-mono text-xs">{conn.dst}</span>
                                 </div>
-                                <div className="col-span-3 text-gray-400 font-mono text-xs">{conn.protocol}</div>
-                                <div className="col-span-3 text-right font-mono text-gray-300">{conn.size}</div>
+                                <div className="col-span-3 text-muted-foreground font-mono text-xs">{conn.protocol}</div>
+                                <div className="col-span-3 text-right font-mono text-foreground">{conn.size}</div>
                             </motion.div>
                         ))}
                     </AnimatePresence>

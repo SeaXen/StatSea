@@ -134,7 +134,7 @@ export const UserManagement: React.FC = () => {
             });
             toast.success(`User ${user.is_active ? 'deactivated' : 'activated'} successfully`);
             fetchUsers();
-        } catch (error) {
+        } catch {
             toast.error('Failed to update user status');
         }
     };
@@ -146,7 +146,7 @@ export const UserManagement: React.FC = () => {
             });
             toast.success(`User updated successfully`);
             fetchUsers();
-        } catch (error) {
+        } catch {
             toast.error('Failed to update admin permissions');
         }
     };
@@ -158,7 +158,7 @@ export const UserManagement: React.FC = () => {
             await axiosInstance.delete(`/admin/users/${userId}`);
             toast.success('User deleted successfully');
             fetchUsers();
-        } catch (error) {
+        } catch {
             toast.error('Failed to delete user');
         }
     };

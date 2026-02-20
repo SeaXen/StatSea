@@ -7,9 +7,8 @@ import {
     Settings, Play, Clock, TrendingUp,
     Download, Upload, RefreshCw, Share2, MapPin
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { flushSync } from 'react-dom';
+
 import SpeedtestService, { SpeedtestResult } from '../services/SpeedtestService';
 import SpeedtestSettingsModal from './SpeedtestSettingsModal';
 
@@ -17,21 +16,21 @@ import SpeedtestSettingsModal from './SpeedtestSettingsModal';
 
 // Stat Card (Matching AnalyticsDashboard)
 const StatCard = ({ label, value, icon: Icon, color, sub, trend }: {
-    label: string; value: string | number; icon: any; color: string; sub?: string; trend?: 'up' | 'down' | 'neutral';
+    label: string; value: string | number; icon: React.ElementType; color: string; sub?: string; trend?: 'up' | 'down' | 'neutral';
 }) => (
-    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4 flex flex-col gap-1 relative overflow-hidden group hover:border-gray-700 transition-all duration-300 hover:shadow-lg" style={{ '--glow': color } as React.CSSProperties}>
+    <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-1 relative overflow-hidden group hover:border-border/80 transition-all duration-300 hover:shadow-lg" style={{ '--glow': color } as React.CSSProperties}>
         <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">{label}</span>
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color}15` }}>
                 <Icon className="h-4 w-4" style={{ color }} />
             </div>
         </div>
-        <span className="text-2xl font-bold text-white font-mono truncate">{value}</span>
+        <span className="text-2xl font-bold text-foreground font-mono truncate">{value}</span>
         {sub && (
             <div className="flex items-center gap-1">
                 {trend === 'up' && <TrendingUp className="w-3 h-3 text-emerald-400" />}
                 {trend === 'down' && <TrendingUp className="w-3 h-3 text-red-400 rotate-180" />}
-                <span className="text-[11px] text-gray-500 truncate">{sub}</span>
+                <span className="text-[11px] text-muted-foreground truncate">{sub}</span>
             </div>
         )}
         <div className="absolute bottom-0 left-0 h-[2px] w-full opacity-50" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
@@ -45,6 +44,7 @@ const SpeedtestPage = () => {
     const [history, setHistory] = useState<SpeedtestResult[]>([]);
     const [latestResult, setLatestResult] = useState<SpeedtestResult | null>(null);
     const [provider, setProvider] = useState<'ookla' | 'cloudflare'>('ookla');
+    const [activePhase, setActivePhase] = useState<'idle' | 'ping' | 'download' | 'upload' | 'complete'>('idle');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     // Load History
@@ -62,46 +62,115 @@ const SpeedtestPage = () => {
     }, []);
 
     useEffect(() => {
-        fetchHistory();
-    }, [fetchHistory]);
+        const loadHistory = async () => {
+            try {
+                const data = await SpeedtestService.getHistory();
+                setHistory(data);
+                if (data.length > 0) {
+                    setLatestResult(data[0]);
+                }
+            } catch (error) {
+                console.error('Failed to load history:', error);
+                toast.error('Failed to load speedtest history');
+            }
+        };
+        loadHistory();
+    }, []);
 
     // Run Test
-    const runSpeedtest = async () => {
+    const runSpeedtest = useCallback(() => {
+        if (loading) return;
         setLoading(true);
         setProgress(0);
+        setActivePhase('idle');
+        setLatestResult(null);
 
-        // Reset UI state for new test
-        // setLatestResult(null); // Optional: keep showing last result or clear it? Keeping it is better UX usually.
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/api/ws/speedtest?provider=${provider}`;
+        // In development, might need to adjust port if proxy isn't set up for WS perfectly or if using separate backend
+        // defaulting to standard construction which works with the proxy setup usually.
+        // If local dev with separate ports:
+        const devWsUrl = `ws://localhost:8000/api/ws/speedtest?provider=${provider}`;
 
-        // Simulate progress for UX since backend is sync
-        const interval = setInterval(() => {
-            setProgress(prev => {
-                if (prev >= 95) return 95;
-                // Slower progress as it gets higher
-                const increment = 100 / (20000 / 500) * (prev > 80 ? 0.2 : 1);
-                return prev + increment;
-            });
-        }, 500);
+        const socket = new WebSocket(import.meta.env.DEV ? devWsUrl : wsUrl);
 
-        try {
-            const result = await SpeedtestService.runSpeedtest(provider);
-            flushSync(() => {
-                setLatestResult(result);
-                setProgress(100);
-            });
-            await fetchHistory();
-            toast.success('Speedtest completed successfully');
-        } catch (error) {
-            console.error('Speedtest failed:', error);
-            toast.error('Speedtest failed to complete');
-            setProgress(0);
-        } finally {
-            clearInterval(interval);
+        socket.onopen = () => {
+            console.log('Speedtest receive socket connected');
+        };
+
+        socket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+
+                if (data.error) {
+                    toast.error(`Speedtest failed: ${data.error}`);
+                    socket.close();
+                    return;
+                }
+
+                if (data.phase) {
+                    setActivePhase(data.phase);
+                }
+
+                if (data.phase === 'ping') {
+                    // Update ping
+                    setLatestResult(prev => {
+                        const base = prev || {
+                            id: 0,
+                            ping: 0,
+                            jitter: 0,
+                            download: 0,
+                            upload: 0,
+                            server: { name: 'Selecting...', country: '', id: '0' },
+                            timestamp: new Date().toISOString(),
+                            provider: provider,
+                            isp: '...'
+                        };
+                        return {
+                            ...base,
+                            ping: data.val || 0
+                        };
+                    });
+                    if (data.progress) setProgress(data.progress * 0.1); // Ping is first 10%
+                } else if (data.phase === 'download') {
+                    // Update download
+                    setLatestResult(prev => {
+                        if (!prev) return prev; // Should have been initialized in ping
+                        return { ...prev, download: data.val || 0 };
+                    });
+                    // Download is 10-55%
+                    if (data.progress) setProgress(10 + (data.progress * 0.45));
+                } else if (data.phase === 'upload') {
+                    // Update upload
+                    setLatestResult(prev => {
+                        if (!prev) return prev;
+                        return { ...prev, upload: data.val || 0 };
+                    });
+                    // Upload is 55-100%
+                    if (data.progress) setProgress(55 + (data.progress * 0.45));
+                } else if (data.phase === 'complete') {
+                    setLatestResult(data.result);
+                    setProgress(100);
+                    toast.success('Speedtest completed successfully');
+                    fetchHistory();
+                    socket.close();
+                }
+            } catch (e) {
+                console.error('Error parsing WS message:', e);
+            }
+        };
+
+        socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            toast.error('Connection error');
             setLoading(false);
-            // Reset progress after a delay
-            // setTimeout(() => setProgress(0), 2000); 
-        }
-    };
+        };
+
+        socket.onclose = () => {
+            setLoading(false);
+        };
+
+    }, [loading, provider, fetchHistory]);
 
     const handleShare = () => {
         if (!latestResult) return;
@@ -145,17 +214,17 @@ Generated by StatSea`;
             {/* ─── Header ─── */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                        <Activity className="w-8 h-8 text-cyan-400" />
+                    <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
+                        <Activity className="w-8 h-8 text-cyan-500 dark:text-cyan-400" />
                         Speedtest Intelligence
                     </h1>
-                    <p className="text-gray-400 mt-1 text-sm">Advanced network performance analytics & automation</p>
+                    <p className="text-muted-foreground mt-1 text-sm">Advanced network performance analytics & automation</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleShare}
                         disabled={!latestResult}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-900/60 border border-gray-800 text-gray-300 hover:text-white rounded-lg hover:bg-gray-800/60 transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-muted-foreground hover:text-foreground rounded-lg hover:bg-accent transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Copy result to clipboard"
                     >
                         <Share2 className="w-4 h-4" />
@@ -163,7 +232,7 @@ Generated by StatSea`;
                     </button>
                     <button
                         onClick={() => setIsSettingsOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-900/60 border border-gray-800 text-gray-300 hover:text-white rounded-lg hover:bg-gray-800/60 transition-all font-medium text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-muted-foreground hover:text-foreground rounded-lg hover:bg-accent transition-all font-medium text-sm"
                     >
                         <Settings className="w-4 h-4" />
                         Settings
@@ -172,7 +241,7 @@ Generated by StatSea`;
                         onClick={runSpeedtest}
                         disabled={loading}
                         className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold shadow-lg shadow-cyan-500/20 transition-all ${loading
-                            ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
                             : 'bg-cyan-500 hover:bg-cyan-400 text-white hover:scale-105'
                             }`}
                     >
@@ -247,14 +316,14 @@ Generated by StatSea`;
 
                 {/* Left Column: Gauge & Info (4 cols) */}
                 <div className="lg:col-span-4 flex flex-col gap-6">
-                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-6 relative overflow-hidden h-full flex flex-col items-center justify-center min-h-[350px]">
+                    <div className="bg-card border border-border rounded-xl p-6 relative overflow-hidden h-full flex flex-col items-center justify-center min-h-[350px]">
                         {/* Provider Toggle */}
-                        <div className="absolute top-4 left-4 right-4 flex p-1 bg-black/20 rounded-lg border border-white/5 z-10">
+                        <div className="absolute top-4 left-4 right-4 flex p-1 bg-muted/50 rounded-lg border border-border z-10">
                             {['ookla', 'cloudflare'].map((p) => (
                                 <button
                                     key={p}
-                                    onClick={() => !loading && setProvider(p as any)}
-                                    className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all uppercase ${provider === p ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-500 hover:text-gray-400'
+                                    onClick={() => !loading && setProvider(p as 'ookla' | 'cloudflare')}
+                                    className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all uppercase ${provider === p ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                                         }`}
                                 >
                                     {p}
@@ -264,43 +333,80 @@ Generated by StatSea`;
 
                         {/* Animated Gauge */}
                         <div className="relative w-64 h-64 mt-8">
-                            {/* Background Arc */}
-                            <svg className="w-full h-full transform rotate-135" viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="45" stroke="#1f2937" strokeWidth="6" fill="none" strokeDasharray="210" strokeDashoffset="0" strokeLinecap="round" />
+                            {/* SVG Gauge: 270° arc (¾ circle), r=45, C=2π×45≈282.7, arc=282.7×(270/360)≈212 */}
+                            <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 100 100">
+                                {/* Background track */}
+                                <circle cx="50" cy="50" r="45" stroke="currentColor" className="text-muted/20" strokeWidth="6" fill="none" strokeDasharray="212 283" strokeLinecap="round" />
                                 {/* Progress Arc */}
-                                <motion.circle
+                                <circle
                                     cx="50" cy="50" r="45"
-                                    stroke={latestResult ? '#22d3ee' : '#374151'}
+                                    stroke={loading ? (activePhase === 'upload' ? '#34d399' : '#22d3ee') : (latestResult ? (latestResult.download > 500_000_000 ? '#a855f7' : '#22d3ee') : 'currentColor')}
+                                    className={!loading && !latestResult ? "text-muted/40" : ""}
                                     strokeWidth="6"
                                     fill="none"
-                                    strokeDasharray="210"
-                                    // Progress calculation: 0-100% mapped to strokeDashoffset
-                                    // Max speed for gauge visual is 1000 Mbps
-                                    initial={{ strokeDashoffset: 210 }}
-                                    animate={{
-                                        strokeDashoffset: 210 - (210 * (loading ? progress : (latestResult ? Math.min(latestResult.download / 1000000000, 1) * 100 : 0)) / 100),
-                                        stroke: loading ? '#22d3ee' : (latestResult ? (latestResult.download > 500000000 ? '#a855f7' : '#22d3ee') : '#374151')
-                                    }}
-                                    transition={{ duration: 0.5, ease: "easeOut" }}
+                                    strokeDasharray="212 283"
+                                    strokeDashoffset={loading
+                                        ? 212 - (212 * (progress / 100))
+                                        : (latestResult
+                                            ? 212 - (212 * Math.min(latestResult.download / 1_000_000_000, 1))
+                                            : 212)}
                                     strokeLinecap="round"
+                                    style={{ transition: 'stroke-dashoffset 0.4s ease, stroke 0.3s ease' }}
                                 />
                             </svg>
                             {/* Inner Info */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center pt-4">
-                                <span className="text-gray-500 text-xs font-bold tracking-widest uppercase mb-1">Download</span>
+                                <span className="text-muted-foreground text-xs font-bold tracking-widest uppercase mb-1">
+                                    {loading ? (activePhase === 'upload' ? 'Upload' : activePhase === 'download' ? 'Download' : 'Ping') : 'Download'}
+                                </span>
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-5xl font-bold text-white tracking-tighter">
-                                        {loading
-                                            ? Math.floor(progress * 10) // Fake number during loading
-                                            : (latestResult ? Math.floor(latestResult.download / 1_000_000) : '0')}
-                                    </span>
-                                    {!loading && <span className="text-lg text-gray-500">.{(latestResult ? (latestResult.download / 1_000_000 % 1) * 10 : 0).toFixed(0)}</span>}
+                                    {(() => {
+                                        // Determine the current speed value to display
+                                        const currentSpeed = loading
+                                            ? (activePhase === 'upload' ? latestResult?.upload : latestResult?.download) || 0
+                                            : (latestResult?.download || 0);
+                                        const mbps = currentSpeed / 1_000_000;
+                                        const isActivelyTesting = loading && (activePhase === 'download' || activePhase === 'upload') && currentSpeed === 0;
+
+                                        if (isActivelyTesting) {
+                                            // Show animated dash while waiting for first speed value
+                                            return (
+                                                <>
+                                                    <span className="text-5xl font-bold text-foreground tracking-tighter animate-pulse">—</span>
+                                                </>
+                                            );
+                                        }
+                                        return (
+                                            <>
+                                                <span className="text-5xl font-bold text-foreground tracking-tighter">
+                                                    {Math.floor(mbps)}
+                                                </span>
+                                                <span className="text-lg text-muted-foreground">
+                                                    .{Math.floor((mbps % 1) * 10)}
+                                                </span>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
-                                <span className="text-cyan-400 text-sm font-medium mt-1">Mbps</span>
+                                <span className={loading && activePhase === 'upload' ? "text-emerald-400 text-sm font-medium mt-1" : "text-cyan-400 text-sm font-medium mt-1"}>Mbps</span>
+
+                                {/* Inline Start Button */}
+                                {!loading && (
+                                    <button
+                                        onClick={runSpeedtest}
+                                        className="mt-3 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wider uppercase bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/25 hover:border-cyan-500/50 hover:scale-105 transition-all shadow-lg shadow-cyan-500/10"
+                                    >
+                                        <Play className="w-3 h-3 fill-current" />
+                                        GO
+                                    </button>
+                                )}
 
                                 {loading && (
-                                    <div className="absolute bottom-12 px-3 py-1 bg-cyan-500/10 text-cyan-400 text-[10px] font-bold rounded-full animate-pulse border border-cyan-500/20">
-                                        RUNNING TEST...
+                                    <div className={`absolute bottom-12 px-3 py-1 text-[10px] font-bold rounded-full animate-pulse border ${activePhase === 'upload'
+                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                        : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                                        }`}>
+                                        {activePhase === 'upload' ? 'UPLOADING...' : activePhase === 'download' ? 'DOWNLOADING...' : 'PREPARING...'}
                                     </div>
                                 )}
                             </div>
@@ -308,12 +414,12 @@ Generated by StatSea`;
 
                         {/* Server & ISP Info Below Gauge */}
                         {latestResult && !loading && (
-                            <div className="w-full mt-4 flex items-center justify-between text-xs px-4 border-t border-gray-800 pt-4">
-                                <div className="flex items-center gap-2 text-gray-400">
+                            <div className="w-full mt-4 flex items-center justify-between text-xs px-4 border-t border-border pt-4">
+                                <div className="flex items-center gap-2 text-muted-foreground">
                                     <Globe className="w-3 h-3" />
                                     <span>{latestResult.isp}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-gray-400">
+                                <div className="flex items-center gap-2 text-muted-foreground">
                                     <MapPin className="w-3 h-3" />
                                     <span>{latestResult.server.name}</span>
                                 </div>
@@ -325,8 +431,8 @@ Generated by StatSea`;
                 {/* Right Column: Charts (8 cols) */}
                 <div className="lg:col-span-8 flex flex-col gap-6">
                     {/* Bandwidth History Chart */}
-                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 flex-1">
-                        <h3 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+                    <div className="bg-card border border-border rounded-xl p-5 flex-1">
+                        <h3 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
                             <TrendingUp className="w-4 h-4 text-cyan-400" /> Bandwidth History
                         </h3>
                         <div className="h-[200px]">
@@ -342,12 +448,12 @@ Generated by StatSea`;
                                             <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                                    <XAxis dataKey="time" stroke="#4b5563" fontSize={10} axisLine={false} tickLine={false} />
-                                    <YAxis stroke="#4b5563" fontSize={10} axisLine={false} tickLine={false} tickFormatter={v => `${v}`} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border" vertical={false} />
+                                    <XAxis dataKey="time" stroke="currentColor" className="text-muted-foreground" fontSize={10} axisLine={false} tickLine={false} />
+                                    <YAxis stroke="currentColor" className="text-muted-foreground" fontSize={10} axisLine={false} tickLine={false} tickFormatter={v => `${v}`} />
                                     <Tooltip
-                                        contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px', fontSize: '11px' }}
-                                        itemStyle={{ color: '#e5e7eb' }}
+                                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', fontSize: '11px', color: 'var(--foreground)' }}
+                                        itemStyle={{ color: 'var(--foreground)' }}
                                     />
                                     <Area type="monotone" dataKey="down" stroke="#22d3ee" strokeWidth={2} fill="url(#colorDown)" name="Download (Mbps)" />
                                     <Area type="monotone" dataKey="up" stroke="#34d399" strokeWidth={2} fill="url(#colorUp)" name="Upload (Mbps)" />
@@ -357,19 +463,19 @@ Generated by StatSea`;
                     </div>
 
                     {/* Comparison Chart */}
-                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 h-[200px] flex flex-col">
-                        <h3 className="text-sm font-medium text-gray-400 mb-2 flex items-center gap-2">
+                    <div className="bg-card border border-border rounded-xl p-5 h-[200px] flex flex-col">
+                        <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
                             <Activity className="w-4 h-4 text-purple-400" /> Speed Comparison
                         </h3>
                         <div className="flex-1 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={compareData} layout="vertical" barSize={20}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" horizontal={false} />
-                                    <XAxis type="number" stroke="#4b5563" fontSize={10} hide />
-                                    <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={11} width={80} tickLine={false} axisLine={false} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border" horizontal={false} />
+                                    <XAxis type="number" stroke="currentColor" className="text-muted-foreground" fontSize={10} hide />
+                                    <YAxis dataKey="name" type="category" stroke="currentColor" className="text-muted-foreground" fontSize={11} width={80} tickLine={false} axisLine={false} />
                                     <Tooltip
                                         cursor={{ fill: 'transparent' }}
-                                        contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px', fontSize: '11px' }}
+                                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', fontSize: '11px', color: 'var(--foreground)' }}
                                         formatter={(value: number) => [`${(value / 1_000_000).toFixed(1)} Mbps`]}
                                     />
                                     <Bar dataKey="value" radius={[0, 4, 4, 0]}>
@@ -385,60 +491,60 @@ Generated by StatSea`;
             </div>
 
             {/* ─── Recent Tests Table ─── */}
-            <div className="bg-gray-900/60 border border-gray-800 rounded-xl overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <h3 className="text-sm font-medium text-white">Recent Tests</h3>
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <h3 className="text-sm font-medium text-foreground">Recent Tests</h3>
                     </div>
-                    <button onClick={fetchHistory} className="text-xs text-gray-500 hover:text-white transition-colors">
+                    <button onClick={fetchHistory} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                         Refresh
                     </button>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead className="bg-gray-900/95 border-b border-gray-800">
+                        <thead className="bg-muted/50 border-b border-border">
                             <tr>
-                                <th className="text-left text-gray-500 font-medium px-5 py-3 text-xs">DATE & TIME</th>
-                                <th className="text-left text-gray-500 font-medium px-5 py-3 text-xs">PROVIDER</th>
-                                <th className="text-left text-gray-500 font-medium px-5 py-3 text-xs">ISP</th>
-                                <th className="text-left text-gray-500 font-medium px-5 py-3 text-xs">SERVER</th>
-                                <th className="text-right text-gray-500 font-medium px-5 py-3 text-xs">DOWNLOAD</th>
-                                <th className="text-right text-gray-500 font-medium px-5 py-3 text-xs">UPLOAD</th>
-                                <th className="text-right text-gray-500 font-medium px-5 py-3 text-xs">PING</th>
+                                <th className="text-left text-muted-foreground font-medium px-5 py-3 text-xs">DATE & TIME</th>
+                                <th className="text-left text-muted-foreground font-medium px-5 py-3 text-xs">PROVIDER</th>
+                                <th className="text-left text-muted-foreground font-medium px-5 py-3 text-xs">ISP</th>
+                                <th className="text-left text-muted-foreground font-medium px-5 py-3 text-xs">SERVER</th>
+                                <th className="text-right text-muted-foreground font-medium px-5 py-3 text-xs">DOWNLOAD</th>
+                                <th className="text-right text-muted-foreground font-medium px-5 py-3 text-xs">UPLOAD</th>
+                                <th className="text-right text-muted-foreground font-medium px-5 py-3 text-xs">PING</th>
                             </tr>
                         </thead>
                         <tbody>
                             {history.length === 0 ? (
-                                <tr><td colSpan={7} className="text-center text-gray-600 py-8">No test history found</td></tr>
+                                <tr><td colSpan={7} className="text-center text-muted-foreground py-8">No test history found</td></tr>
                             ) : (
                                 history.slice(0, 10).map((result, i) => (
-                                    <tr key={i} className="border-b border-gray-800/30 hover:bg-gray-800/30 transition-colors">
-                                        <td className="px-5 py-3 font-mono text-gray-400 text-xs">
+                                    <tr key={i} className="border-b border-border hover:bg-muted/30 transition-colors">
+                                        <td className="px-5 py-3 font-mono text-muted-foreground text-xs">
                                             {new Date(result.timestamp).toLocaleString()}
                                         </td>
                                         <td className="px-5 py-3">
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${result.provider === 'ookla'
-                                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                                : 'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                                                ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                                : 'bg-orange-500/10 text-orange-500 border-orange-500/20'
                                                 }`}>
                                                 {result.provider}
                                             </span>
                                         </td>
-                                        <td className="px-5 py-3 text-gray-400 text-xs font-medium">
+                                        <td className="px-5 py-3 text-muted-foreground text-xs font-medium">
                                             {result.isp || 'Unknown'}
                                         </td>
-                                        <td className="px-5 py-3 text-gray-300 text-xs">
-                                            {result.server.name || 'Auto'} <span className="text-gray-600">({result.server.country || 'Unknown'})</span>
+                                        <td className="px-5 py-3 text-foreground text-xs">
+                                            {result.server.name || 'Auto'} <span className="text-muted-foreground">({result.server.country || 'Unknown'})</span>
                                         </td>
-                                        <td className="px-5 py-3 font-mono text-cyan-400 text-xs text-right font-bold">
-                                            {toMbps(result.download)} <span className="text-gray-600 text-[10px] font-normal">Mbps</span>
+                                        <td className="px-5 py-3 font-mono text-cyan-500 dark:text-cyan-400 text-xs text-right font-bold">
+                                            {toMbps(result.download)} <span className="text-muted-foreground text-[10px] font-normal">Mbps</span>
                                         </td>
-                                        <td className="px-5 py-3 font-mono text-emerald-400 text-xs text-right font-bold">
-                                            {toMbps(result.upload)} <span className="text-gray-600 text-[10px] font-normal">Mbps</span>
+                                        <td className="px-5 py-3 font-mono text-emerald-500 dark:text-emerald-400 text-xs text-right font-bold">
+                                            {toMbps(result.upload)} <span className="text-muted-foreground text-[10px] font-normal">Mbps</span>
                                         </td>
-                                        <td className="px-5 py-3 font-mono text-amber-400 text-xs text-right font-bold">
-                                            {Math.round(result.ping)} <span className="text-gray-600 text-[10px] font-normal">ms</span>
+                                        <td className="px-5 py-3 font-mono text-amber-500 dark:text-amber-400 text-xs text-right font-bold">
+                                            {Math.round(result.ping)} <span className="text-muted-foreground text-[10px] font-normal">ms</span>
                                         </td>
                                     </tr>
                                 ))

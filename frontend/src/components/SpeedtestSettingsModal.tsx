@@ -22,27 +22,28 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
 
     useEffect(() => {
         if (isOpen) {
-            fetchSettings();
+            const loadSettings = async () => {
+                try {
+                    const response = await fetch(`${API_CONFIG.BASE_URL}/api/settings`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        setSettings(prev => {
+                            const newSettings = { ...prev };
+                            data.forEach((s: { key: string; value: string }) => {
+                                if (Object.prototype.hasOwnProperty.call(newSettings, s.key)) {
+                                    (newSettings as Record<string, string>)[s.key] = s.value;
+                                }
+                            });
+                            return newSettings;
+                        });
+                    }
+                } catch {
+                    toast.error("Failed to load settings");
+                }
+            };
+            loadSettings();
         }
     }, [isOpen]);
-
-    const fetchSettings = async () => {
-        try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}/api/settings`);
-            if (response.ok) {
-                const data = await response.json();
-                const newSettings: any = { ...settings };
-                data.forEach((s: any) => {
-                    if (newSettings.hasOwnProperty(s.key)) {
-                        newSettings[s.key] = s.value;
-                    }
-                });
-                setSettings(newSettings);
-            }
-        } catch (error) {
-            toast.error("Failed to load settings");
-        }
-    };
 
     const handleSave = async () => {
         setLoading(true);
@@ -64,7 +65,7 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
             await Promise.all(promises);
             toast.success("Settings saved successfully");
             onClose();
-        } catch (error) {
+        } catch {
             toast.error("Failed to save settings");
         } finally {
             setLoading(false);

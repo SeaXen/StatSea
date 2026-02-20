@@ -40,7 +40,7 @@ export function GroupManager({ isOpen, onClose, groups, setGroups }: GroupManage
             setNewGroupColor('#3b82f6');
             setIsAdding(false);
             toast.success('Group created successfully');
-        } catch (error) {
+        } catch {
             toast.error('Failed to create group');
         }
     };
@@ -59,7 +59,7 @@ export function GroupManager({ isOpen, onClose, groups, setGroups }: GroupManage
             setGroups(groups.map(g => g.id === updatedGroup.id ? updatedGroup : g));
             setEditingId(null);
             toast.success('Group updated');
-        } catch (error) {
+        } catch {
             toast.error('Failed to update group');
         }
     };
@@ -76,7 +76,7 @@ export function GroupManager({ isOpen, onClose, groups, setGroups }: GroupManage
 
             setGroups(groups.filter(g => g.id !== id));
             toast.success('Group deleted');
-        } catch (error) {
+        } catch {
             toast.error('Failed to delete group');
         }
     };

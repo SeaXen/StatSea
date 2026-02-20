@@ -39,16 +39,16 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-sm border-l border-white/10 bg-[#0a0a0a] shadow-2xl"
+                        className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-sm border-l border-border bg-background shadow-2xl"
                     >
                         <div className="flex h-full flex-col">
                             {/* Header */}
-                            <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
+                            <div className="flex items-center justify-between border-b border-border px-4 py-4">
                                 <div className="flex items-center gap-2">
-                                    <Bell className="h-5 w-5 text-gray-400" />
-                                    <h2 className="font-semibold text-gray-200">Notifications</h2>
+                                    <Bell className="h-5 w-5 text-muted-foreground" />
+                                    <h2 className="font-semibold text-foreground">Notifications</h2>
                                     {unreadCount > 0 && (
-                                        <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs font-medium text-blue-400">
+                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                                             {unreadCount} New
                                         </span>
                                     )}
@@ -58,14 +58,14 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                                         <>
                                             <button
                                                 onClick={markAllAsRead}
-                                                className="group rounded-md p-2 text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                                className="group rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                                                 title="Mark all as read"
                                             >
                                                 <Check className="h-4 w-4" />
                                             </button>
                                             <button
                                                 onClick={clearNotifications}
-                                                className="group rounded-md p-2 text-gray-400 hover:bg-white/5 hover:text-red-400 transition-colors"
+                                                className="group rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive transition-colors"
                                                 title="Clear all"
                                             >
                                                 <Trash2 className="h-4 w-4" />
@@ -74,7 +74,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                                     )}
                                     <button
                                         onClick={onClose}
-                                        className="rounded-md p-2 text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                        className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                                     >
                                         <X className="h-5 w-5" />
                                     </button>
@@ -82,9 +82,9 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                             </div>
 
                             {/* Content */}
-                            <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                            <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                                 {notifications.length === 0 ? (
-                                    <div className="flex h-full flex-col items-center justify-center text-center text-gray-500">
+                                    <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
                                         <Bell className="h-12 w-12 opacity-20 mb-4" />
                                         <p className="font-medium">All caught up!</p>
                                         <p className="text-sm">No new notifications to show.</p>
@@ -99,26 +99,26 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, x: -20 }}
                                                 className={`relative rounded-xl border p-4 transition-colors ${notification.read
-                                                        ? 'border-white/5 bg-white/[0.02]'
-                                                        : 'border-blue-500/20 bg-blue-500/5'
+                                                    ? 'border-border bg-card/50'
+                                                    : 'border-primary/20 bg-primary/5'
                                                     }`}
                                                 onClick={() => markAsRead(notification.id)}
                                             >
                                                 {!notification.read && (
-                                                    <div className="absolute right-4 top-4 h-2 w-2 rounded-full bg-blue-500" />
+                                                    <div className="absolute right-4 top-4 h-2 w-2 rounded-full bg-primary" />
                                                 )}
                                                 <div className="flex gap-4">
                                                     <div className="mt-1 flex-shrink-0">
                                                         {getIcon(notification.type)}
                                                     </div>
                                                     <div className="flex-1 space-y-1">
-                                                        <h3 className={`text-sm font-medium ${notification.read ? 'text-gray-300' : 'text-white'}`}>
+                                                        <h3 className={`text-sm font-medium ${notification.read ? 'text-muted-foreground' : 'text-foreground'}`}>
                                                             {notification.title}
                                                         </h3>
-                                                        <p className="text-xs text-gray-500 leading-relaxed">
+                                                        <p className="text-xs text-muted-foreground leading-relaxed">
                                                             {notification.description}
                                                         </p>
-                                                        <span className="text-[10px] text-gray-600">
+                                                        <span className="text-[10px] text-muted-foreground/70">
                                                             {new Date(notification.timestamp).toLocaleTimeString()}
                                                         </span>
                                                     </div>

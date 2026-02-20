@@ -32,21 +32,21 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
     };
 
     return (
-        <div className="sticky top-0 z-40 w-full border-b border-white/5 bg-black/50 backdrop-blur-xl supports-[backdrop-filter]:bg-black/20">
+        <div className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-16 items-center justify-between px-4 lg:px-6">
 
                 {/* Left Side: Page Title / Breadcrumbs */}
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onMenuClick}
-                        className="md:hidden p-2 -ml-2 text-gray-400 hover:text-white"
+                        className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground"
                         aria-label="Toggle menu"
                     >
                         <Menu className="h-6 w-6" />
                     </button>
 
                     <div>
-                        <h2 className="text-lg font-semibold text-white capitalize tracking-tight">
+                        <h2 className="text-lg font-semibold text-foreground capitalize tracking-tight">
                             {activeTab}
                         </h2>
                     </div>
@@ -59,21 +59,21 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
                     {/* Search Trigger */}
                     <button
                         onClick={() => setCommandOpen(true)}
-                        className="group flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-sm text-gray-400 hover:border-white/10 hover:bg-white/10 hover:text-gray-200 transition-all"
+                        className="group flex items-center gap-2 rounded-full border border-border bg-accent/50 px-3 py-1.5 text-sm text-muted-foreground hover:border-accent hover:bg-accent hover:text-foreground transition-all"
                         aria-label="Search"
                     >
                         <Search className="h-4 w-4" />
                         <span className="hidden sm:inline">Search...</span>
-                        <kbd className="hidden lg:inline-flex h-5 items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-gray-500">
+                        <kbd className="hidden lg:inline-flex h-5 items-center gap-1 rounded border border-border bg-accent/50 px-1.5 font-mono text-[10px] text-muted-foreground">
                             ⌘K
                         </kbd>
                     </button>
 
-                    <div className="h-6 w-px bg-white/10 mx-2" />
+                    <div className="h-6 w-px bg-border mx-2" />
 
                     <button
                         onClick={() => setIsNotificationOpen(true)}
-                        className="relative rounded-full p-2 text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                        className="relative rounded-full p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                         aria-label="Notifications"
                     >
                         <Bell className="h-5 w-5" />
@@ -86,16 +86,16 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
 
                     <div className="flex items-center gap-3 pl-2">
                         <div className="hidden lg:flex flex-col items-end">
-                            <span className="text-xs font-medium text-white">{user?.full_name || user?.username}</span>
-                            <span className="text-[10px] text-gray-500">{user?.is_admin ? 'Administrator' : 'User'}</span>
+                            <span className="text-xs font-medium text-foreground">{user?.full_name || user?.username}</span>
+                            <span className="text-[10px] text-muted-foreground">{user?.is_admin ? 'Administrator' : 'User'}</span>
                         </div>
-                        <div className="h-8 w-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
                             <UserIcon className="h-4 w-4" />
                         </div>
 
                         <button
                             onClick={handleLogout}
-                            className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-full transition-all"
+                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-all"
                             title="Sign Out"
                             aria-label="Sign out"
                         >

@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setIsMobileOpen(false)}
-                        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+                        className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
                     />
                 )}
             </AnimatePresence>
@@ -78,13 +78,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 initial={false}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className={`
-                    fixed left-0 top-0 z-50 h-screen border-r border-white/5 bg-black/50 backdrop-blur-xl
+                    fixed left-0 top-0 z-50 h-screen border-r border-border bg-background/80 backdrop-blur-xl
                     ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
                     md:translate-x-0 transition-transform duration-300 ease-in-out md:sticky
                 `}
             >
                 {/* Logo Area */}
-                <div className={`flex h-16 items-center ${isCollapsed ? 'justify-center' : 'justify-between px-6'} border-b border-white/5`}>
+                <div className={`flex h-16 items-center ${isCollapsed ? 'justify-center' : 'justify-between px-6'} border-b border-border`}>
                     <div className="flex items-center gap-3 overflow-hidden" onClick={() => setActiveTab('dashboard')}>
                         <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/20">
                             <Activity className="h-5 w-5 text-blue-400" />
@@ -97,8 +97,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 animate={{ opacity: 1 }}
                                 className="flex flex-col"
                             >
-                                <span className="font-bold tracking-tight text-white text-lg">Statsea</span>
-                                <span className="text-[10px] uppercase tracking-wider text-blue-400 font-medium">Enterprise</span>
+                                <span className="font-bold tracking-tight text-foreground text-lg">Statsea</span>
+                                <span className="text-[10px] uppercase tracking-wider text-primary font-medium">Enterprise</span>
                             </motion.div>
                         )}
                     </div>
@@ -107,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {!isCollapsed && (
                         <button
                             onClick={() => setIsCollapsed(true)}
-                            className="hidden md:flex h-6 w-6 items-center justify-center rounded-md text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+                            className="hidden md:flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </button>
@@ -129,8 +129,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     group relative flex h-10 items-center rounded-lg transition-all duration-200
                                     ${isCollapsed ? 'justify-center px-0' : 'px-4'}
                                     ${isActive
-                                        ? 'bg-blue-500/10 text-blue-400'
-                                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'
+                                        ? 'bg-primary/10 text-primary'
+                                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                                     }
                                 `}
                                 title={isCollapsed ? item.label : undefined}
@@ -138,13 +138,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 {isActive && (
                                     <motion.div
                                         layoutId="activeTabIndicator"
-                                        className="absolute inset-0 rounded-lg bg-blue-500/10 border border-blue-500/20"
+                                        className="absolute inset-0 rounded-lg bg-primary/10 border border-primary/20"
                                         initial={false}
                                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                     />
                                 )}
 
-                                <item.icon className={` shrink-0 transition-colors ${isActive ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-100'} ${isCollapsed ? 'h-5 w-5' : 'h-4 w-4'}`} />
+                                <item.icon className={` shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'} ${isCollapsed ? 'h-5 w-5' : 'h-4 w-4'}`} />
 
                                 {!isCollapsed && (
                                     <span className="ml-3 text-sm font-medium truncate">
@@ -154,7 +154,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                                 {/* Hover tooltip for collapsed state */}
                                 {isCollapsed && (
-                                    <div className="absolute left-full ml-2 hidden rounded-md bg-gray-800 px-2 py-1 text-xs text-white opacity-0 shadow-lg group-hover:block group-hover:opacity-100 z-50 whitespace-nowrap border border-white/10">
+                                    <div className="absolute left-full ml-2 hidden rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-lg group-hover:block group-hover:opacity-100 z-50 whitespace-nowrap border border-border">
                                         {item.label}
                                     </div>
                                 )}
@@ -164,11 +164,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 {/* Bottom Actions / User */}
-                <div className="absolute bottom-0 w-full p-3 border-t border-white/5 bg-black/20 backdrop-blur-md">
+                <div className="absolute bottom-0 w-full p-3 border-t border-border bg-background/20 backdrop-blur-md">
                     <button
                         className={`
                             group flex w-full items-center rounded-lg transition-all duration-200
-                            ${isCollapsed ? 'justify-center h-10' : 'px-3 py-2.5 bg-white/5 hover:bg-white/10'}
+                            ${isCollapsed ? 'justify-center h-10' : 'px-3 py-2.5 bg-accent/50 hover:bg-accent'}
                         `}
                     >
                         {isCollapsed ? (
@@ -177,10 +177,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <div className="flex items-center gap-3 w-full">
                                 <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 ring-1 ring-white/10" />
                                 <div className="flex flex-col items-start truncate text-left">
-                                    <span className="text-sm font-medium text-white/90 truncate max-w-[120px]">{user?.full_name || user?.username}</span>
-                                    <span className="text-[10px] text-blue-400 capitalize">{user?.is_admin ? 'Administrator' : 'General User'}</span>
+                                    <span className="text-sm font-medium text-foreground truncate max-w-[120px]">{user?.full_name || user?.username}</span>
+                                    <span className="text-[10px] text-primary capitalize">{user?.is_admin ? 'Administrator' : 'General User'}</span>
                                 </div>
-                                <div className="ml-auto text-gray-500 group-hover:text-gray-300">
+                                <div className="ml-auto text-muted-foreground group-hover:text-foreground">
                                     <LogOut className="h-4 w-4" />
                                 </div>
                             </div>
@@ -197,7 +197,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {isCollapsed && (
                         <button
                             onClick={() => setIsCollapsed(false)}
-                            className="hidden md:flex w-full mt-2 items-center justify-center text-gray-500 hover:text-white"
+                            className="hidden md:flex w-full mt-2 items-center justify-center text-muted-foreground hover:text-foreground"
                         >
                             <Menu className="h-4 w-4" />
                         </button>

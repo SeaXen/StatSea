@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Shield, AlertTriangle, Info, CheckCircle, Bell, X, Check, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axiosInstance from '../config/axiosInstance';
@@ -21,12 +21,12 @@ export function SecurityAlertsWidget() {
     const [filterTimeframe, setFilterTimeframe] = useState<string>('24h');
     const [selectedAlert, setSelectedAlert] = useState<SecurityAlert | null>(null);
 
-    const fetchAlerts = async () => {
+    const fetchAlerts = useCallback(async () => {
         setLoading(true);
         try {
             const params = new URLSearchParams();
             if (filterSeverity !== 'all') params.append('severity', filterSeverity);
-            if (filterTimeframe !== 'all') params.append('timeframe', filterTimeframe);
+            if (filterTimeframe !== '24h') params.append('timeframe', filterTimeframe);
 
             const response = await axiosInstance.get(`${API_CONFIG.ENDPOINTS.SECURITY.ALERTS}?${params.toString()}`);
             setAlerts(response.data);
@@ -35,13 +35,13 @@ export function SecurityAlertsWidget() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filterSeverity, filterTimeframe]);
 
     useEffect(() => {
         fetchAlerts();
         const interval = setInterval(fetchAlerts, 30000);
         return () => clearInterval(interval);
-    }, [filterSeverity, filterTimeframe]);
+    }, [fetchAlerts]);
 
     const handleResolve = async (id: number, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -58,20 +58,20 @@ export function SecurityAlertsWidget() {
 
     const getIcon = (severity: string) => {
         switch (severity) {
-            case 'critical': return <AlertTriangle className="w-4 h-4 text-red-500" />;
-            case 'warning': return <AlertTriangle className="w-4 h-4 text-orange-400" />;
-            case 'info': return <Info className="w-4 h-4 text-blue-400" />;
-            default: return <Bell className="w-4 h-4 text-gray-400" />;
+            case 'critical': return <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400" />;
+            case 'warning': return <AlertTriangle className="w-4 h-4 text-orange-500 dark:text-orange-400" />;
+            case 'info': return <Info className="w-4 h-4 text-blue-500 dark:text-blue-400" />;
+            default: return <Bell className="w-4 h-4 text-muted-foreground" />;
         }
     };
 
     const getSeverityStyles = (severity: string, isResolved: boolean) => {
-        if (isResolved) return 'bg-white/5 border-white/5 opacity-60 grayscale';
+        if (isResolved) return 'bg-accent/20 border-border opacity-60 grayscale';
         switch (severity) {
             case 'critical': return 'bg-red-500/10 border-red-500/20';
             case 'warning': return 'bg-orange-500/10 border-orange-500/20';
             case 'info': return 'bg-blue-500/10 border-blue-500/20';
-            default: return 'bg-white/5 border-white/10';
+            default: return 'bg-muted/50 border-border';
         }
     };
 
@@ -84,18 +84,18 @@ export function SecurityAlertsWidget() {
     });
 
     return (
-        <div className="glass-card rounded-xl p-6 border border-white/5 bg-black/20 backdrop-blur-xl h-full flex flex-col relative">
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm h-full flex flex-col relative">
             <div className="flex flex-col gap-4 mb-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Shield className="w-5 h-5 text-indigo-400" />
-                        <h3 className="text-lg font-semibold text-gray-200">Security Alerts</h3>
+                        <Shield className="w-5 h-5 text-primary" />
+                        <h3 className="text-lg font-semibold text-foreground">Security Alerts</h3>
                     </div>
                     <div className="flex gap-2">
                         <select
                             value={filterSeverity}
                             onChange={(e) => setFilterSeverity(e.target.value)}
-                            className="bg-black/30 border border-white/10 text-xs rounded-lg px-2 py-1 text-gray-300 focus:outline-none focus:border-indigo-500/50"
+                            className="bg-muted/50 border border-border text-xs rounded-lg px-2 py-1 text-foreground focus:outline-none focus:border-primary/50"
                         >
                             <option value="all">All Severities</option>
                             <option value="critical">Critical</option>
@@ -105,7 +105,7 @@ export function SecurityAlertsWidget() {
                         <select
                             value={filterTimeframe}
                             onChange={(e) => setFilterTimeframe(e.target.value)}
-                            className="bg-black/30 border border-white/10 text-xs rounded-lg px-2 py-1 text-gray-300 focus:outline-none focus:border-indigo-500/50"
+                            className="bg-muted/50 border border-border text-xs rounded-lg px-2 py-1 text-foreground focus:outline-none focus:border-primary/50"
                         >
                             <option value="1h">1 Hour</option>
                             <option value="24h">24 Hours</option>
@@ -120,13 +120,13 @@ export function SecurityAlertsWidget() {
             <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                 {loading ? (
                     [...Array(3)].map((_, i) => (
-                        <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/5 animate-pulse">
-                            <div className="h-4 w-2/3 bg-white/10 rounded mb-2"></div>
-                            <div className="h-3 w-1/2 bg-white/10 rounded"></div>
+                        <div key={i} className="p-4 rounded-xl bg-accent/20 border border-border animate-pulse">
+                            <div className="h-4 w-2/3 bg-muted rounded mb-2"></div>
+                            <div className="h-3 w-1/2 bg-muted rounded"></div>
                         </div>
                     ))
                 ) : alerts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center p-6 text-gray-500">
+                    <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground">
                         <CheckCircle className="w-8 h-8 mb-2 opacity-20" />
                         <p className="text-sm">No alerts found</p>
                     </div>
@@ -139,7 +139,7 @@ export function SecurityAlertsWidget() {
                                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className={`p-4 rounded-xl border ${getSeverityStyles(alert.severity, alert.is_resolved)} transition-all hover:bg-white/5 cursor-pointer group`}
+                                className={`p-4 rounded-xl border ${getSeverityStyles(alert.severity, alert.is_resolved)} transition-all hover:bg-muted/50 cursor-pointer group`}
                                 onClick={() => setSelectedAlert(alert)}
                             >
                                 <div className="flex gap-3">
@@ -148,15 +148,15 @@ export function SecurityAlertsWidget() {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start mb-1">
-                                            <h4 className={`text-sm font-medium truncate pr-2 ${alert.is_resolved ? 'text-gray-500 line-through' : 'text-gray-200'}`}>
+                                            <h4 className={`text-sm font-medium truncate pr-2 ${alert.is_resolved ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                                                 {alert.title}
                                             </h4>
-                                            <span className="text-[10px] text-gray-500 whitespace-nowrap flex items-center gap-1">
+                                            <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />
                                                 {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
+                                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                                             {alert.description}
                                         </p>
 
@@ -164,7 +164,7 @@ export function SecurityAlertsWidget() {
                                             <div className="flex items-center justify-end mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
                                                     onClick={(e) => handleResolve(alert.id, e)}
-                                                    className="flex items-center gap-1 text-[10px] bg-green-500/10 text-green-400 hover:bg-green-500/20 px-2 py-1 rounded-full transition-colors"
+                                                    className="flex items-center gap-1 text-[10px] bg-green-500/10 text-green-500 hover:bg-green-500/20 px-2 py-1 rounded-full transition-colors"
                                                 >
                                                     <Check className="w-3 h-3" />
                                                     Resolve
@@ -182,37 +182,37 @@ export function SecurityAlertsWidget() {
             {/* Detail Modal */}
             <AnimatePresence>
                 {selectedAlert && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm rounded-xl" onClick={() => setSelectedAlert(null)}>
+                    <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm rounded-xl" onClick={() => setSelectedAlert(null)}>
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-[#0f1115] border border-white/10 rounded-xl w-full max-w-sm overflow-hidden shadow-2xl"
+                            className="bg-card border border-border rounded-xl w-full max-w-sm overflow-hidden shadow-2xl"
                         >
-                            <div className={`p-4 border-b border-white/5 flex items-center justify-between ${getSeverityStyles(selectedAlert.severity, selectedAlert.is_resolved).split(' ')[0]}`}>
+                            <div className={`p-4 border-b border-border flex items-center justify-between ${getSeverityStyles(selectedAlert.severity, selectedAlert.is_resolved).split(' ')[0]}`}>
                                 <div className="flex items-center gap-2">
                                     {getIcon(selectedAlert.severity)}
-                                    <h3 className="font-medium text-gray-200">{selectedAlert.title}</h3>
+                                    <h3 className="font-medium text-foreground">{selectedAlert.title}</h3>
                                 </div>
-                                <button onClick={() => setSelectedAlert(null)} className="text-gray-400 hover:text-white">
+                                <button onClick={() => setSelectedAlert(null)} className="text-muted-foreground hover:text-foreground">
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
                             <div className="p-4 space-y-4">
                                 <div>
-                                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider block mb-1">Description</label>
-                                    <p className="text-sm text-gray-300 leading-relaxed">{selectedAlert.description}</p>
+                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Description</label>
+                                    <p className="text-sm text-foreground leading-relaxed">{selectedAlert.description}</p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider block mb-1">Time</label>
-                                        <p className="text-sm text-gray-300">{new Date(selectedAlert.timestamp).toLocaleString()}</p>
+                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Time</label>
+                                        <p className="text-sm text-foreground">{new Date(selectedAlert.timestamp).toLocaleString()}</p>
                                     </div>
                                     <div>
-                                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider block mb-1">Status</label>
-                                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${selectedAlert.is_resolved ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${selectedAlert.is_resolved ? 'bg-green-500' : 'bg-red-500'}`} />
+                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1">Status</label>
+                                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${selectedAlert.is_resolved ? 'bg-green-500/10 text-green-500' : 'bg-destructive/10 text-destructive'}`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${selectedAlert.is_resolved ? 'bg-green-500' : 'bg-destructive'}`} />
                                             {selectedAlert.is_resolved ? 'Resolved' : 'Active'}
                                         </span>
                                     </div>
@@ -220,7 +220,7 @@ export function SecurityAlertsWidget() {
                                 {!selectedAlert.is_resolved && (
                                     <button
                                         onClick={(e) => handleResolve(selectedAlert.id, e)}
-                                        className="w-full py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                                        className="w-full py-2 bg-primary/20 hover:bg-primary/30 text-primary dark:text-primary-foreground text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                                     >
                                         <Check className="w-4 h-4" />
                                         Mark as Resolved

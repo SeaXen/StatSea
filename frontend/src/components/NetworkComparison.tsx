@@ -73,32 +73,32 @@ const NetworkComparison: React.FC = () => {
     };
 
     useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const datesA = getRangeDates(rangeA);
+                const datesB = getRangeDates(rangeB);
+
+                // Fetch concurrently
+                const [resA, resB] = await Promise.all([
+                    axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY_SYSTEM, {
+                        params: { start: datesA.start.toISOString(), end: datesA.end.toISOString() }
+                    }),
+                    axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY_SYSTEM, {
+                        params: { start: datesB.start.toISOString(), end: datesB.end.toISOString() }
+                    })
+                ]);
+
+                setData({ periodA: resA.data, periodB: resB.data });
+            } catch (error) {
+                console.error("Failed to fetch comparison data", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
         fetchData();
     }, [rangeA, rangeB]);
-
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const datesA = getRangeDates(rangeA);
-            const datesB = getRangeDates(rangeB);
-
-            // Fetch concurrently
-            const [resA, resB] = await Promise.all([
-                axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY_SYSTEM, {
-                    params: { start: datesA.start.toISOString(), end: datesA.end.toISOString() }
-                }),
-                axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY_SYSTEM, {
-                    params: { start: datesB.start.toISOString(), end: datesB.end.toISOString() }
-                })
-            ]);
-
-            setData({ periodA: resA.data, periodB: resB.data });
-        } catch (error) {
-            console.error("Failed to fetch comparison data", error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const calculateMetrics = (points: HistoryPoint[]): MetricSummary => {
         if (!points.length) return { totalUpload: 0, totalDownload: 0, avgUploadRate: 0, avgDownloadRate: 0 };
