@@ -28,7 +28,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab })
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
-                            className={`flex flex-col items-center gap-1 transition-all duration-200 ${isActive ? 'text-blue-400' : 'text-gray-500'
+                            className={`flex flex-col items-center gap-1 transition-all duration-200 ${isActive ? 'text-blue-400' : 'text-muted-foreground'
                                 }`}
                             aria-label={`Navigate to ${item.label}`}
                         >

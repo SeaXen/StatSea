@@ -75,7 +75,7 @@ const Dashboard = () => {
             <header className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-white tracking-tight">Dashboard</h1>
-                    <p className="text-gray-400 text-sm mt-0.5">Real-time network overview</p>
+                    <p className="text-muted-foreground text-sm mt-0.5">Real-time network overview</p>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className={`px-2.5 py-1 rounded-full flex items-center gap-2 border ${isConnected ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
@@ -94,15 +94,15 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 <div className="col-span-2 glass-card rounded-lg p-4 h-[350px] border border-white/5 bg-black/40 backdrop-blur-xl shadow-xl overflow-hidden relative">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
                             <Activity className="w-3.5 h-3.5 text-blue-400" />
                             Live Network Traffic
                         </h3>
                         <div className="flex gap-4 text-xs">
-                            <span className="flex items-center gap-1.5 text-gray-400">
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div> Download
                             </span>
-                            <span className="flex items-center gap-1.5 text-gray-400">
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div> Upload
                             </span>
                         </div>
@@ -110,7 +110,7 @@ const Dashboard = () => {
                     {wsData.length === 0 ? (
                         <div className="absolute inset-0 top-10 flex flex-col items-center justify-center space-y-4 px-12">
                             <div className="w-full h-full max-h-[250px] bg-white/5 animate-pulse rounded-lg" />
-                            <p className="text-xs text-gray-500 animate-pulse">Waiting for network telemetry...</p>
+                            <p className="text-xs text-muted-foreground animate-pulse">Waiting for network telemetry...</p>
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height={280}>

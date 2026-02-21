@@ -132,9 +132,9 @@ function formatNumber(num: number): string {
 const StatCard = ({ label, value, icon: Icon, color, sub, trend }: {
     label: string; value: string | number; icon: React.ElementType; color: string; sub?: string; trend?: 'up' | 'down' | 'neutral';
 }) => (
-    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 flex flex-col gap-0.5 relative overflow-hidden group hover:border-gray-700 transition-all duration-300 hover:shadow-lg" style={{ '--glow': color } as React.CSSProperties}>
+    <div className="bg-card/60 border border-border rounded-xl p-3 flex flex-col gap-0.5 relative overflow-hidden group hover:border-border/80 transition-all duration-300 hover:shadow-lg" style={{ '--glow': color } as React.CSSProperties}>
         <div className="flex items-center justify-between">
-            <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">{label}</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110" style={{ background: `${color}15` }}>
                 <Icon className="h-3.5 w-3.5" style={{ color }} />
             </div>
@@ -144,7 +144,7 @@ const StatCard = ({ label, value, icon: Icon, color, sub, trend }: {
             <div className="flex items-center gap-1">
                 {trend === 'up' && <TrendingUp className="w-2.5 h-2.5 text-emerald-400" />}
                 {trend === 'down' && <TrendingUp className="w-2.5 h-2.5 text-red-400 rotate-180" />}
-                <span className="text-[10px] text-gray-500 truncate">{sub}</span>
+                <span className="text-[10px] text-muted-foreground truncate">{sub}</span>
             </div>
         )}
         <div className="absolute bottom-0 left-0 h-[1.5px] w-full opacity-30 group-hover:opacity-50 transition-opacity" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
@@ -174,10 +174,10 @@ const CircularGauge = ({ percentage, rate, label, color, dotColor }: {
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <div className="w-2 h-2 rounded-full mb-1" style={{ background: dotColor }} />
                     <span className="text-lg font-bold text-white">{percentage}%</span>
-                    <span className="text-[10px] text-gray-400">{rate}</span>
+                    <span className="text-[10px] text-muted-foreground">{rate}</span>
                 </div>
             </div>
-            <span className="text-xs text-gray-500">{label}</span>
+            <span className="text-xs text-muted-foreground">{label}</span>
         </div>
     );
 };
@@ -439,22 +439,22 @@ const AnalyticsDashboard = () => {
     }, [analyticsData?.packet_log, activeView, paused]);
 
     if (loading && !analyticsData) return (
-        <div className="h-[60vh] flex flex-col items-center justify-center text-gray-500 gap-4">
+        <div className="h-[60vh] flex flex-col items-center justify-center text-muted-foreground gap-4">
             <Activity className="w-8 h-8 animate-pulse text-cyan-500" />
             <span>Initializing Traffic Analyzer...</span>
         </div>
     );
 
     if (!analyticsData) return (
-        <div className="h-[60vh] flex flex-col items-center justify-center text-gray-500 gap-4">
+        <div className="h-[60vh] flex flex-col items-center justify-center text-muted-foreground gap-4">
             <AlertTriangle className="w-10 h-10 text-amber-500" />
             <h3 className="text-xl font-semibold text-white">Backend Unavailable</h3>
-            <p className="max-w-md text-center text-gray-400">
+            <p className="max-w-md text-center text-muted-foreground">
                 Could not connect to the analysis engine. Please ensure the backend server is running.
             </p>
             <button
                 onClick={() => window.location.reload()}
-                className="mt-4 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors border border-gray-700"
+                className="mt-4 px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground rounded-lg transition-colors border border-border"
             >
                 Retry Connection
             </button>
@@ -516,12 +516,12 @@ const AnalyticsDashboard = () => {
                         <Activity className="w-7 h-7 text-cyan-400" />
                         Traffic Analyzer
                     </h1>
-                    <p className="text-gray-400 mt-0.5 text-xs">Real-time packet monitoring and deep analysis</p>
+                    <p className="text-muted-foreground mt-0.5 text-xs">Real-time packet monitoring and deep analysis</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900/60 border border-gray-800 rounded-lg">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-card/60 border border-border rounded-lg">
                         <div className={`w-2 h-2 rounded-full ${paused ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
-                        <span className="text-xs text-gray-400">{paused ? 'Paused' : 'Capturing'}</span>
+                        <span className="text-xs text-muted-foreground">{paused ? 'Paused' : 'Capturing'}</span>
                     </div>
                     <button onClick={() => setPaused(!paused)}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${paused
@@ -533,15 +533,15 @@ const AnalyticsDashboard = () => {
                     <div className="relative">
                         <button
                             onClick={() => setShowSettings(!showSettings)}
-                            className={`p-2 rounded-lg transition-colors border ${showSettings ? 'bg-gray-800 border-gray-600 text-cyan-400' : 'bg-gray-900/60 border-gray-800 text-gray-400 hover:text-white'}`}
+                            className={`p-2 rounded-lg transition-colors border ${showSettings ? 'bg-secondary border-border text-cyan-400' : 'bg-card/60 border-border text-muted-foreground hover:text-foreground'}`}
                         >
                             <Settings className="w-4 h-4" />
                         </button>
 
                         {/* Settings Dropdown */}
                         {showSettings && (
-                            <div className="absolute right-0 top-full mt-2 w-56 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-50 p-3 animate-in fade-in slide-in-from-top-2">
-                                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Dashboard Layout</h4>
+                            <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-xl shadow-xl z-50 p-3 animate-in fade-in slide-in-from-top-2">
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">Dashboard Layout</h4>
                                 <div className="space-y-1">
                                     {[
                                         { key: 'showStatsRow', label: 'Key Statistics' },
@@ -555,11 +555,11 @@ const AnalyticsDashboard = () => {
                                         <button
                                             key={item.key}
                                             onClick={() => toggleWidget(item.key as keyof DashboardConfig)}
-                                            className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-gray-800 rounded-lg text-xs text-gray-300 transition-colors"
+                                            className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-secondary rounded-lg text-xs text-foreground/80 transition-colors"
                                         >
                                             <span>{item.label}</span>
-                                            <div className={`w-8 h-4 rounded-full relative transition-colors ${dashboardConfig[item.key as keyof DashboardConfig] ? 'bg-cyan-500/20' : 'bg-gray-700'}`}>
-                                                <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${dashboardConfig[item.key as keyof DashboardConfig] ? 'left-4.5 bg-cyan-400' : 'left-0.5 bg-gray-500'}`} style={{ left: dashboardConfig[item.key as keyof DashboardConfig] ? '18px' : '2px' }} />
+                                            <div className={`w-8 h-4 rounded-full relative transition-colors ${dashboardConfig[item.key as keyof DashboardConfig] ? 'bg-cyan-500/20' : 'bg-secondary'}`}>
+                                                <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${dashboardConfig[item.key as keyof DashboardConfig] ? 'left-4.5 bg-cyan-400' : 'left-0.5 bg-muted-foreground'}`} style={{ left: dashboardConfig[item.key as keyof DashboardConfig] ? '18px' : '2px' }} />
                                             </div>
                                         </button>
                                     ))}
@@ -571,41 +571,41 @@ const AnalyticsDashboard = () => {
             </div>
 
             {/* Real-time Totals Bar */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-900/40 border border-gray-800/60 rounded-xl p-3 shadow-inner my-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-card/40 border border-border/60 rounded-xl p-3 shadow-inner my-6">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center">
                         <Activity className="w-4 h-4 text-cyan-400" />
                     </div>
                     <div>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Total Packets</p>
-                        <p className="font-mono text-sm text-gray-200 mt-0.5">{analyticsData?.total_packets.toLocaleString() || '---'}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Packets</p>
+                        <p className="font-mono text-sm text-foreground/90 mt-0.5">{analyticsData?.total_packets.toLocaleString() || '---'}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 border-l border-gray-800/60 pl-4">
+                <div className="flex items-center gap-3 border-l border-border/60 pl-4">
                     <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
                         <Database className="w-4 h-4 text-blue-400" />
                     </div>
                     <div>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Total Bytes</p>
-                        <p className="font-mono text-sm text-gray-200 mt-0.5">{analyticsData ? formatBytes(analyticsData.total_bytes) : '---'}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Bytes</p>
+                        <p className="font-mono text-sm text-foreground/90 mt-0.5">{analyticsData ? formatBytes(analyticsData.total_bytes) : '---'}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 border-l border-gray-800/60 pl-4">
+                <div className="flex items-center gap-3 border-l border-border/60 pl-4">
                     <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
                         <Network className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Connections</p>
-                        <p className="font-mono text-sm text-gray-200 mt-0.5">{externalConnections.length.toLocaleString()}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Connections</p>
+                        <p className="font-mono text-sm text-foreground/90 mt-0.5">{externalConnections.length.toLocaleString()}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 border-l border-gray-800/60 pl-4">
+                <div className="flex items-center gap-3 border-l border-border/60 pl-4">
                     <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
                         <AlertTriangle className="w-4 h-4 text-red-400" />
                     </div>
                     <div>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Security Events</p>
-                        <p className="font-mono text-sm text-gray-200 mt-0.5">{securityEvents.length}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Security Events</p>
+                        <p className="font-mono text-sm text-foreground/90 mt-0.5">{securityEvents.length}</p>
                     </div>
                 </div>
             </div>
@@ -631,8 +631,8 @@ const AnalyticsDashboard = () => {
             <div className={`grid grid-cols-1 ${dashboardConfig.showLiveBandwidth && dashboardConfig.showGauges && dashboardConfig.showProtocolFilters ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-4`}>
                 {/* Live Bandwidth Timeline */}
                 {dashboardConfig.showLiveBandwidth && (
-                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                        <h3 className="text-xs font-medium text-gray-400 mb-2 flex items-center gap-2">
+                    <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
+                        <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
                             <TrendingUp className="w-3.5 h-3.5 text-cyan-400" /> Live Bandwidth
                         </h3>
                         <div className="h-[100px]">
@@ -665,7 +665,7 @@ const AnalyticsDashboard = () => {
 
                 {/* Gauges */}
                 {dashboardConfig.showGauges && (
-                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4 flex items-center justify-center gap-6">
+                    <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4 flex items-center justify-center gap-6">
                         <CircularGauge percentage={downPct} rate={formatBytes(analyticsData.download_rate) + '/s'} label="Download" color="#22d3ee" dotColor="#22d3ee" />
                         <CircularGauge percentage={upPct} rate={formatBytes(analyticsData.upload_rate) + '/s'} label="Upload" color="#34d399" dotColor="#34d399" />
                     </div>
@@ -673,22 +673,22 @@ const AnalyticsDashboard = () => {
 
                 {/* Protocol Filters */}
                 {dashboardConfig.showProtocolFilters && (
-                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                        <h3 className="text-xs font-medium text-gray-400 mb-2">Protocol Filters</h3>
+                    <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
+                        <h3 className="text-xs font-medium text-muted-foreground mb-2">Protocol Filters</h3>
                         <div className="flex flex-wrap gap-2">
                             {allProtocols.map(p => (
                                 <ProtocolBadge key={p} proto={p} active={activeProtocols.has(p)} onClick={() => toggleProtocol(p)} />
                             ))}
                         </div>
                         {/* Connection Types mini */}
-                        <div className="mt-4 pt-3 border-t border-gray-800">
-                            <h4 className="text-xs text-gray-500 mb-2">Connection Types</h4>
+                        <div className="mt-4 pt-3 border-t border-border">
+                            <h4 className="text-xs text-muted-foreground mb-2">Connection Types</h4>
                             <div className="flex items-center gap-3">
                                 {connTypeData.map(ct => (
                                     <div key={ct.name} className="flex items-center gap-1.5">
                                         <div className="w-2 h-2 rounded-full" style={{ background: ct.color }} />
-                                        <span className="text-xs text-gray-400">{ct.name}</span>
-                                        <span className="text-xs font-mono text-gray-500">{formatNumber(ct.value)}</span>
+                                        <span className="text-xs text-muted-foreground">{ct.name}</span>
+                                        <span className="text-xs font-mono text-muted-foreground">{formatNumber(ct.value)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -700,12 +700,12 @@ const AnalyticsDashboard = () => {
             </div>
 
             {/* ─── Tab Navigation ─── */}
-            <div className="flex gap-1 border-b border-gray-800">
+            <div className="flex gap-1 border-b border-border">
                 {(['interfaces', 'live', 'statistics', 'connections', 'security', 'history', 'dns', 'comparison'] as const).map(tab => (
                     <button key={tab} onClick={() => setActiveView(tab)}
                         className={`px-4 py-2 text-xs font-medium capitalize transition-all rounded-t-lg ${activeView === tab
-                            ? 'text-cyan-400 bg-gray-900/60 border border-gray-800 border-b-transparent -mb-px'
-                            : 'text-gray-500 hover:text-gray-300'
+                            ? 'text-cyan-400 bg-card/60 border border-border border-b-transparent -mb-px'
+                            : 'text-muted-foreground hover:text-foreground/80'
                             }`}>
                         {tab === 'live' ? 'Live Stream' : tab}
                     </button>
@@ -730,7 +730,7 @@ const AnalyticsDashboard = () => {
                                 ];
                                 exportToCSV(interfaces, 'interfaces');
                             }}
-                            className="px-3 py-1.5 bg-gray-900/60 border border-gray-800 rounded-lg hover:border-gray-700 hover:bg-gray-800 flex items-center gap-2 text-xs text-gray-300 transition-colors"
+                            className="px-3 py-1.5 bg-card/60 border border-border rounded-lg hover:border-border/80 hover:bg-secondary flex items-center gap-2 text-xs text-foreground/80 transition-colors"
                         >
                             <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Export CSV
                         </button>
@@ -743,31 +743,31 @@ const AnalyticsDashboard = () => {
                             { name: 'docker0', status: 'up', type: 'Virtual', ip: '172.17.0.1', tx: 56000000, rx: 89000000, history: [1, 5, 2, 8, 4, 15, 8, 20, 10, 3] },
                             { name: 'tun0', status: 'down', type: 'VPN', ip: '-', tx: 0, rx: 0, history: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
                         ].map((iface) => (
-                            <div key={iface.name} className="bg-gray-900/60 border border-gray-800 rounded-xl p-4 flex flex-col relative overflow-hidden group hover:border-cyan-500/30 transition-colors cursor-pointer">
+                            <div key={iface.name} className="bg-card/60 border border-border rounded-xl p-4 flex flex-col relative overflow-hidden group hover:border-cyan-500/30 transition-colors cursor-pointer">
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full ${iface.status === 'up' ? 'bg-green-500' : 'bg-red-500'} ${iface.status === 'up' ? 'animate-pulse' : ''}`} />
-                                        <h3 className="text-sm font-semibold text-gray-200">{iface.name}</h3>
+                                        <h3 className="text-sm font-semibold text-foreground/90">{iface.name}</h3>
                                     </div>
-                                    <span className="text-[10px] uppercase font-mono tracking-wider text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">{iface.type}</span>
+                                    <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{iface.type}</span>
                                 </div>
 
                                 <div className="space-y-2 mb-4">
                                     <div className="flex justify-between text-xs">
-                                        <span className="text-gray-500">IP Address</span>
-                                        <span className="text-gray-300 font-mono">{iface.ip}</span>
+                                        <span className="text-muted-foreground">IP Address</span>
+                                        <span className="text-foreground/80 font-mono">{iface.ip}</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
-                                        <span className="text-gray-500">Total RX</span>
+                                        <span className="text-muted-foreground">Total RX</span>
                                         <span className="text-cyan-400 font-mono">{formatBytes(iface.rx)}</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
-                                        <span className="text-gray-500">Total TX</span>
+                                        <span className="text-muted-foreground">Total TX</span>
                                         <span className="text-purple-400 font-mono">{formatBytes(iface.tx)}</span>
                                     </div>
                                 </div>
 
-                                <div className="mt-auto h-12 w-full pt-2 border-t border-gray-800/50">
+                                <div className="mt-auto h-12 w-full pt-2 border-t border-border/50">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={iface.history.map((val, i) => ({ time: i, value: val }))}>
                                             <defs>
@@ -792,55 +792,55 @@ const AnalyticsDashboard = () => {
                     {/* Search and Filters */}
                     <div className="flex gap-2">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                             <input
                                 type="text"
                                 placeholder="Search by IP, port, or protocol..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
-                                className="w-full bg-gray-900/60 border border-gray-800 rounded-lg pl-9 pr-4 py-2 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                                className="w-full bg-card/60 border border-border rounded-lg pl-9 pr-4 py-2 text-xs text-foreground/80 placeholder-muted-foreground/60 focus:outline-none focus:border-cyan-500/50 transition-colors"
                             />
                         </div>
                         <div className="relative w-48">
-                            <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+                            <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                             <input
                                 type="text"
                                 placeholder="Filter Flags (e.g. syn)"
                                 value={flagFilter}
                                 onChange={e => setFlagFilter(e.target.value)}
-                                className="w-full bg-gray-900/60 border border-gray-800 rounded-lg pl-9 pr-4 py-2 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                                className="w-full bg-card/60 border border-border rounded-lg pl-9 pr-4 py-2 text-xs text-foreground/80 placeholder-muted-foreground/60 focus:outline-none focus:border-cyan-500/50 transition-colors"
                             />
                         </div>
                         <button
                             onClick={() => exportToCSV(filteredLog, 'live_traffic')}
-                            className="px-4 bg-gray-900/60 border border-gray-800 rounded-lg hover:border-gray-700 hover:bg-gray-800 flex items-center gap-2 text-xs text-gray-300 transition-colors"
+                            className="px-4 bg-card/60 border border-border rounded-lg hover:border-border/80 hover:bg-secondary flex items-center gap-2 text-xs text-foreground/80 transition-colors"
                         >
                             <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Export CSV
                         </button>
                     </div>
 
                     {/* Live Packet Table */}
-                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl overflow-hidden">
+                    <div className="bg-card/60 border border-border rounded-xl overflow-hidden">
                         <div ref={logRef} className="h-[400px] overflow-y-auto custom-scrollbar">
                             <table className="w-full text-sm">
-                                <thead className="sticky top-0 bg-gray-900/95 border-b border-gray-800 z-10">
+                                <thead className="sticky top-0 bg-card/95 border-b border-border z-10">
                                     <tr>
-                                        <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">TIME</th>
-                                        <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">PROTO</th>
-                                        <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">FLAGS</th>
-                                        <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">SOURCE</th>
-                                        <th className="text-center text-gray-500 font-medium px-1 py-2 text-[10px]"></th>
-                                        <th className="text-left text-gray-500 font-medium px-3 py-2 text-[10px]">DESTINATION</th>
-                                        <th className="text-right text-gray-500 font-medium px-3 py-2 text-[10px]">SIZE</th>
+                                        <th className="text-left text-muted-foreground font-medium px-3 py-2 text-[10px]">TIME</th>
+                                        <th className="text-left text-muted-foreground font-medium px-3 py-2 text-[10px]">PROTO</th>
+                                        <th className="text-left text-muted-foreground font-medium px-3 py-2 text-[10px]">FLAGS</th>
+                                        <th className="text-left text-muted-foreground font-medium px-3 py-2 text-[10px]">SOURCE</th>
+                                        <th className="text-center text-muted-foreground font-medium px-1 py-2 text-[10px]"></th>
+                                        <th className="text-left text-muted-foreground font-medium px-3 py-2 text-[10px]">DESTINATION</th>
+                                        <th className="text-right text-muted-foreground font-medium px-3 py-2 text-[10px]">SIZE</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredLog.length === 0 ? (
-                                        <tr><td colSpan={7} className="text-center text-gray-600 py-12">No packets matching filters</td></tr>
+                                        <tr><td colSpan={7} className="text-center text-muted-foreground/60 py-12">No packets matching filters</td></tr>
                                     ) : (
                                         filteredLog.map((pkt, i) => (
-                                            <tr key={i} className={`border-b border-gray-800/30 hover:bg-gray-800/30 transition-colors ${pkt.suspicious ? 'bg-red-500/5' : ''}`}>
-                                                <td className="px-3 py-1.5 font-mono text-gray-500 text-[10px]">{pkt.time}</td>
+                                            <tr key={i} className={`border-b border-border/30 hover:bg-secondary/30 transition-colors ${pkt.suspicious ? 'bg-red-500/5' : ''}`}>
+                                                <td className="px-3 py-1.5 font-mono text-muted-foreground text-[10px]">{pkt.time}</td>
                                                 <td className="px-3 py-1.5">
                                                     <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{
                                                         color: PROTO_COLORS[pkt.proto] || '#9ca3af',
@@ -849,17 +849,17 @@ const AnalyticsDashboard = () => {
                                                         {pkt.proto}
                                                     </span>
                                                 </td>
-                                                <td className="px-3 py-1.5 font-mono text-gray-400 text-[10px]">
+                                                <td className="px-3 py-1.5 font-mono text-muted-foreground text-[10px]">
                                                     {pkt.flags && pkt.flags !== 'None' ? (
                                                         <span className="text-xs text-cyan-600">{pkt.flags}</span>
                                                     ) : (
-                                                        <span className="text-gray-800">-</span>
+                                                        <span className="text-muted-foreground/30">-</span>
                                                     )}
                                                 </td>
-                                                <td className="px-3 py-1.5 font-mono text-gray-300 text-[10px]">{pkt.src}</td>
-                                                <td className="px-1 py-1.5 text-gray-600 text-center text-[10px]">→</td>
-                                                <td className="px-3 py-1.5 font-mono text-gray-300 text-[10px]">{pkt.dst}</td>
-                                                <td className="px-3 py-1.5 font-mono text-gray-400 text-[10px] text-right">{pkt.size} B</td>
+                                                <td className="px-3 py-1.5 font-mono text-foreground/80 text-[10px]">{pkt.src}</td>
+                                                <td className="px-1 py-1.5 text-muted-foreground/60 text-center text-[10px]">→</td>
+                                                <td className="px-3 py-1.5 font-mono text-foreground/80 text-[10px]">{pkt.dst}</td>
+                                                <td className="px-3 py-1.5 font-mono text-muted-foreground text-[10px] text-right">{pkt.size} B</td>
                                             </tr>
                                         ))
                                     )}
@@ -876,8 +876,8 @@ const AnalyticsDashboard = () => {
                     {/* Row 1: Bandwidth + Latency */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Bandwidth Chart */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
+                        <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
+                            <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
                                 <Activity className="w-4 h-4 text-emerald-400" /> Bandwidth Usage
                             </h3>
                             <div className="h-[250px]">
@@ -905,8 +905,8 @@ const AnalyticsDashboard = () => {
                         </div>
 
                         {/* Latency Chart */}
-                        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                            <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
+                        <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
+                            <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
                                 <Wifi className="w-4 h-4 text-amber-400" /> Network Latency
                             </h3>
                             <div className="h-[250px]">
@@ -933,7 +933,7 @@ const AnalyticsDashboard = () => {
                                 Object.entries(analyticsData.protocols).map(([p, v]) => ({ Protocol: p, Packets: v, Bytes: analyticsData.bytes_per_protocol?.[p] || 0 })),
                                 'statistics'
                             )}
-                            className="px-3 py-1.5 bg-gray-900/60 border border-gray-800 rounded-lg hover:border-gray-700 hover:bg-gray-800 flex items-center gap-2 text-xs text-gray-300 transition-colors"
+                            className="px-3 py-1.5 bg-card/60 border border-border rounded-lg hover:border-border/80 hover:bg-secondary flex items-center gap-2 text-xs text-foreground/80 transition-colors"
                         >
                             <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Export CSV
                         </button>
@@ -943,8 +943,8 @@ const AnalyticsDashboard = () => {
                     {dashboardConfig.showProtocolCharts && (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Protocol Distribution */}
-                            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                                <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
+                            <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
+                                <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
                                     <Server className="w-4 h-4 text-purple-400" /> Protocol Distribution
                                 </h3>
                                 <div className="h-[250px] flex items-center">
@@ -963,8 +963,8 @@ const AnalyticsDashboard = () => {
                                         {protocolChartData.map((entry) => (
                                             <div key={entry.name} className="flex items-center gap-2 text-xs">
                                                 <div className="w-2.5 h-2.5 rounded-full" style={{ background: entry.color }} />
-                                                <span className="text-gray-400 w-12">{entry.name}</span>
-                                                <span className="text-gray-500 font-mono">{entry.value.toLocaleString()}</span>
+                                                <span className="text-muted-foreground w-12">{entry.name}</span>
+                                                <span className="text-muted-foreground font-mono">{entry.value.toLocaleString()}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -972,8 +972,8 @@ const AnalyticsDashboard = () => {
                             </div>
 
                             {/* Top Devices */}
-                            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                                <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
+                            <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
+                                <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
                                     <Monitor className="w-4 h-4 text-cyan-400" /> Top Devices by Traffic
                                 </h3>
                                 <div className="h-[250px]">
@@ -1002,8 +1002,8 @@ const AnalyticsDashboard = () => {
                     {dashboardConfig.showPacketCharts && (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Packet Size Distribution */}
-                            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                                <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
+                            <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
+                                <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
                                     <Layers className="w-4 h-4 text-amber-400" /> Packet Size Distribution
                                 </h3>
                                 <div className="h-[220px]">
@@ -1028,8 +1028,8 @@ const AnalyticsDashboard = () => {
                             </div>
 
                             {/* Bytes per Protocol */}
-                            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4">
-                                <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
+                            <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
+                                <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
                                     <BarChart3 className="w-4 h-4 text-blue-400" /> Traffic Volume by Protocol
                                 </h3>
                                 <div className="h-[220px]">
@@ -1056,15 +1056,15 @@ const AnalyticsDashboard = () => {
                     )}
 
                     {/* 7x24 Traffic Heatmap */}
-                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 md:p-4 mt-6">
-                        <h3 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-2">
+                    <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4 mt-6">
+                        <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
                             <Activity className="w-4 h-4 text-cyan-400" /> 7×24 Traffic Heatmap (Volume)
                         </h3>
                         <div className="grid grid-cols-[auto_1fr] gap-2 lg:gap-4 overflow-x-auto custom-scrollbar pb-2">
                             {/* Days Column */}
-                            <div className="flex flex-col gap-1 pr-2 border-r border-gray-800 justify-between py-1 mt-5">
+                            <div className="flex flex-col gap-1 pr-2 border-r border-border justify-between py-1 mt-5">
                                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
-                                    <div key={d} className="text-[10px] text-gray-500 font-medium h-4 sm:h-6 flex items-center">{d}</div>
+                                    <div key={d} className="text-[10px] text-muted-foreground font-medium h-4 sm:h-6 flex items-center">{d}</div>
                                 ))}
                             </div>
 
@@ -1072,7 +1072,7 @@ const AnalyticsDashboard = () => {
                             <div className="min-w-[600px]">
                                 <div className="grid grid-cols-24 gap-1 mb-2" style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}>
                                     {[...Array(24)].map((_, i) => (
-                                        <div key={i} className="text-[9px] text-gray-600 text-center">{i}</div>
+                                        <div key={i} className="text-[9px] text-muted-foreground/60 text-center">{i}</div>
                                     ))}
                                 </div>
                                 <div className="flex flex-col gap-1 justify-between">
@@ -1092,7 +1092,7 @@ const AnalyticsDashboard = () => {
                                                         className="h-4 sm:h-6 rounded-[2px] cursor-pointer hover:ring-1 hover:ring-cyan-400 transition-all duration-200 group relative"
                                                         style={{ backgroundColor: `rgba(34, 211, 238, ${opacity})` }}
                                                     >
-                                                        {val > 0 && <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none whitespace-nowrap shadow-xl border border-gray-700">
+                                                        {val > 0 && <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-secondary text-foreground text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none whitespace-nowrap shadow-xl border border-border">
                                                             {formatBytes(val)}
                                                         </span>}
                                                     </div>
@@ -1111,15 +1111,15 @@ const AnalyticsDashboard = () => {
             {activeView === 'connections' && (
                 <div className="space-y-4">
                     {/* GeoIP World Map */}
-                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4 w-full relative overflow-hidden">
+                    <div className="bg-card/60 border border-border rounded-xl p-4 w-full relative overflow-hidden">
                         <div className="absolute top-4 left-4 z-10 flex flex-col pointer-events-none">
                             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                                 <Globe className="w-4 h-4 text-cyan-400" /> Global Threat Map
                             </h3>
-                            <span className="text-xs text-gray-400 mt-1">{externalConnections.length} Active Connections</span>
+                            <span className="text-xs text-muted-foreground mt-1">{externalConnections.length} Active Connections</span>
                         </div>
 
-                        <div className="w-full h-[350px] bg-[#0A0B0E] rounded-lg border border-gray-800/50 mt-8 mb-2 flex items-center justify-center relative shadow-inner">
+                        <div className="w-full h-[350px] bg-[#0A0B0E] rounded-lg border border-border/50 mt-8 mb-2 flex items-center justify-center relative shadow-inner">
                             {/* Radar scan effect overlay */}
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.03)_0%,_transparent_70%)] pointer-events-none"></div>
 
@@ -1182,40 +1182,40 @@ const AnalyticsDashboard = () => {
                         </div>
                     </div>
 
-                    <div className="bg-gray-900/60 border border-gray-800 rounded-xl overflow-hidden mt-6">
-                        <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+                    <div className="bg-card/60 border border-border rounded-xl overflow-hidden mt-6">
+                        <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                             <div className="flex items-center gap-2">
                                 <Layers className="w-3.5 h-3.5 text-blue-400" />
                                 <h3 className="text-xs font-medium text-white">Connection Details</h3>
                             </div>
                             <button
                                 onClick={() => exportToCSV(externalConnections, 'connections')}
-                                className="px-3 py-1 bg-gray-800/50 border border-gray-700 rounded-lg hover:border-gray-600 hover:bg-gray-700 flex items-center gap-2 text-[10px] text-gray-300 transition-colors ml-auto"
+                                className="px-3 py-1 bg-secondary/50 border border-border rounded-lg hover:border-border/80 hover:bg-secondary flex items-center gap-2 text-[10px] text-foreground/80 transition-colors ml-auto"
                             >
                                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" /> Export CSV
                             </button>
                         </div>
                         <div className="h-[400px] overflow-y-auto custom-scrollbar">
                             <table className="w-full text-sm">
-                                <thead className="sticky top-0 bg-gray-900/95 border-b border-gray-800">
+                                <thead className="sticky top-0 bg-card/95 border-b border-border">
                                     <tr>
-                                        <th className="text-left text-gray-500 font-medium px-5 py-3 text-xs">IP ADDRESS</th>
-                                        <th className="text-left text-gray-500 font-medium px-5 py-3 text-xs">LOCATION</th>
-                                        <th className="text-right text-gray-500 font-medium px-5 py-3 text-xs">HITS</th>
-                                        <th className="text-right text-gray-500 font-medium px-5 py-3 text-xs">TRAFFIC</th>
+                                        <th className="text-left text-muted-foreground font-medium px-5 py-3 text-xs">IP ADDRESS</th>
+                                        <th className="text-left text-muted-foreground font-medium px-5 py-3 text-xs">LOCATION</th>
+                                        <th className="text-right text-muted-foreground font-medium px-5 py-3 text-xs">HITS</th>
+                                        <th className="text-right text-muted-foreground font-medium px-5 py-3 text-xs">TRAFFIC</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {externalConnections.length === 0 ? (
-                                        <tr><td colSpan={4} className="text-center text-gray-600 py-12">No external connections detected yet</td></tr>
+                                        <tr><td colSpan={4} className="text-center text-muted-foreground/60 py-12">No external connections detected yet</td></tr>
                                     ) : (
                                         externalConnections.sort((a, b) => b.bytes - a.bytes).map((conn, i) => (
-                                            <tr key={i} className="border-b border-gray-800/30 hover:bg-gray-800/30 transition-colors">
-                                                <td className="px-5 py-3 font-mono text-gray-300 text-xs">{conn.ip}</td>
-                                                <td className="px-5 py-3 text-gray-400 text-xs">
+                                            <tr key={i} className="border-b border-border/30 hover:bg-secondary/30 transition-colors">
+                                                <td className="px-5 py-3 font-mono text-foreground/80 text-xs">{conn.ip}</td>
+                                                <td className="px-5 py-3 text-muted-foreground text-xs">
                                                     <span className="mr-1">🌍</span> {conn.city}, {conn.country}
                                                 </td>
-                                                <td className="px-5 py-3 font-mono text-gray-400 text-xs text-right">{conn.hits.toLocaleString()}</td>
+                                                <td className="px-5 py-3 font-mono text-muted-foreground text-xs text-right">{conn.hits.toLocaleString()}</td>
                                                 <td className="px-5 py-3 font-mono text-cyan-400 text-xs text-right">{formatBytes(conn.bytes)}</td>
                                             </tr>
                                         ))
@@ -1229,14 +1229,14 @@ const AnalyticsDashboard = () => {
 
             {/* ═══════════════════ SECURITY ═══════════════════ */}
             {activeView === 'security' && (
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4">
+                <div className="bg-card/60 border border-border rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                         <Shield className="h-4 w-4 text-indigo-400" />
                         <h3 className="text-sm font-semibold text-white">Security Events</h3>
-                        <span className="ml-auto text-[10px] text-gray-500">{securityEvents.length} events</span>
+                        <span className="ml-auto text-[10px] text-muted-foreground">{securityEvents.length} events</span>
                         <button
                             onClick={() => exportToCSV(securityEvents, 'security_events')}
-                            className="ml-2 px-3 py-1 bg-gray-800/50 border border-gray-700 rounded hover:border-gray-600 hover:bg-gray-700 flex items-center gap-2 text-xs text-gray-300 transition-colors"
+                            className="ml-2 px-3 py-1 bg-secondary/50 border border-border rounded hover:border-border/80 hover:bg-secondary flex items-center gap-2 text-xs text-foreground/80 transition-colors"
                         >
                             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" /> Export CSV
                         </button>
@@ -1246,27 +1246,27 @@ const AnalyticsDashboard = () => {
                     </div>
                     <div className="h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                         {securityEvents.length === 0 ? (
-                            <div className="text-center text-gray-500 py-8 flex flex-col items-center gap-2">
+                            <div className="text-center text-muted-foreground py-8 flex flex-col items-center gap-2">
                                 <Shield className="w-8 h-8 text-green-500/50" />
                                 <span>No security events detected. Safe seas! 🌊</span>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {securityEvents.map((event) => (
-                                    <div key={event.id} className="flex items-start justify-between p-3 rounded-lg bg-gray-800/40 border border-gray-700/50 hover:border-gray-600/50 transition-colors">
+                                    <div key={event.id} className="flex items-start justify-between p-3 rounded-lg bg-secondary/40 border border-border/50 hover:border-border/80 transition-colors">
                                         <div className="flex items-start gap-3">
                                             <AlertTriangle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${event.severity === 'CRITICAL' ? 'text-red-500' :
                                                 event.severity === 'HIGH' ? 'text-orange-500' : 'text-yellow-500'
                                                 }`} />
                                             <div>
                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="font-semibold text-gray-200 text-sm">{event.event_type}</span>
-                                                    <span className="px-1.5 py-0.5 rounded text-[10px] border border-gray-700 text-gray-500 font-mono">
+                                                    <span className="font-semibold text-foreground/90 text-sm">{event.event_type}</span>
+                                                    <span className="px-1.5 py-0.5 rounded text-[10px] border border-border text-muted-foreground font-mono">
                                                         {event.source_ip || 'Unknown IP'}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-gray-400 mt-1">{event.description}</p>
-                                                <p className="text-[10px] text-gray-600 mt-1.5">{new Date(event.timestamp).toLocaleString()}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{event.description}</p>
+                                                <p className="text-[10px] text-muted-foreground/60 mt-1.5">{new Date(event.timestamp).toLocaleString()}</p>
                                             </div>
                                         </div>
                                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex-shrink-0 ${event.severity === 'CRITICAL' ? 'bg-red-500/20 text-red-400' :
@@ -1301,13 +1301,13 @@ const AnalyticsDashboard = () => {
             {/* Configure Rules Modal */}
             {showRulesModal && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
-                        <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between sticky top-0 bg-gray-900/95 backdrop-blur z-10">
+                    <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-5 py-4 border-b border-border flex items-center justify-between sticky top-0 bg-card/95 backdrop-blur z-10">
                             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                                 <Shield className="w-5 h-5 text-indigo-400" />
                                 Security Alert Rules
                             </h2>
-                            <button onClick={() => { setShowRulesModal(false); setEditingRule(null); }} className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors">
+                            <button onClick={() => { setShowRulesModal(false); setEditingRule(null); }} className="p-1 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -1316,38 +1316,38 @@ const AnalyticsDashboard = () => {
                             {!editingRule ? (
                                 <>
                                     <div className="flex justify-between items-center mb-2">
-                                        <p className="text-sm text-gray-400">Manage real-time alert rules for network traffic anomalies.</p>
+                                        <p className="text-sm text-muted-foreground">Manage real-time alert rules for network traffic anomalies.</p>
                                         <button onClick={() => setEditingRule({ name: '', description: '', condition: '', action: 'alert', is_active: true })} className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded shadow-lg transition-colors flex items-center gap-1">
                                             <Plus className="w-3.5 h-3.5" /> New Rule
                                         </button>
                                     </div>
 
                                     {rulesLoading ? (
-                                        <div className="py-8 text-center text-sm text-gray-500">Loading rules...</div>
+                                        <div className="py-8 text-center text-sm text-muted-foreground">Loading rules...</div>
                                     ) : rules.length === 0 ? (
-                                        <div className="py-8 text-center border border-dashed border-gray-800 rounded-lg text-gray-500 text-sm">
+                                        <div className="py-8 text-center border border-dashed border-border rounded-lg text-muted-foreground text-sm">
                                             No alert rules configured yet.
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
                                             {rules.map((rule) => (
-                                                <div key={rule.id} className={`p-4 rounded-lg border ${rule.is_active ? 'bg-gray-800/40 border-gray-700/50' : 'bg-gray-900/40 border-gray-800/80'} flex items-center justify-between group`}>
+                                                <div key={rule.id} className={`p-4 rounded-lg border ${rule.is_active ? 'bg-secondary/40 border-border/50' : 'bg-card/40 border-border/80'} flex items-center justify-between group`}>
                                                     <div>
                                                         <div className="flex items-center gap-2">
-                                                            <div className={`w-2 h-2 rounded-full ${rule.is_active ? 'bg-green-400' : 'bg-gray-600'}`}></div>
-                                                            <h4 className={`font-medium text-sm ${rule.is_active ? 'text-gray-200' : 'text-gray-500'}`}>{rule.name}</h4>
-                                                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-800 border border-gray-700 text-gray-400 uppercase">{rule.action}</span>
+                                                            <div className={`w-2 h-2 rounded-full ${rule.is_active ? 'bg-green-400' : 'bg-muted-foreground/60'}`}></div>
+                                                            <h4 className={`font-medium text-sm ${rule.is_active ? 'text-foreground/90' : 'text-muted-foreground'}`}>{rule.name}</h4>
+                                                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-secondary border border-border text-muted-foreground uppercase">{rule.action}</span>
                                                         </div>
-                                                        <p className="text-xs text-gray-400 mt-1 max-w-md truncate">{rule.description || 'No description'}</p>
+                                                        <p className="text-xs text-muted-foreground mt-1 max-w-md truncate">{rule.description || 'No description'}</p>
                                                         <div className="mt-2 text-xs font-mono text-indigo-300 bg-indigo-900/20 px-2 py-1 rounded inline-block">
                                                             {rule.condition}
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => setEditingRule(rule)} className="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 rounded transition-colors">
+                                                        <button onClick={() => setEditingRule(rule)} className="p-1.5 text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 rounded transition-colors">
                                                             <Settings className="w-4 h-4" />
                                                         </button>
-                                                        <button onClick={() => rule.id && handleDeleteRule(rule.id)} className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded transition-colors">
+                                                        <button onClick={() => rule.id && handleDeleteRule(rule.id)} className="p-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded transition-colors">
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
                                                     </div>
@@ -1363,32 +1363,32 @@ const AnalyticsDashboard = () => {
                                 }}>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-1">
-                                            <label className="text-xs font-medium text-gray-300">Rule Name <span className="text-red-400">*</span></label>
-                                            <input required type="text" value={editingRule.name} onChange={e => setEditingRule({ ...editingRule, name: e.target.value })} className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500" placeholder="e.g. High HTTP Traffic" />
+                                            <label className="text-xs font-medium text-foreground/80">Rule Name <span className="text-red-400">*</span></label>
+                                            <input required type="text" value={editingRule.name} onChange={e => setEditingRule({ ...editingRule, name: e.target.value })} className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground/90 focus:outline-none focus:border-indigo-500" placeholder="e.g. High HTTP Traffic" />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-xs font-medium text-gray-300">Action</label>
-                                            <select value={editingRule.action} onChange={e => setEditingRule({ ...editingRule, action: e.target.value })} className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                                            <label className="text-xs font-medium text-foreground/80">Action</label>
+                                            <select value={editingRule.action} onChange={e => setEditingRule({ ...editingRule, action: e.target.value })} className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground/90 focus:outline-none focus:border-indigo-500">
                                                 <option value="alert">Alert Only</option>
                                                 <option value="block">Block</option>
                                             </select>
                                         </div>
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-300">Description</label>
-                                        <input type="text" value={editingRule.description} onChange={e => setEditingRule({ ...editingRule, description: e.target.value })} className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500" placeholder="Optional description..." />
+                                        <label className="text-xs font-medium text-foreground/80">Description</label>
+                                        <input type="text" value={editingRule.description} onChange={e => setEditingRule({ ...editingRule, description: e.target.value })} className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground/90 focus:outline-none focus:border-indigo-500" placeholder="Optional description..." />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-300">Condition Expression <span className="text-red-400">*</span></label>
-                                        <input required type="text" value={editingRule.condition} onChange={e => setEditingRule({ ...editingRule, condition: e.target.value })} className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-sm font-mono text-indigo-300 focus:outline-none focus:border-indigo-500" placeholder="e.g. bytes > 500000 && proto == 'HTTP'" />
-                                        <p className="text-[10px] text-gray-500 mt-1">Available variables: bytes, packets, proto, src_ip, dst_ip</p>
+                                        <label className="text-xs font-medium text-foreground/80">Condition Expression <span className="text-red-400">*</span></label>
+                                        <input required type="text" value={editingRule.condition} onChange={e => setEditingRule({ ...editingRule, condition: e.target.value })} className="w-full bg-background border border-border rounded px-3 py-2 text-sm font-mono text-indigo-300 focus:outline-none focus:border-indigo-500" placeholder="e.g. bytes > 500000 && proto == 'HTTP'" />
+                                        <p className="text-[10px] text-muted-foreground mt-1">Available variables: bytes, packets, proto, src_ip, dst_ip</p>
                                     </div>
                                     <div className="flex items-center gap-2 pt-2">
-                                        <input type="checkbox" id="isActive" checked={editingRule.is_active} onChange={e => setEditingRule({ ...editingRule, is_active: e.target.checked })} className="w-3.5 h-3.5 bg-gray-900 border-gray-700 rounded rounded text-indigo-500 focus:ring-0" />
-                                        <label htmlFor="isActive" className="text-sm text-gray-300 cursor-pointer">Rule is active</label>
+                                        <input type="checkbox" id="isActive" checked={editingRule.is_active} onChange={e => setEditingRule({ ...editingRule, is_active: e.target.checked })} className="w-3.5 h-3.5 bg-background border-border rounded rounded text-indigo-500 focus:ring-0" />
+                                        <label htmlFor="isActive" className="text-sm text-foreground/80 cursor-pointer">Rule is active</label>
                                     </div>
-                                    <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-800">
-                                        <button type="button" onClick={() => setEditingRule(null)} className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">Cancel</button>
+                                    <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
+                                        <button type="button" onClick={() => setEditingRule(null)} className="px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">Cancel</button>
                                         <button type="submit" className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded shadow-lg transition-colors flex items-center gap-1">
                                             <Save className="w-4 h-4" /> Save Rule
                                         </button>

@@ -41,7 +41,7 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
             {/* Background Glows */}
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[120px] rounded-full" />
@@ -51,14 +51,14 @@ const LoginPage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="w-full max-w-md"
             >
-                <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl overflow-hidden relative">
+                <div className="bg-card/50 backdrop-blur-xl border border-border rounded-3xl p-8 shadow-2xl overflow-hidden relative">
                     {/* Header */}
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500/10 rounded-2xl mb-4 border border-blue-500/20">
                             <Shield className="w-8 h-8 text-blue-500" />
                         </div>
                         <h1 className="text-3xl font-bold text-white mb-2">StatSea</h1>
-                        <p className="text-slate-400">Secure Network Intelligence Dashboard</p>
+                        <p className="text-muted-foreground">Secure Network Intelligence Dashboard</p>
                     </div>
 
                     {/* Form */}
@@ -66,16 +66,16 @@ const LoginPage: React.FC = () => {
                         <div className="space-y-4">
                             {/* Username */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-300 ml-1">Username</label>
+                                <label className="text-sm font-medium text-foreground/80 ml-1">Username</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <User className="w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                                        <User className="w-5 h-5 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
                                     </div>
                                     <input
                                         type="text"
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                                        className="w-full bg-background/50 border border-border rounded-xl py-3.5 pl-12 pr-4 text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
                                         placeholder="Enter your username"
                                         required
                                     />
@@ -84,16 +84,16 @@ const LoginPage: React.FC = () => {
 
                             {/* Password */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-300 ml-1">Password</label>
+                                <label className="text-sm font-medium text-foreground/80 ml-1">Password</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Lock className="w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                                        <Lock className="w-5 h-5 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
                                     </div>
                                     <input
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                                        className="w-full bg-background/50 border border-border rounded-xl py-3.5 pl-12 pr-4 text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
                                         placeholder="••••••••"
                                         required
                                     />
@@ -111,12 +111,12 @@ const LoginPage: React.FC = () => {
                                         onChange={(e) => setRememberMe(e.target.checked)}
                                         className="sr-only peer"
                                     />
-                                    <div className="w-5 h-5 bg-slate-950/50 border border-slate-800 rounded-md peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all" />
+                                    <div className="w-5 h-5 bg-background/50 border border-border rounded-md peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all" />
                                     <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-opacity">
                                         <Shield className="w-3 h-3 text-white" />
                                     </div>
                                 </div>
-                                <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">Remember me</span>
+                                <span className="text-sm text-muted-foreground group-hover:text-foreground/80 transition-colors">Remember me</span>
                             </label>
 
                             <button
@@ -161,8 +161,8 @@ const LoginPage: React.FC = () => {
                     </form>
 
                     {/* Footer */}
-                    <div className="mt-8 pt-6 border-t border-slate-800/50 text-center">
-                        <p className="text-slate-500 text-xs">
+                    <div className="mt-8 pt-6 border-t border-border/50 text-center">
+                        <p className="text-muted-foreground/70 text-xs">
                             Access restricted to authorized personnel only.
                             <br />All activity is being monitored and logged.
                         </p>

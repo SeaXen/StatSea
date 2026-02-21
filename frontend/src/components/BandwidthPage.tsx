@@ -20,7 +20,7 @@ import { motion } from 'framer-motion';
 
 // ─── Constants ───
 const COLORS = ['#84cc16', '#3f3f46', '#10b981', '#8b5cf6', '#ef4444', '#ec4899', '#06b6d4'];
-const CHART_TOOLTIP_STYLE = { backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px', fontSize: '12px' };
+const CHART_TOOLTIP_STYLE = { backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '12px' };
 
 // ─── Helpers ───
 const formatRate = (rateBps: number) => {
@@ -146,7 +146,7 @@ const InterfaceSummaryPanel = ({ iface, data }: { iface: string; data: any }) =>
                 {iface}
             </h3>
             {data?.estimated && data.estimated.total > 0 && (
-                <div className="px-3 py-1 rounded-full bg-zinc-800/50 border border-white/5 text-[10px] font-bold text-white/40">
+                <div className="px-3 py-1 rounded-full bg-secondary/50 border border-white/5 text-[10px] font-bold text-white/40">
                     Est. {formatBytes(data.estimated.total)} / mo
                 </div>
             )}
@@ -248,7 +248,7 @@ export default function BandwidthPage() {
                         </div>
                         <h1 className="text-4xl font-black text-white tracking-tight">Traffic <span className="text-emerald-500">Flux</span></h1>
                     </motion.div>
-                    <p className="text-gray-400 font-medium text-sm ml-15">Real-time throughput analysis and network data distribution</p>
+                    <p className="text-muted-foreground font-medium text-sm ml-15">Real-time throughput analysis and network data distribution</p>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -304,7 +304,7 @@ export default function BandwidthPage() {
                                         hourly.length > 0 ? (
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <BarChart data={hourly} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                                                     <XAxis dataKey="hour" tickFormatter={v => `${v}`} stroke="#52525b" fontSize={10} tickLine={false} axisLine={false} />
                                                     <YAxis tickFormatter={v => formatBytes(v)} stroke="#52525b" fontSize={10} tickLine={false} axisLine={false} width={55} />
                                                     <Tooltip contentStyle={CHART_TOOLTIP_STYLE} itemStyle={{ color: '#e4e4e7' }} labelFormatter={v => `${v}:00`} formatter={(v: number) => [formatBytes(v), '']} />
@@ -323,7 +323,7 @@ export default function BandwidthPage() {
                                         fiveMin.length > 0 ? (
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <BarChart data={fiveMin.slice(-60)} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                                                     <XAxis
                                                         dataKey="timestamp"
                                                         tickFormatter={(v) => {

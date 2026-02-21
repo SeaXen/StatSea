@@ -85,20 +85,20 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="bg-[#0f172a] border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden"
+                    className="bg-background border border-border rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden"
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-slate-700/50 bg-slate-900/50">
+                    <div className="flex items-center justify-between p-6 border-b border-border/50 bg-card/50">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-blue-500/10 rounded-lg">
                                 <Bell className="w-5 h-5 text-blue-400" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-semibold text-white">Speedtest Automation</h2>
-                                <p className="text-sm text-slate-400">Configure schedule and notifications</p>
+                                <h2 className="text-xl font-semibold text-foreground">Speedtest Automation</h2>
+                                <p className="text-sm text-muted-foreground">Configure schedule and notifications</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-slate-400 hover:text-white">
+                        <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-muted-foreground hover:text-foreground">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -111,8 +111,8 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                             <h3 className="text-sm font-medium text-blue-400 uppercase tracking-wider flex items-center gap-2">
                                 <Clock className="w-4 h-4" /> Schedule
                             </h3>
-                            <div className="bg-slate-800/30 rounded-xl p-5 border border-slate-700/50">
-                                <label className="block text-sm font-medium text-slate-300 mb-2">
+                            <div className="bg-secondary/30 rounded-xl p-5 border border-border/50">
+                                <label className="block text-sm font-medium text-foreground/80 mb-2">
                                     Run Interval (Hours)
                                 </label>
                                 <div className="flex gap-3">
@@ -122,7 +122,7 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                                             onClick={() => handleChange('speedtest_interval', String(interval))}
                                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${String(settings.speedtest_interval) === String(interval)
                                                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                                : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-white'
+                                                : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
                                                 }`}
                                         >
                                             {interval === 0 ? 'Disabled' : `${interval}h`}
@@ -133,10 +133,10 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                                         placeholder="Custom"
                                         value={settings.speedtest_interval}
                                         onChange={(e) => handleChange('speedtest_interval', e.target.value)}
-                                        className="w-24 px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                        className="w-24 px-3 py-2 bg-background/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-blue-500 transition-colors"
                                     />
                                 </div>
-                                <p className="mt-2 text-xs text-slate-500">
+                                <p className="mt-2 text-xs text-muted-foreground/70">
                                     Set to 0 to disable automatic testing.
                                 </p>
                             </div>
@@ -149,34 +149,34 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                             </h3>
 
                             {/* Telegram */}
-                            <div className="bg-slate-800/30 rounded-xl p-5 border border-slate-700/50 space-y-4">
+                            <div className="bg-secondary/30 rounded-xl p-5 border border-border/50 space-y-4">
                                 <div className="flex items-center gap-2 mb-2">
                                     <div className="w-6 h-6 rounded-full bg-[#229ED9]/20 flex items-center justify-center">
                                         <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram" className="w-4 h-4" />
                                     </div>
-                                    <span className="text-slate-200 font-medium">Telegram</span>
+                                    <span className="text-foreground font-medium">Telegram</span>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-400 mb-1">Bot Token</label>
+                                        <label className="block text-xs font-medium text-muted-foreground mb-1">Bot Token</label>
                                         <div className="relative">
-                                            <Hash className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+                                            <Hash className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
                                             <input
                                                 type="password"
                                                 value={settings.telegram_bot_token}
                                                 onChange={(e) => handleChange('telegram_bot_token', e.target.value)}
-                                                className="w-full pl-9 pr-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white text-sm focus:border-[#229ED9] transition-colors"
+                                                className="w-full pl-9 pr-4 py-2 bg-background/50 border border-border rounded-lg text-foreground text-sm focus:border-[#229ED9] transition-colors"
                                                 placeholder="123456:ABC-DEF..."
                                             />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-400 mb-1">Chat ID</label>
+                                        <label className="block text-xs font-medium text-muted-foreground mb-1">Chat ID</label>
                                         <input
                                             type="text"
                                             value={settings.telegram_chat_id}
                                             onChange={(e) => handleChange('telegram_chat_id', e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white text-sm focus:border-[#229ED9] transition-colors"
+                                            className="w-full px-4 py-2 bg-background/50 border border-border rounded-lg text-foreground text-sm focus:border-[#229ED9] transition-colors"
                                             placeholder="-100123456789"
                                         />
                                     </div>
@@ -184,20 +184,20 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                             </div>
 
                             {/* Discord */}
-                            <div className="bg-slate-800/30 rounded-xl p-5 border border-slate-700/50 space-y-4">
+                            <div className="bg-secondary/30 rounded-xl p-5 border border-border/50 space-y-4">
                                 <div className="flex items-center gap-2 mb-2">
                                     <div className="w-6 h-6 rounded-full bg-[#5865F2]/20 flex items-center justify-center">
                                         <img src="https://assets-global.website-files.com/6257adef93867e56f84d3092/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" alt="Discord" className="w-4 h-4" />
                                     </div>
-                                    <span className="text-slate-200 font-medium">Discord</span>
+                                    <span className="text-foreground font-medium">Discord</span>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-400 mb-1">Webhook URL</label>
+                                    <label className="block text-xs font-medium text-muted-foreground mb-1">Webhook URL</label>
                                     <input
                                         type="password"
                                         value={settings.discord_webhook_url}
                                         onChange={(e) => handleChange('discord_webhook_url', e.target.value)}
-                                        className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white text-sm focus:border-[#5865F2] transition-colors"
+                                        className="w-full px-4 py-2 bg-background/50 border border-border rounded-lg text-foreground text-sm focus:border-[#5865F2] transition-colors"
                                         placeholder="https://discord.com/api/webhooks/..."
                                     />
                                 </div>
@@ -206,10 +206,10 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                     </div>
 
                     {/* Footer */}
-                    <div className="p-6 border-t border-slate-700/50 bg-slate-900/50 flex justify-end gap-3">
+                    <div className="p-6 border-t border-border/50 bg-card/50 flex justify-end gap-3">
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+                            className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                         >
                             Cancel
                         </button>

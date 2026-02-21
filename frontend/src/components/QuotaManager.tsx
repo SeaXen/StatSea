@@ -72,7 +72,7 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
     return (
         <div className="glass-card rounded-2xl p-6 border border-white/5 bg-white/5 mb-8">
             <div className="flex items-center gap-3 mb-6">
-                <Settings className="w-5 h-5 text-gray-400" />
+                <Settings className="w-5 h-5 text-muted-foreground" />
                 <h3 className="text-lg font-semibold text-white">Bandwidth Quotas</h3>
             </div>
 
@@ -80,7 +80,7 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
                 {/* Daily Quota */}
                 <div className="p-4 rounded-xl bg-black/20 border border-white/5">
                     <div className="flex justify-between mb-2">
-                        <label className="text-sm font-medium text-gray-400">Daily Limit (GB)</label>
+                        <label className="text-sm font-medium text-muted-foreground">Daily Limit (GB)</label>
                         {dailyLimit && (
                             <span className={`text-xs font-bold ${dailyUsage > dailyLimit ? "text-red-500" : "text-green-500"}`}>
                                 {((dailyUsage / dailyLimit) * 100).toFixed(1)}% Used
@@ -106,7 +106,7 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
                                     style={{ width: `${Math.min((dailyUsage / dailyLimit) * 100, 100)}%` }}
                                 />
                             </div>
-                            <div className="flex justify-between mt-1 text-xs text-gray-500 font-mono">
+                            <div className="flex justify-between mt-1 text-xs text-muted-foreground font-mono">
                                 <span>{toMB(dailyUsage)} MB Used</span>
                                 <span>{toGB(dailyLimit)} GB Limit</span>
                             </div>
@@ -117,7 +117,7 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
                 {/* Monthly Quota */}
                 <div className="p-4 rounded-xl bg-black/20 border border-white/5">
                     <div className="flex justify-between mb-2">
-                        <label className="text-sm font-medium text-gray-400">Monthly Limit (GB)</label>
+                        <label className="text-sm font-medium text-muted-foreground">Monthly Limit (GB)</label>
                         {monthlyLimit && (
                             <span className={`text-xs font-bold ${monthlyUsage > monthlyLimit ? "text-red-500" : "text-green-500"}`}>
                                 {((monthlyUsage / monthlyLimit) * 100).toFixed(1)}% Used
@@ -142,7 +142,7 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
                                     style={{ width: `${Math.min((monthlyUsage / monthlyLimit) * 100, 100)}%` }}
                                 />
                             </div>
-                            <div className="flex justify-between mt-1 text-xs text-gray-500 font-mono">
+                            <div className="flex justify-between mt-1 text-xs text-muted-foreground font-mono">
                                 <span>{toGB(monthlyUsage)} GB Used</span>
                                 <span>{toGB(monthlyLimit)} GB Limit</span>
                             </div>

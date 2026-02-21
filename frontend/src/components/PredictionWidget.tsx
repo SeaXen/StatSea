@@ -33,7 +33,7 @@ const PredictionWidget: React.FC = () => {
     };
 
     if (loading) return (
-        <div className="bg-slate-900/50 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 h-full flex items-center justify-center">
+        <div className="bg-card/50 backdrop-blur-md border border-border/50 rounded-2xl p-6 h-full flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
     );
@@ -41,7 +41,7 @@ const PredictionWidget: React.FC = () => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Month Forecast */}
-            <div className="bg-slate-900/50 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 relative overflow-hidden group">
+            <div className="bg-card/50 backdrop-blur-md border border-border/50 rounded-2xl p-6 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Brain size={120} />
                 </div>
@@ -50,17 +50,17 @@ const PredictionWidget: React.FC = () => {
                     <div className="p-2 bg-primary/10 rounded-lg">
                         <Zap className="text-primary" size={20} />
                     </div>
-                    <h3 className="text-lg font-semibold text-white">AI Monthly Forecast</h3>
+                    <h3 className="text-lg font-semibold text-foreground">AI Monthly Forecast</h3>
                 </div>
 
                 {prediction?.error ? (
-                    <div className="text-slate-400 text-sm italic">Learning usage patterns... (Requires 3+ days of data)</div>
+                    <div className="text-muted-foreground text-sm italic">Learning usage patterns... (Requires 3+ days of data)</div>
                 ) : (
                     <div className="space-y-6">
                         <div className="flex justify-between items-end">
                             <div>
-                                <p className="text-slate-400 text-sm mb-1">Predicted Total</p>
-                                <p className="text-3xl font-bold text-white font-mono">
+                                <p className="text-muted-foreground text-sm mb-1">Predicted Total</p>
+                                <p className="text-3xl font-bold text-foreground font-mono">
                                     {formatBytes(prediction?.predicted_bytes || 0)}
                                 </p>
                             </div>
@@ -73,12 +73,12 @@ const PredictionWidget: React.FC = () => {
 
                         <div className="space-y-2">
                             <div className="flex justify-between text-xs">
-                                <span className="text-slate-400">Current Progress</span>
-                                <span className="text-white font-mono">
+                                <span className="text-muted-foreground">Current Progress</span>
+                                <span className="text-foreground font-mono">
                                     {((prediction?.current_usage || 0) / (prediction?.predicted_bytes || 1) * 100).toFixed(0)}%
                                 </span>
                             </div>
-                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-2 bg-secondary rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)] transition-all duration-1000"
                                     style={{ width: `${Math.min(100, (prediction?.current_usage || 0) / (prediction?.predicted_bytes || 1) * 100)}%` }}
@@ -90,36 +90,36 @@ const PredictionWidget: React.FC = () => {
             </div>
 
             {/* Anomalies */}
-            <div className="bg-slate-900/50 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6">
+            <div className="bg-card/50 backdrop-blur-md border border-border/50 rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-amber-500/10 rounded-lg">
                             <ShieldCheck className="text-amber-500" size={20} />
                         </div>
-                        <h3 className="text-lg font-semibold text-white">Anomaly Detection</h3>
+                        <h3 className="text-lg font-semibold text-foreground">Anomaly Detection</h3>
                     </div>
-                    <span className="text-xs text-slate-400 px-2 py-0.5 bg-slate-800 rounded-full">Last 14 Days</span>
+                    <span className="text-xs text-muted-foreground px-2 py-0.5 bg-secondary rounded-full">Last 14 Days</span>
                 </div>
 
                 <div className="space-y-4 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
                     {anomalies.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-6 text-slate-500">
+                        <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
                             <ShieldCheck size={32} className="mb-2 opacity-20" />
                             <p className="text-sm">No unusual activity detected</p>
                         </div>
                     ) : (
                         anomalies.map((anom, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 bg-slate-800/30 rounded-xl border border-white/5">
+                            <div key={idx} className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl border border-white/5">
                                 <div className="flex items-center gap-3">
                                     <AlertTriangle className="text-rose-500" size={16} />
                                     <div>
-                                        <p className="text-sm font-medium text-white">{anom.device_name}</p>
-                                        <p className="text-xs text-slate-500 uppercase">{anom.device_mac}</p>
+                                        <p className="text-sm font-medium text-foreground">{anom.device_name}</p>
+                                        <p className="text-xs text-muted-foreground uppercase">{anom.device_mac}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xs font-bold text-rose-400">+{((anom.current_usage / anom.avg_usage - 1) * 100).toFixed(0)}% Spike</p>
-                                    <p className="text-[10px] text-slate-500 uppercase">Severe Anomaly</p>
+                                    <p className="text-[10px] text-muted-foreground uppercase">Severe Anomaly</p>
                                 </div>
                             </div>
                         ))

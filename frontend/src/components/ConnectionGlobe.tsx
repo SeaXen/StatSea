@@ -124,23 +124,23 @@ export const ConnectionGlobe = () => {
     }, [] as { country: string, count: number, bytes: number }[]).sort((a, b) => b.bytes - a.bytes).slice(0, 5);
 
     return (
-        <div className="glass-card relative overflow-hidden bg-slate-900/50 border border-white/5 backdrop-blur-xl h-[600px] rounded-xl flex text-slate-200">
+        <div className="glass-card relative overflow-hidden bg-card/50 border border-white/5 backdrop-blur-xl h-[600px] rounded-xl flex text-foreground/80">
             {/* Left: Globe Area */}
-            <div ref={containerRef} className="flex-1 relative h-full bg-slate-950/20">
+            <div ref={containerRef} className="flex-1 relative h-full bg-background/20">
                 <div className="absolute top-4 left-4 z-10 flex items-center gap-2 pointer-events-none">
                     <div className="p-2 bg-blue-500/20 rounded-lg backdrop-blur-md">
                         <GlobeIcon className="w-5 h-5 text-blue-400" />
                     </div>
                     <div>
-                        <h3 className="text-sm font-semibold text-slate-100 shadow-black drop-shadow-md">Global Connection Map</h3>
-                        <p className="text-xs text-slate-400 shadow-black drop-shadow-md">Live external traffic visualization</p>
+                        <h3 className="text-sm font-semibold text-foreground shadow-black drop-shadow-md">Global Connection Map</h3>
+                        <p className="text-xs text-muted-foreground shadow-black drop-shadow-md">Live external traffic visualization</p>
                     </div>
                 </div>
 
                 <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 pointer-events-none">
-                    <div className="px-3 py-1 bg-slate-800/80 rounded-full border border-slate-700 flex items-center gap-2 backdrop-blur-md">
+                    <div className="px-3 py-1 bg-secondary/80 rounded-full border border-border flex items-center gap-2 backdrop-blur-md">
                         <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                        <span className="text-xs text-slate-300 font-medium">
+                        <span className="text-xs text-foreground/80 font-medium">
                             {displayConnections.length} Active Nodes
                         </span>
                     </div>
@@ -200,33 +200,33 @@ export const ConnectionGlobe = () => {
 
                 {/* Connection Details Overlay */}
                 {selectedPoint && selectedPoint !== homeLocation && (
-                    <div className="absolute bottom-4 left-4 right-4 p-4 bg-slate-900/90 border border-white/10 rounded-xl backdrop-blur-xl z-20 animate-in slide-in-from-bottom-5">
+                    <div className="absolute bottom-4 left-4 right-4 p-4 bg-card/90 border border-white/10 rounded-xl backdrop-blur-xl z-20 animate-in slide-in-from-bottom-5">
                         <div className="flex justify-between items-start">
                             <div>
-                                <h4 className="font-semibold text-white flex items-center gap-2">
+                                <h4 className="font-semibold text-foreground flex items-center gap-2">
                                     {getCountryFlag(selectedPoint.country_code || 'US')} {selectedPoint.city}, {selectedPoint.country}
                                 </h4>
-                                <div className="text-xs text-slate-400 font-mono mt-1 mb-2">{selectedPoint.ip}</div>
+                                <div className="text-xs text-muted-foreground font-mono mt-1 mb-2">{selectedPoint.ip}</div>
 
                                 {loadingIp ? (
                                     <div className="text-xs text-blue-400 animate-pulse">Running IP Intelligence Scan...</div>
                                 ) : ipInfo ? (
-                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-300 mt-2 border-t border-white/5 pt-2">
-                                        <div><span className="text-slate-500">ASN:</span> {ipInfo.asn}</div>
-                                        <div><span className="text-slate-500">Org:</span> {ipInfo.org}</div>
-                                        <div className="col-span-2"><span className="text-slate-500">Abuse:</span> {ipInfo.abuse_contact}</div>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-foreground/80 mt-2 border-t border-white/5 pt-2">
+                                        <div><span className="text-muted-foreground">ASN:</span> {ipInfo.asn}</div>
+                                        <div><span className="text-muted-foreground">Org:</span> {ipInfo.org}</div>
+                                        <div className="col-span-2"><span className="text-muted-foreground">Abuse:</span> {ipInfo.abuse_contact}</div>
                                     </div>
                                 ) : (
                                     <div className="text-xs text-red-400">Failed to load IP details</div>
                                 )}
                             </div>
                             <div className="text-right">
-                                <div className="text-xs text-slate-500 uppercase font-bold">Traffic</div>
+                                <div className="text-xs text-muted-foreground uppercase font-bold">Traffic</div>
                                 <div className="text-sm text-blue-400 font-mono">{selectedPoint.bytes ? (selectedPoint.bytes / 1024).toFixed(2) : '0.00'} KB</div>
                             </div>
                         </div>
                         <button
-                            className="absolute -top-2 -right-2 bg-slate-800 rounded-full p-1 border border-white/10 hover:bg-slate-700 transition-colors"
+                            className="absolute -top-2 -right-2 bg-secondary rounded-full p-1 border border-white/10 hover:bg-secondary/80 transition-colors"
                             onClick={(e) => { e.stopPropagation(); setSelectedPoint(null); setIpInfo(null); }}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
@@ -238,7 +238,7 @@ export const ConnectionGlobe = () => {
             {/* Right: Top Countries Sidebar */}
             <div className="w-64 border-l border-white/5 bg-black/20 backdrop-blur-xl p-4 flex flex-col gap-4 overflow-y-auto hidden md:flex">
                 <div>
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Top Locations</h4>
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Top Locations</h4>
                     <div className="space-y-3">
                         {topCountries.map((country, idx) => (
                             <div key={idx} className="flex items-center justify-between group">
@@ -247,15 +247,15 @@ export const ConnectionGlobe = () => {
                                         {getCountryFlag(country.country.slice(0, 2) || 'US')}
                                     </span>
                                     <div className="flex flex-col">
-                                        <span className="text-sm text-slate-300 font-medium group-hover:text-white transition-colors">
+                                        <span className="text-sm text-foreground/80 font-medium group-hover:text-foreground transition-colors">
                                             {country.country}
                                         </span>
-                                        <span className="text-[10px] text-slate-500">
+                                        <span className="text-[10px] text-muted-foreground">
                                             {country.count} connections
                                         </span>
                                     </div>
                                 </div>
-                                <div className="text-xs font-mono text-slate-400">
+                                <div className="text-xs font-mono text-muted-foreground">
                                     {Math.round(country.bytes / 1024)}K
                                 </div>
                             </div>

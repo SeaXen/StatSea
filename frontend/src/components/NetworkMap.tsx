@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { Network, Router, Monitor, Smartphone, Laptop, Tablet, Box, ShieldCheck, Activity } from 'lucide-react';
 import { cn } from '../lib/utils';
 import axiosInstance from '../config/axiosInstance';
@@ -30,6 +30,19 @@ export function NetworkMap() {
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
     const [nodePositions, setNodePositions] = useState<Record<string, { x: number; y: number }>>({});
     const containerRef = React.useRef<HTMLDivElement>(null);
+
+    const handleDrag = (nodeId: string, info: PanInfo) => {
+        setNodePositions((prev) => {
+            if (!prev[nodeId]) return prev;
+            return {
+                ...prev,
+                [nodeId]: {
+                    x: prev[nodeId].x + info.delta.x,
+                    y: prev[nodeId].y + info.delta.y,
+                },
+            };
+        });
+    };
 
     useEffect(() => {
         const fetchTopology = async () => {
@@ -86,15 +99,7 @@ export function NetworkMap() {
         }
     };
 
-    const handleDrag = (id: string, info: any) => {
-        setNodePositions(prev => ({
-            ...prev,
-            [id]: {
-                x: prev[id].x + info.delta.x,
-                y: prev[id].y + info.delta.y
-            }
-        }));
-    };
+
 
     if (loading) {
         return (
@@ -223,7 +228,7 @@ export function NetworkMap() {
                             key={node.id}
                             drag
                             dragConstraints={containerRef}
-                            onDrag={(e, info) => handleDrag(node.id, info)}
+                            onDrag={(_, info) => handleDrag(node.id, info)}
                             initial={{ scale: 0, x: 0, y: 0 }}
                             animate={{ scale: 1, x: pos.x, y: pos.y }}
                             whileHover={{ scale: 1.05 }}

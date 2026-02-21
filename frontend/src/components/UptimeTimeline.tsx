@@ -139,7 +139,7 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-gray-200">Uptime Timeline</h3>
+                    <h3 className="text-sm font-semibold text-foreground/90">Uptime Timeline</h3>
                     <div className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-xs font-mono">
                         {stats.uptimePercent.toFixed(2)}%
                     </div>
@@ -152,7 +152,7 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
                             onClick={() => setRange(r)}
                             className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${range === r
                                 ? 'bg-blue-500/20 text-blue-400 shadow-sm'
-                                : 'text-gray-400 hover:text-gray-300'
+                                : 'text-muted-foreground hover:text-foreground/80'
                                 }`}
                         >
                             {r}
@@ -160,7 +160,7 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
                     ))}
                     <button
                         onClick={() => fetchLogs()}
-                        className="ml-1 px-2 text-gray-400 hover:text-white transition-colors"
+                        className="ml-1 px-2 text-muted-foreground hover:text-foreground transition-colors"
                         disabled={loading}
                     >
                         <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
@@ -186,16 +186,16 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
                         >
                             {/* Tooltip */}
                             <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-20 min-w-[150px]">
-                                <div className="bg-gray-900 border border-white/10 rounded-lg p-2 shadow-xl text-xs">
+                                <div className="bg-card border border-white/10 rounded-lg p-2 shadow-xl text-xs">
                                     <div className={`font-bold mb-1 ${seg.status === 'online' ? 'text-green-400' : 'text-red-400'}`}>
                                         {seg.status === 'online' ? 'Online' : 'Offline'}
                                     </div>
-                                    <div className="text-gray-400">
+                                    <div className="text-muted-foreground">
                                         {new Date(seg.start).toLocaleString(undefined, {
                                             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                                         })}
                                     </div>
-                                    <div className="text-gray-500 text-[10px] mt-1">
+                                    <div className="text-muted-foreground text-[10px] mt-1">
                                         Duration: {formatDuration(seg.end - seg.start)}
                                     </div>
                                 </div>
@@ -205,14 +205,14 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
                 })}
 
                 {segments.length === 0 && (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-500 italic">
+                    <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground italic">
                         No data for this period
                     </div>
                 )}
             </div>
 
             {/* Legend / Stats */}
-            <div className="flex items-center gap-6 text-xs text-gray-400">
+            <div className="flex items-center gap-6 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-500/80" />
                     <span>Online: {formatDuration(stats.onlineDuration)}</span>

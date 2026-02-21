@@ -41,7 +41,7 @@ export default function DeviceBandwidthPage({ macAddress, onBack }: DeviceBandwi
 
     if (!macAddress) {
         return (
-            <div className="flex flex-col items-center justify-center p-8 text-slate-400">
+            <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
                 <AlertTriangle className="w-12 h-12 mb-4 text-amber-500" />
                 <p>No device selected for bandwidth history.</p>
                 <button onClick={onBack} className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
@@ -59,7 +59,7 @@ export default function DeviceBandwidthPage({ macAddress, onBack }: DeviceBandwi
             <div className="flex items-center gap-4 mb-6">
                 <button
                     onClick={onBack}
-                    className="p-2 hover:bg-white/5 rounded-lg transition-colors text-slate-400 hover:text-white"
+                    className="p-2 hover:bg-white/5 rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </button>
@@ -68,8 +68,8 @@ export default function DeviceBandwidthPage({ macAddress, onBack }: DeviceBandwi
                         <Activity className="w-6 h-6 text-blue-400" />
                         Device Traffic History
                     </h2>
-                    <p className="text-sm text-slate-400">
-                        Analyzing bandwidth usage for MAC: <span className="text-slate-200 font-mono">{macAddress}</span>
+                    <p className="text-sm text-muted-foreground">
+                        Analyzing bandwidth usage for MAC: <span className="text-foreground/90 font-mono">{macAddress}</span>
                     </p>
                 </div>
             </div>

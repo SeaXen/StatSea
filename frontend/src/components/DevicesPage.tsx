@@ -153,7 +153,7 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">{filteredDevices.filter((d: any) => d.is_online || d.status === 'online').length} Online</span>
                                 </div>
                                 <span className="text-white/20 text-[10px] font-bold uppercase tracking-widest leading-none">•</span>
-                                <p className="text-gray-400 font-medium text-sm tracking-tight">{filteredDevices.length} Total Managed Units</p>
+                                <p className="text-muted-foreground font-medium text-sm tracking-tight">{filteredDevices.length} Total Managed Units</p>
                             </div>
                         </div>
                     </motion.div>

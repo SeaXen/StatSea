@@ -270,7 +270,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
 
                                 {/* Tags Section */}
                                 <div className="mb-8">
-                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
+                                    <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3">
                                         <Tag className="w-3 h-3" /> Tags
                                     </label>
                                     <div className="flex flex-wrap gap-2">
@@ -291,7 +291,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                         placeholder="Add tag..."
                                                         className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-blue-500 min-w-[80px]"
                                                     />
-                                                    <button onClick={addTag} className="p-1 rounded bg-white/5 hover:bg-white/10 text-gray-400">
+                                                    <button onClick={addTag} className="p-1 rounded bg-white/5 hover:bg-white/10 text-muted-foreground">
                                                         <Plus className="w-3 h-3" />
                                                     </button>
                                                 </div>
@@ -300,12 +300,12 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                             <>
                                                 {(device.tags && device.tags.length > 0) ? (
                                                     device.tags.map(tag => (
-                                                        <span key={tag} className="px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 border border-white/5 text-xs">
+                                                        <span key={tag} className="px-2.5 py-1 rounded-lg bg-white/5 text-foreground/80 border border-white/5 text-xs">
                                                             {tag}
                                                         </span>
                                                     ))
                                                 ) : (
-                                                    <span className="text-gray-600 italic text-sm">No tags.</span>
+                                                    <span className="text-muted-foreground/60 italic text-sm">No tags.</span>
                                                 )}
                                             </>
                                         )}
@@ -314,18 +314,18 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
 
                                 {/* Notes Section */}
                                 <div className="mb-8">
-                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-2">
+                                    <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
                                         <Edit2 className="w-3 h-3" /> Notes
                                     </label>
                                     {isEditing ? (
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="text-xs text-gray-500 font-medium ml-1 mb-1 block">Group</label>
+                                                <label className="text-xs text-muted-foreground font-medium ml-1 mb-1 block">Group</label>
                                                 <div className="relative">
                                                     <select
                                                         value={selectedGroupId || ''}
                                                         onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
-                                                        className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500/50 appearance-none"
+                                                        className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground/90 focus:outline-none focus:border-blue-500/50 appearance-none"
                                                     >
                                                         <option value="">No Group</option>
                                                         {groups.map(g => (
@@ -344,20 +344,20 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                     ) : (
                                         <>
                                             <div className="mb-4">
-                                                <div className="text-xs text-gray-500 mb-1">Group</div>
-                                                <div className="text-sm font-medium text-gray-200 flex items-center gap-2">
+                                                <div className="text-xs text-muted-foreground mb-1">Group</div>
+                                                <div className="text-sm font-medium text-foreground/90 flex items-center gap-2">
                                                     {device.group_id ? (
                                                         <>
                                                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: groups.find(g => g.id === device.group_id)?.color || '#3b82f6' }} />
                                                             {groups.find(g => g.id === device.group_id)?.name || 'Unknown Group'}
                                                         </>
                                                     ) : (
-                                                        <span className="text-gray-500">No Group</span>
+                                                        <span className="text-muted-foreground">No Group</span>
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="w-full min-h-[60px] bg-white/5 border border-white/5 rounded-xl p-3 text-sm text-gray-300">
-                                                {device.notes ? device.notes : <span className="text-gray-600 italic">No notes added.</span>}
+                                            <div className="w-full min-h-[60px] bg-white/5 border border-white/5 rounded-xl p-3 text-sm text-foreground/80">
+                                                {device.notes ? device.notes : <span className="text-muted-foreground/60 italic">No notes added.</span>}
                                             </div>
                                         </>
                                     )}

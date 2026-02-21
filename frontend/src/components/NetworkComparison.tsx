@@ -150,24 +150,24 @@ const NetworkComparison: React.FC = () => {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header / Controls */}
-            <div className="flex flex-col md:flex-row justify-between items-center bg-gray-900/40 p-4 rounded-xl border border-gray-800 backdrop-blur-sm">
+            <div className="flex flex-col md:flex-row justify-between items-center bg-card/40 p-4 rounded-xl border border-border backdrop-blur-sm">
                 <div className="flex items-center gap-3 mb-4 md:mb-0">
                     <div className="p-2 bg-indigo-500/20 rounded-lg">
                         <ArrowRightLeft className="w-5 h-5 text-indigo-400" />
                     </div>
                     <div>
                         <h2 className="text-lg font-semibold text-white">Network Comparison</h2>
-                        <p className="text-xs text-gray-400">Analyze performance across different timeframes</p>
+                        <p className="text-xs text-muted-foreground">Analyze performance across different timeframes</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col gap-1">
-                        <label className="text-[10px] uppercase tracking-wider text-gray-500 font-bold ml-1">Period A</label>
+                        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold ml-1">Period A</label>
                         <select
                             value={rangeA}
                             onChange={(e) => setRangeA(e.target.value)}
-                            className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                            className="bg-secondary border border-border text-foreground/90 text-sm rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                         >
                             <option value="1h">Last Hour</option>
                             <option value="24h">Last 24 Hours</option>
@@ -175,14 +175,14 @@ const NetworkComparison: React.FC = () => {
                         </select>
                     </div>
 
-                    <span className="text-gray-600 mt-4">VS</span>
+                    <span className="text-muted-foreground mt-4">VS</span>
 
                     <div className="flex flex-col gap-1">
-                        <label className="text-[10px] uppercase tracking-wider text-gray-500 font-bold ml-1">Period B</label>
+                        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold ml-1">Period B</label>
                         <select
                             value={rangeB}
                             onChange={(e) => setRangeB(e.target.value)}
-                            className="bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                            className="bg-secondary border border-border text-foreground/90 text-sm rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                         >
                             <option value="prev_1h">Previous Hour</option>
                             <option value="prev_24h">Previous 24 Hours</option>
@@ -195,7 +195,7 @@ const NetworkComparison: React.FC = () => {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Period A Stats */}
-                <div className="bg-gray-900/60 border border-indigo-500/30 rounded-xl p-5 relative overflow-hidden">
+                <div className="bg-card/60 border border-indigo-500/30 rounded-xl p-5 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <Calendar className="w-24 h-24 text-indigo-500" />
                     </div>
@@ -207,7 +207,7 @@ const NetworkComparison: React.FC = () => {
                     </div>
                     <div className="space-y-4">
                         <div>
-                            <p className="text-gray-400 text-xs mb-1">Total Download</p>
+                            <p className="text-muted-foreground text-xs mb-1">Total Download</p>
                             <div className="flex items-end gap-2">
                                 <span className="text-2xl font-bold text-white">{formatBytes(statsA.totalDownload)}</span>
                                 <span className={`text-xs flex items-center ${getDiff(statsA.totalDownload, statsB.totalDownload) > 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -217,7 +217,7 @@ const NetworkComparison: React.FC = () => {
                             </div>
                         </div>
                         <div>
-                            <p className="text-gray-400 text-xs mb-1">Total Upload</p>
+                            <p className="text-muted-foreground text-xs mb-1">Total Upload</p>
                             <div className="flex items-end gap-2">
                                 <span className="text-2xl font-bold text-white">{formatBytes(statsA.totalUpload)}</span>
                                 <span className={`text-xs flex items-center ${getDiff(statsA.totalUpload, statsB.totalUpload) > 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -230,38 +230,38 @@ const NetworkComparison: React.FC = () => {
                 </div>
 
                 {/* Period B Stats */}
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 relative overflow-hidden">
+                <div className="bg-card/60 border border-border rounded-xl p-5 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Timer className="w-24 h-24 text-gray-500" />
+                        <Timer className="w-24 h-24 text-muted-foreground" />
                     </div>
                     <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-sm font-medium text-gray-400">Period B (Baseline)</h3>
-                        <span className="px-2 py-1 bg-gray-800 text-gray-400 text-xs rounded-full">
+                        <h3 className="text-sm font-medium text-muted-foreground">Period B (Baseline)</h3>
+                        <span className="px-2 py-1 bg-secondary text-muted-foreground text-xs rounded-full">
                             {rangeB === 'prev_24h' ? 'Prev 24h' : rangeB}
                         </span>
                     </div>
                     <div className="space-y-4 opacity-75">
                         <div>
-                            <p className="text-gray-500 text-xs mb-1">Total Download</p>
-                            <span className="text-2xl font-bold text-gray-300">{formatBytes(statsB.totalDownload)}</span>
+                            <p className="text-muted-foreground text-xs mb-1">Total Download</p>
+                            <span className="text-2xl font-bold text-foreground/80">{formatBytes(statsB.totalDownload)}</span>
                         </div>
                         <div>
-                            <p className="text-gray-500 text-xs mb-1">Total Upload</p>
-                            <span className="text-2xl font-bold text-gray-300">{formatBytes(statsB.totalUpload)}</span>
+                            <p className="text-muted-foreground text-xs mb-1">Total Upload</p>
+                            <span className="text-2xl font-bold text-foreground/80">{formatBytes(statsB.totalUpload)}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Comparison Chart */}
-            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4 md:p-6">
-                <h3 className="text-sm font-medium text-gray-300 mb-6 flex items-center gap-2">
+            <div className="bg-card/60 border border-border rounded-xl p-4 md:p-6">
+                <h3 className="text-sm font-medium text-foreground/80 mb-6 flex items-center gap-2">
                     <Activity className="w-4 h-4 text-cyan-400" />
                     Traffic Trend Comparison
                 </h3>
                 <div className="h-[350px] w-full">
                     {loading ? (
-                        <div className="h-full flex items-center justify-center text-gray-500">
+                        <div className="h-full flex items-center justify-center text-muted-foreground">
                             Loading comparison data...
                         </div>
                     ) : (

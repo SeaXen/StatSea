@@ -87,12 +87,12 @@ const formatBytes = (bytes: number) => {
 };
 
 const getStatusColor = (status: string) => {
-    if (!status) return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+    if (!status) return 'text-muted-foreground bg-secondary/50 border-border';
     switch (status.toLowerCase()) {
         case 'running': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
         case 'exited': return 'text-rose-400 bg-rose-400/10 border-rose-400/20';
         case 'restarting': return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
-        default: return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+        default: return 'text-muted-foreground bg-secondary/50 border-border';
     }
 };
 
@@ -128,7 +128,7 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
                         <Box className="w-6 h-6 text-blue-500" />
                         Docker Manager
                     </h1>
-                    <p className="text-[11px] text-gray-400 mt-0.5 uppercase tracking-[0.15em] font-bold">Manage system containers</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-[0.15em] font-bold">Manage system containers</p>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -141,13 +141,13 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
                         <span className="hidden sm:inline">Prune</span>
                     </button>
                     <div className="relative group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
                         <input
                             type="text"
                             placeholder="Search containers..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-gray-900/50 border border-gray-800 rounded-lg py-1.5 pl-9 pr-4 text-xs text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all w-full md:w-48 placeholder:text-gray-600"
+                            className="bg-card/50 border border-border rounded-lg py-1.5 pl-9 pr-4 text-xs text-foreground/90 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all w-full md:w-48 placeholder:text-muted-foreground"
                         />
                     </div>
                 </div>
@@ -158,7 +158,7 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
                     <div
                         key={container.id}
                         onClick={() => onSelect(container.id)}
-                        className="group relative bg-gray-900/40 backdrop-blur-xl border border-gray-800/50 rounded-2xl p-4 cursor-pointer hover:border-blue-500/30 hover:bg-gray-900/60 transition-all"
+                        className="group relative bg-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-4 cursor-pointer hover:border-blue-500/30 hover:bg-card/60 transition-all"
                     >
                         <div className="flex items-center gap-4">
                             <div className={`p-2.5 rounded-xl border ${getStatusColor(container.status)} shadow-lg shrink-0`}>
@@ -173,20 +173,20 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
                                         {container.status}
                                     </span>
                                 </div>
-                                <p className="text-[10px] text-gray-500 font-mono truncate opacity-60">
+                                <p className="text-[10px] text-muted-foreground font-mono truncate opacity-60">
                                     {container.image.split('/').pop()}
                                 </p>
                             </div>
                             <div className="flex items-center gap-8 shrink-0">
                                 <div className="hidden sm:flex flex-col items-end">
-                                    <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-1">CPU</span>
+                                    <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest leading-none mb-1">CPU</span>
                                     <span className="font-mono text-xs text-blue-400 font-bold">{(container.cpu_pct || 0).toFixed(1)}%</span>
                                 </div>
                                 <div className="hidden sm:flex flex-col items-end">
-                                    <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-1">MEM</span>
+                                    <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest leading-none mb-1">MEM</span>
                                     <span className="font-mono text-xs text-purple-400 font-bold">{container.mem_usage || 0}MB</span>
                                 </div>
-                                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white transition-colors" />
+                                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                             </div>
                         </div>
                     </div>
@@ -194,7 +194,7 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
             </div>
 
             {filteredContainers.length === 0 && !loading && (
-                <div className="py-20 text-center text-gray-600 border border-dashed border-gray-800 rounded-3xl">
+                <div className="py-20 text-center text-muted-foreground border border-dashed border-border rounded-3xl">
                     <Layers className="w-12 h-12 mx-auto mb-4 opacity-10" />
                     <p className="font-bold">No containers found</p>
                 </div>
@@ -241,7 +241,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
             <header className="flex items-center gap-4">
                 <button
                     onClick={onBack}
-                    className="p-2 bg-gray-900 border border-gray-800 rounded-xl text-gray-400 hover:text-white hover:border-gray-700 transition-all"
+                    className="p-2 bg-card border border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-border/80 transition-all"
                 >
                     <ArrowLeft className="w-4 h-4" />
                 </button>
@@ -252,7 +252,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                             {container.status}
                         </span>
                     </div>
-                    <p className="text-[10px] text-gray-500 font-mono mt-0.5">ID: {container.id?.substring(0, 12)}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">ID: {container.id?.substring(0, 12)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -281,8 +281,8 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-4">
-                    <div className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4">
-                        <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Node Configuration</h3>
+                    <div className="bg-card/60 border border-border/50 rounded-2xl p-4">
+                        <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">Node Configuration</h3>
                         <div className="space-y-4">
                             {[
                                 { label: 'Image', value: container.image, icon: Box },
@@ -291,10 +291,10 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                                 { label: 'Network Tx', value: formatBytes(container.net_tx || 0), icon: Activity },
                             ].map((item, i) => (
                                 <div key={i} className="flex gap-3">
-                                    <item.icon className="w-4 h-4 text-gray-600 mt-0.5" />
+                                    <item.icon className="w-4 h-4 text-muted-foreground mt-0.5" />
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">{item.label}</p>
-                                        <p className="text-xs text-gray-200 mt-0.5 break-all font-mono truncate">{item.value}</p>
+                                        <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">{item.label}</p>
+                                        <p className="text-xs text-foreground/90 mt-0.5 break-all font-mono truncate">{item.value}</p>
                                     </div>
                                 </div>
                             ))}
@@ -304,15 +304,15 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                     <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/5 rounded-2xl p-4">
                         <div className="flex items-center gap-2 mb-4">
                             <Activity className="w-4 h-4 text-blue-400" />
-                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Real-time Load</span>
+                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Real-time Load</span>
                         </div>
                         <div className="flex justify-between items-end gap-2">
                             <div>
-                                <p className="text-[9px] text-gray-500 font-black uppercase">CPU</p>
+                                <p className="text-[9px] text-muted-foreground font-black uppercase">CPU</p>
                                 <p className="text-2xl font-black text-white">{(container.cpu_pct || 0).toFixed(2)}%</p>
                             </div>
                             <div>
-                                <p className="text-[9px] text-gray-500 font-black uppercase text-right">MEM</p>
+                                <p className="text-[9px] text-muted-foreground font-black uppercase text-right">MEM</p>
                                 <p className="text-2xl font-black text-white text-right">{container.mem_usage || 0}<span className="text-xs ml-0.5">MB</span></p>
                             </div>
                         </div>
@@ -323,7 +323,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="bg-black/40 border border-white/5 rounded-2xl p-4 h-[200px] flex flex-col">
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Processor Intensity</span>
+                                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Processor Intensity</span>
                                 <span className="text-xs font-mono text-blue-400 font-bold">{(container.cpu_pct || 0).toFixed(1)}%</span>
                             </div>
                             <div className="flex-1 min-h-0">
@@ -336,7 +336,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                         </div>
                         <div className="bg-black/40 border border-white/5 rounded-2xl p-4 h-[200px] flex flex-col">
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Memory Isolation</span>
+                                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Memory Isolation</span>
                                 <span className="text-xs font-mono text-purple-400 font-bold">{container.mem_usage || 0}MB</span>
                             </div>
                             <div className="flex-1 min-h-0">
@@ -351,7 +351,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
 
                     <div className="bg-black/40 border border-white/5 rounded-2xl p-4 h-[200px] flex flex-col">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Network Throughput (RX/TX)</span>
+                            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Network Throughput (RX/TX)</span>
                             <div className="flex gap-3 text-[9px] font-bold">
                                 <span className="text-blue-400">RX</span>
                                 <span className="text-emerald-400">TX</span>
@@ -368,19 +368,19 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                     </div>
 
                     {usage && (
-                        <div className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4">
-                            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Historical Usage Table</h3>
+                        <div className="bg-card/60 border border-border/50 rounded-2xl p-4">
+                            <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">Historical Usage Table</h3>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="border-b border-gray-800">
-                                            <th className="py-2 text-[9px] font-black text-gray-500 uppercase tracking-widest">Period</th>
-                                            <th className="py-2 text-[9px] font-black text-gray-500 uppercase tracking-widest">Received (RX)</th>
-                                            <th className="py-2 text-[9px] font-black text-gray-500 uppercase tracking-widest">Transmitted (TX)</th>
-                                            <th className="py-2 text-[9px] font-black text-gray-500 uppercase tracking-widest text-right">Total</th>
+                                        <tr className="border-b border-border">
+                                            <th className="py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">Period</th>
+                                            <th className="py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">Received (RX)</th>
+                                            <th className="py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">Transmitted (TX)</th>
+                                            <th className="py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest text-right">Total</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-800/50">
+                                    <tbody className="divide-y divide-border/50">
                                         {[
                                             { label: 'Today (24h)', stats: usage.daily },
                                             { label: 'Monthly', stats: usage.monthly },
@@ -388,7 +388,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                                             { label: 'All-time', stats: usage.all_time },
                                         ].map((row, i) => (
                                             <tr key={i} className="hover:bg-white/5 transition-colors">
-                                                <td className="py-2 text-xs font-bold text-gray-400">{row.label}</td>
+                                                <td className="py-2 text-xs font-bold text-muted-foreground">{row.label}</td>
                                                 <td className="py-2 text-xs font-mono text-blue-400">{formatBytes(row.stats.rx)}</td>
                                                 <td className="py-2 text-xs font-mono text-emerald-400">{formatBytes(row.stats.tx)}</td>
                                                 <td className="py-2 text-xs font-mono text-white text-right font-bold">{formatBytes(row.stats.rx + row.stats.tx)}</td>
@@ -400,25 +400,25 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                         </div>
                     )}
 
-                    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col h-[300px]">
-                        <div className="px-4 py-3 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between">
+                    <div className="bg-card border border-border rounded-2xl overflow-hidden flex flex-col h-[300px]">
+                        <div className="px-4 py-3 border-b border-border bg-card/50 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Terminal className="w-3.5 h-3.5 text-emerald-500" />
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Console Stream</span>
+                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Console Stream</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                {logsLoading && <RefreshCw className="w-3 h-3 text-gray-500 animate-spin" />}
+                                {logsLoading && <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin" />}
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 font-mono text-[10px] leading-relaxed text-gray-400 bg-black/40 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-4 font-mono text-[10px] leading-relaxed text-muted-foreground bg-black/40 custom-scrollbar">
                             {logs && Array.isArray(logs) && logs.length > 0 ? logs.map((log, i) => (
                                 <div key={i} className="mb-1 border-l border-white/5 pl-3 hover:bg-white/5 transition-colors">
-                                    <span className="text-gray-700 mr-3 select-none">{String(i + 1).padStart(3, '0')}</span>
+                                    <span className="text-muted-foreground/50 mr-3 select-none">{String(i + 1).padStart(3, '0')}</span>
                                     {typeof log === 'string' ? log : JSON.stringify(log)}
                                 </div>
                             )) : (
-                                <div className="h-full flex items-center justify-center text-gray-700 italic">
+                                <div className="h-full flex items-center justify-center text-muted-foreground/50 italic">
                                     {logsLoading ? 'Synchronizing stream...' : 'Waiting for telemetry...'}
                                 </div>
                             )}

@@ -77,7 +77,7 @@ export default function AuditLogTab() {
             case 'UPDATE': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
             case 'DELETE': return 'text-red-500 bg-red-500/10 border-red-500/20';
             case 'LOGIN': return 'text-purple-500 bg-purple-500/10 border-purple-500/20';
-            default: return 'text-zinc-500 bg-zinc-500/10 border-zinc-500/20';
+            default: return 'text-muted-foreground bg-secondary/50 border-border';
         }
     };
 

@@ -160,7 +160,7 @@ export const UserManagement: React.FC = () => {
                         </div>
                         <h1 className="text-4xl font-black text-white tracking-tight">Access <span className="text-indigo-500">Control</span></h1>
                     </motion.div>
-                    <p className="text-gray-400 font-medium text-sm ml-15">Manage system operators, permissions, and security profiles</p>
+                    <p className="text-muted-foreground font-medium text-sm ml-15">Manage system operators, permissions, and security profiles</p>
                 </div>
 
                 <div className="flex items-center gap-4">
