@@ -11,84 +11,64 @@ logger = logging.getLogger(__name__)
 
 def run_cleanup_job():
     """
-    Deletes old records based on retention policy.
-    Targets: DockerContainerMetric, SystemNetworkHistory, TrafficLog, SecurityEvent
+    Deletes old records based on granular retention policies.
     """
     db: Session = SessionLocal()
     try:
-        # Get retention days from settings, default to 30
-        retention_setting = (
-            db.query(models.SystemSettings)
-            .filter(models.SystemSettings.key == "data_retention_days")
-            .first()
-        )
-        retention_days = 30
-        if retention_setting and retention_setting.value:
-            try:
-                retention_days = int(retention_setting.value)
-            except ValueError:
-                pass
+        def get_retention_days(key: str, default: int) -> int:
+            setting = db.query(models.SystemSettings).filter(models.SystemSettings.key == key).first()
+            if setting and setting.value:
+                try:
+                    return int(setting.value)
+                except ValueError:
+                    pass
+            return default
 
-        if retention_days <= 0:
-            logger.info("Data retention cleanup disabled (days <= 0).")
-            return
+        # Fetch retention settings
+        retention_raw = get_retention_days("retention_days_raw", 7)
+        retention_daily = get_retention_days("retention_days_daily", 90)
+        retention_events = get_retention_days("retention_days_events", 30)
 
-        cutoff_date = datetime.now() - timedelta(days=retention_days)
+        # Cutoffs
+        cutoff_raw = datetime.now() - timedelta(days=retention_raw)
+        cutoff_daily = datetime.now() - timedelta(days=retention_daily)
+        cutoff_events = datetime.now() - timedelta(days=retention_events)
+
         logger.info(
-            f"Running data cleanup for records older than {cutoff_date} ({retention_days} days retention)."
+            f"Running cleanup: raw (> {cutoff_raw}), daily (> {cutoff_daily}), events (> {cutoff_events})"
         )
 
-        # 1. Docker Metrics
-        deleted_docker = (
-            db.query(models.DockerContainerMetric)
-            .filter(models.DockerContainerMetric.timestamp < cutoff_date)
-            .delete()
-        )
+        # 1. Raw Data (High frequency)
+        deleted_bandwidth = 0
+        deleted_latency = 0
+        deleted_net = 0
+        if retention_raw > 0:
+            deleted_bandwidth = db.query(models.BandwidthHistory).filter(models.BandwidthHistory.timestamp < cutoff_raw).delete()
+            deleted_latency = db.query(models.LatencyLog).filter(models.LatencyLog.timestamp < cutoff_raw).delete()
+            deleted_net = db.query(models.SystemNetworkHistory).filter(models.SystemNetworkHistory.timestamp < cutoff_raw).delete()
 
-        # 2. System Network History
-        deleted_net = (
-            db.query(models.SystemNetworkHistory)
-            .filter(models.SystemNetworkHistory.timestamp < cutoff_date)
-            .delete()
-        )
+        # 2. Daily Summaries / Medium frequency
+        deleted_traffic = 0
+        deleted_docker = 0
+        if retention_daily > 0:
+            deleted_traffic = db.query(models.DeviceDailySummary).filter(models.DeviceDailySummary.date < cutoff_daily.date()).delete()
+            # Docker metrics can be kept for medium frequency
+            deleted_docker = db.query(models.DockerContainerMetric).filter(models.DockerContainerMetric.timestamp < cutoff_daily).delete()
 
-        # 3. Device Traffic Logs (Daily Summaries)
-        deleted_traffic = (
-            db.query(models.DeviceDailySummary)
-            .filter(models.DeviceDailySummary.date < cutoff_date.date())
-            .delete()
-        )
-
-        # 4. Security Events
-        deleted_security = (
-            db.query(models.SecurityEvent)
-            .filter(models.SecurityEvent.timestamp < cutoff_date)
-            .delete()
-        )
-
-        # 5. Speedtest Results
-        deleted_speedtest = (
-            db.query(models.SpeedtestResult)
-            .filter(models.SpeedtestResult.timestamp < cutoff_date)
-            .delete()
-        )
-
-        # 6. Bandwidth History (High frequency)
-        deleted_bandwidth = (
-            db.query(models.BandwidthHistory)
-            .filter(models.BandwidthHistory.timestamp < cutoff_date)
-            .delete()
-        )
-
-        # 7. Latency Logs (High frequency)
-        deleted_latency = (
-            db.query(models.LatencyLog).filter(models.LatencyLog.timestamp < cutoff_date).delete()
-        )
+        # 3. Events / Logs
+        deleted_security = 0
+        deleted_speedtest = 0
+        if retention_events > 0:
+            deleted_security = db.query(models.SecurityEvent).filter(models.SecurityEvent.timestamp < cutoff_events).delete()
+            deleted_speedtest = db.query(models.SpeedtestResult).filter(models.SpeedtestResult.timestamp < cutoff_events).delete()
 
         db.commit()
 
         logger.info(
-            f"Cleanup complete. Deleted: {deleted_docker} docker metrics, {deleted_net} net history, {deleted_traffic} traffic logs, {deleted_security} security events, {deleted_speedtest} speedtests, {deleted_bandwidth} bandwidth logs, {deleted_latency} latency logs."
+            f"Cleanup complete. Deleted: "
+            f"{deleted_bandwidth} bandwidth logs, {deleted_latency} latency logs, {deleted_net} net history, "
+            f"{deleted_traffic} traffic summaries, {deleted_docker} docker metrics, "
+            f"{deleted_security} security events, {deleted_speedtest} speedtests."
         )
 
     except Exception as e:
@@ -96,3 +76,4 @@ def run_cleanup_job():
         db.rollback()
     finally:
         db.close()
+

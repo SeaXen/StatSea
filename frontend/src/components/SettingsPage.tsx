@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Sun, Bell, Activity, Terminal, Database, Trash2, ShieldCheck, Cpu, User, Check, Download, Loader2 } from 'lucide-react';
+import { Save, Sun, Bell, Activity, Terminal, Database, Trash2, ShieldCheck, Cpu, User, Check, Download, Loader2, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import axiosInstance from '../config/axiosInstance';
@@ -7,15 +7,11 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { API_CONFIG } from '../config/apiConfig';
 import { presets, accentColors, ThemeMode } from '../lib/themes';
-
-interface Setting {
-    key: string;
-    value: string;
-    type: string;
-    description?: string;
-}
+import { useSettings as useSettingsQuery, useSaveSetting, useChangePassword } from '../hooks/useSettings';
+import AuditLogTab from './AuditLogTab';
 
 export default function Settings() {
+    const { data: fetchedSettings = {} } = useSettingsQuery();
     const [settings, setSettings] = useState<Record<string, string>>({});
     const [activeSection, setActiveSection] = useState('appearance');
     const [devMode, setDevMode] = useState(false);
@@ -24,42 +20,37 @@ export default function Settings() {
     // Password change state
     const { user } = useAuth();
     const { themeConfig, updateTheme } = useTheme();
+    const saveSettingMutation = useSaveSetting();
+    const changePasswordMutation = useChangePassword();
 
     // Password change state
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-    // Initial Load
+    // Sync fetched settings into local state for editing
     useEffect(() => {
-        // 1. Dev Mode
+        if (Object.keys(fetchedSettings).length > 0) {
+            setSettings(fetchedSettings);
+        }
+    }, [fetchedSettings]);
+
+    // Load dev mode
+    useEffect(() => {
         const savedDevMode = localStorage.getItem('devMode') === 'true';
         setDevMode(savedDevMode);
-
-        fetchSettings();
     }, []);
 
-    const fetchSettings = async () => {
-        try {
-            const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.SETTINGS);
-            const settingsMap: Record<string, string> = {};
-            res.data.forEach((s: Setting) => settingsMap[s.key] = s.value);
-            setSettings(settingsMap);
-        } catch (e) {
-            console.error("Failed to fetch settings", e);
-            toast.error("Failed to load backend settings");
-        }
-    };
-
     const saveSetting = async (key: string, value: string, type: string = 'string') => {
-        try {
-            await axiosInstance.post(API_CONFIG.ENDPOINTS.SETTINGS, { key, value, type });
-            setSettings(prev => ({ ...prev, [key]: value }));
-            toast.success("Setting saved");
-        } catch {
-            toast.error("Failed to save setting");
-        }
+        saveSettingMutation.mutate({ key, value, type }, {
+            onSuccess: () => {
+                setSettings(prev => ({ ...prev, [key]: value }));
+                toast.success("Setting saved");
+            },
+            onError: () => {
+                toast.error("Failed to save setting");
+            },
+        });
     };
 
     const toggleDevMode = () => {
@@ -116,23 +107,19 @@ export default function Settings() {
             return;
         }
 
-        setIsChangingPassword(true);
-        try {
-            await axiosInstance.post('/auth/change-password', {
-                current_password: currentPassword,
-                new_password: newPassword
-            });
-            toast.success("Password changed successfully");
-            setCurrentPassword('');
-            setNewPassword('');
-            setConfirmPassword('');
-        } catch (error: unknown) {
-            const err = error as { response?: { data?: { detail?: string } } };
-            const detail = err.response?.data?.detail || "Failed to change password";
-            toast.error(detail);
-        } finally {
-            setIsChangingPassword(false);
-        }
+        changePasswordMutation.mutate({ currentPassword, newPassword }, {
+            onSuccess: () => {
+                toast.success("Password changed successfully");
+                setCurrentPassword('');
+                setNewPassword('');
+                setConfirmPassword('');
+            },
+            onError: (error: unknown) => {
+                const err = error as { response?: { data?: { detail?: string } } };
+                const detail = err.response?.data?.detail || "Failed to change password";
+                toast.error(detail);
+            },
+        });
     };
 
     const SidebarItem = ({ id, icon: Icon, label }: { id: string, icon: React.ElementType, label: string }) => (
@@ -189,6 +176,7 @@ export default function Settings() {
                         <SidebarItem id="monitoring" icon={Activity} label="Monitoring" />
                         <SidebarItem id="notifications" icon={Bell} label="Notifications" />
                         <SidebarItem id="backup" icon={Download} label="Backup" />
+                        {user?.is_admin && <SidebarItem id="audit" icon={ClipboardList} label="Audit Log" />}
                     </div>
 
                     <div className="hidden md:block space-y-2">
@@ -197,6 +185,7 @@ export default function Settings() {
                         <SidebarItem id="monitoring" icon={Activity} label="Monitoring" />
                         <SidebarItem id="notifications" icon={Bell} label="Notifications" />
                         <SidebarItem id="backup" icon={Download} label="Backup" />
+                        {user?.is_admin && <SidebarItem id="audit" icon={ClipboardList} label="Audit Log" />}
 
                         {devMode && (
                             <motion.div
@@ -284,10 +273,10 @@ export default function Settings() {
 
                                             <button
                                                 type="submit"
-                                                disabled={isChangingPassword}
+                                                disabled={changePasswordMutation.isPending}
                                                 className="w-full bg-primary text-primary-foreground font-semibold py-3 rounded-xl hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                                             >
-                                                {isChangingPassword ? (
+                                                {changePasswordMutation.isPending ? (
                                                     <>
                                                         <Loader2 className="w-5 h-5 animate-spin" />
                                                         Updating...
@@ -567,6 +556,11 @@ export default function Settings() {
                                         </div>
                                     </div>
                                 </div>
+                            )}
+
+                            {/* Audit Log Section */}
+                            {activeSection === 'audit' && (
+                                <AuditLogTab />
                             )}
 
                             {/* Developer Section */}

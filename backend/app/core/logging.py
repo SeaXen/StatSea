@@ -1,8 +1,11 @@
 import contextvars
 import json
 import logging
+import os
 from datetime import datetime
 from typing import Any
+from logging.handlers import RotatingFileHandler
+from .config import settings
 
 # Context variable to store the request ID
 request_id_ctx_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
@@ -39,19 +42,37 @@ class JsonFormatter(logging.Formatter):
 
 def setup_logging(level: int = logging.INFO):
     """
-    Configures the root logger to use JSON formatting.
+    Configures the root logger to use JSON formatting and RotatingFileHandler.
     """
-    handler = logging.StreamHandler()
-    handler.setFormatter(JsonFormatter())
+    formatter = JsonFormatter()
+
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
 
     root = logging.getLogger()
-    root.setLevel(level)
+    # Try to use config LOG_LEVEL string, fallback to level arg
+    log_level = getattr(logging, settings.LOG_LEVEL.upper(), level)
+    root.setLevel(log_level)
 
     # Remove existing handlers to avoid duplicates
     for h in root.handlers[:]:
         root.removeHandler(h)
 
-    root.addHandler(handler)
+    root.addHandler(console_handler)
+
+    # File handler
+    if getattr(settings, "LOG_FILE", None):
+        log_file = settings.LOG_FILE
+        # Ensure log directory exists
+        log_dir = os.path.dirname(log_file)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+            
+        # 10MB per file, keep 5 backups
+        file_handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)
+        file_handler.setFormatter(formatter)
+        root.addHandler(file_handler)
 
 
 def get_logger(name: str) -> logging.Logger:

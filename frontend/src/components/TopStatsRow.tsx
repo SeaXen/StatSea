@@ -1,18 +1,9 @@
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDown, ArrowUp, Laptop, Activity } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
-import { API_CONFIG } from '../config/apiConfig';
-import axiosInstance from '../config/axiosInstance';
 import { StatCardSkeleton } from './skeletons/StatCardSkeleton';
-
-interface TopStatsData {
-    network: {
-        sent: number;
-        recv: number;
-    };
-    active_devices: number;
-}
+import { useSystemInfo, useHealth } from '../hooks/useSystem';
+import { useNetworkHistory } from '../hooks/useAnalytics';
 
 interface HistoryData {
     timestamp: string;
@@ -21,51 +12,9 @@ interface HistoryData {
 }
 
 const TopStatsRow = () => {
-    const [stats, setStats] = useState<TopStatsData | null>(null);
-    const [health, setHealth] = useState({ score: 0, status: 'Unknown' });
-    const [history, setHistory] = useState<HistoryData[]>([]);
-
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.SYSTEM.INFO);
-                setStats(res.data);
-            } catch (error) {
-                console.error('Failed to fetch stats:', error);
-            }
-        };
-
-        const fetchHealth = async () => {
-            try {
-                const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.HEALTH);
-                setHealth({
-                    score: res.data.score ?? (res.data.status === 'healthy' ? 100 : 0),
-                    status: res.data.status || 'Excellent'
-                });
-            } catch (error) {
-                console.error('Failed to fetch health:', error);
-            }
-        };
-
-        const fetchHistory = async () => {
-            try {
-                const res = await axiosInstance.get(`${API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY}?limit=30`);
-                setHistory(res.data);
-            } catch (error) {
-                console.error('Failed to fetch history:', error);
-            }
-        };
-
-        fetchStats();
-        fetchHealth();
-        fetchHistory();
-        const interval = setInterval(() => {
-            fetchStats();
-            fetchHealth();
-            fetchHistory();
-        }, 5000);
-        return () => clearInterval(interval);
-    }, []);
+    const { data: stats } = useSystemInfo();
+    const { data: health = { score: 0, status: 'Unknown' } } = useHealth();
+    const { data: history = [] } = useNetworkHistory(30) as { data: HistoryData[] };
 
     const formatBytes = (bytes: number) => {
         if (bytes === 0) return '0 B';

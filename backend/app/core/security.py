@@ -1,8 +1,12 @@
+import logging
+
 import psutil
 from sqlalchemy.orm import Session
 
 from ..core.notifications import notification_service
 from ..models import models
+
+logger = logging.getLogger(__name__)
 
 
 class SecurityEngine:
@@ -29,7 +33,7 @@ class SecurityEngine:
             if not self.baseline_established:
                 self.known_ports = current_ports
                 self.baseline_established = True
-                print(
+                logger.info(
                     f"Security Baseline: Established {len(self.known_ports)} known listening ports."
                 )
                 return
@@ -46,7 +50,7 @@ class SecurityEngine:
                     description=desc,
                     source_ip=ip,
                 )
-                print(f"SECURITY ALERT: {desc}")
+                logger.warning(f"SECURITY ALERT: {desc}")
                 # Send Notification
                 notification_service.send_alert(
                     title="New Open Port Detected",
@@ -59,7 +63,7 @@ class SecurityEngine:
             self.known_ports = current_ports
 
         except Exception as e:
-            print(f"Port scan error: {e}")
+            logger.error(f"Port scan error: {e}")
 
     def detect_rogue_dhcp(self, db: Session):
         """
@@ -95,7 +99,7 @@ class SecurityEngine:
             else:
                 db.flush()
         except Exception as e:
-            print(f"Security logging error: {e}")
+            logger.error(f"Security logging error: {e}")
             if commit:
                 db.rollback()
 

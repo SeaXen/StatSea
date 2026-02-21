@@ -9,6 +9,8 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    JSON,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -78,6 +80,13 @@ class User(Base):
     last_login = Column(DateTime(timezone=True), nullable=True)
     preferred_language = Column(String, default="en")
 
+    failed_login_attempts = Column(Integer, default=0)
+    locked_until = Column(DateTime(timezone=True), nullable=True)
+    must_change_password = Column(Boolean, default=False)
+    
+    is_deleted = Column(Boolean, default=False)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+
     refresh_tokens = relationship(
         "RefreshToken", back_populates="user", cascade="all, delete-orphan"
     )
@@ -129,7 +138,7 @@ class Device(Base):
     is_online = Column(Boolean, default=False)
     nickname = Column(String, nullable=True)
     notes = Column(String, nullable=True)
-    tags = Column(String, nullable=True)  # JSON list of strings
+    tags = Column(JSON, nullable=True)  # JSON list of strings
     group_id = Column(Integer, ForeignKey("device_groups.id"), nullable=True)
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 
@@ -166,6 +175,10 @@ class DeviceDailySummary(Base):
     download_bytes = Column(BigInteger, default=0)
 
     device = relationship("Device", back_populates="daily_summaries")
+    
+    __table_args__ = (
+        UniqueConstraint("device_id", "date", name="uix_device_date"),
+    )
 
 
 class BandwidthHistory(Base):
@@ -236,6 +249,19 @@ class SecurityAlert(Base):
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 
     device = relationship("Device")
+
+
+class SecurityRule(Base):
+    __tablename__ = "security_rules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    description = Column(String, nullable=True)
+    condition = Column(String)  # E.g. "bandwidth > 1GB"
+    action = Column(String, default="alert") # alert, block
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 
 
 class SystemSettings(Base):
@@ -331,13 +357,39 @@ class SystemDailySummary(Base):
     packets_recv = Column(BigInteger, default=0)
 
 
+class SystemInterfaceDailySummary(Base):
+    """Aggregated daily usage for a specific system interface"""
+
+    __tablename__ = "system_interface_daily_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    interface = Column(String, index=True)
+    date = Column(Date, index=True)
+    bytes_sent = Column(BigInteger, default=0)
+    bytes_recv = Column(BigInteger, default=0)
+    packets_sent = Column(BigInteger, default=0)
+    packets_recv = Column(BigInteger, default=0)
+
+
+class SystemInterfaceMonthlySummary(Base):
+    """Aggregated monthly usage for a specific system interface"""
+
+    __tablename__ = "system_interface_monthly_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    interface = Column(String, index=True)
+    month = Column(String, index=True)  # YYYY-MM
+    bytes_sent = Column(BigInteger, default=0)
+    bytes_recv = Column(BigInteger, default=0)
+
+
 class SystemMonthlySummary(Base):
     """Aggregated monthly usage for the whole system"""
 
     __tablename__ = "system_monthly_summaries"
 
     id = Column(Integer, primary_key=True, index=True)
-    month = Column(String, index=True)  # YYYY-MM
+    month = Column(String, index=True, unique=True)  # YYYY-MM
     bytes_sent = Column(BigInteger, default=0)
     bytes_recv = Column(BigInteger, default=0)
 
@@ -348,7 +400,7 @@ class SystemYearlySummary(Base):
     __tablename__ = "system_yearly_summaries"
 
     id = Column(Integer, primary_key=True, index=True)
-    year = Column(Integer, index=True)  # YYYY
+    year = Column(Integer, index=True, unique=True)  # YYYY
     bytes_sent = Column(BigInteger, default=0)
     bytes_recv = Column(BigInteger, default=0)
 
@@ -365,6 +417,10 @@ class DeviceMonthlySummary(Base):
     download_bytes = Column(BigInteger, default=0)
 
     device = relationship("Device")
+    
+    __table_args__ = (
+        UniqueConstraint("device_id", "month", name="uix_device_month"),
+    )
 
 
 class DeviceYearlySummary(Base):
@@ -380,6 +436,10 @@ class DeviceYearlySummary(Base):
 
 
     device = relationship("Device")
+
+    __table_args__ = (
+        UniqueConstraint("device_id", "year", name="uix_device_year"),
+    )
 
 
 class AuditLog(Base):

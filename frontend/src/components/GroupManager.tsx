@@ -1,20 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Edit2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { DeviceGroup } from '../types';
+import { useAddGroup, useUpdateGroup, useDeleteGroup } from '../hooks/useDevices';
 
 interface GroupManagerProps {
     isOpen: boolean;
     onClose: () => void;
     groups: DeviceGroup[];
-    setGroups: (groups: DeviceGroup[]) => void;
 }
 
-export function GroupManager({ isOpen, onClose, groups, setGroups }: GroupManagerProps) {
+export function GroupManager({ isOpen, onClose, groups: initialGroups }: GroupManagerProps) {
+    const [localGroups, setLocalGroups] = useState<DeviceGroup[]>(initialGroups);
     const [isAdding, setIsAdding] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [newGroupName, setNewGroupName] = useState('');
     const [newGroupColor, setNewGroupColor] = useState('#3b82f6');
+
+    const addGroupMutation = useAddGroup();
+    const updateGroupMutation = useUpdateGroup();
+    const deleteGroupMutation = useDeleteGroup();
+
+    useEffect(() => {
+        setLocalGroups(initialGroups);
+    }, [initialGroups]);
 
     const colors = [
         '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981',
@@ -26,16 +35,8 @@ export function GroupManager({ isOpen, onClose, groups, setGroups }: GroupManage
         if (!newGroupName.trim()) return;
 
         try {
-            const response = await fetch('/api/groups', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newGroupName, color: newGroupColor })
-            });
+            await addGroupMutation.mutateAsync({ name: newGroupName, color: newGroupColor });
 
-            if (!response.ok) throw new Error('Failed to create group');
-
-            const newGroup = await response.json();
-            setGroups([...groups, newGroup]);
             setNewGroupName('');
             setNewGroupColor('#3b82f6');
             setIsAdding(false);
@@ -47,16 +48,8 @@ export function GroupManager({ isOpen, onClose, groups, setGroups }: GroupManage
 
     const handleUpdate = async (group: DeviceGroup) => {
         try {
-            const response = await fetch(`/api/groups/${group.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: group.name, color: group.color })
-            });
+            await updateGroupMutation.mutateAsync({ id: group.id, name: group.name, color: group.color });
 
-            if (!response.ok) throw new Error('Failed to update group');
-
-            const updatedGroup = await response.json();
-            setGroups(groups.map(g => g.id === updatedGroup.id ? updatedGroup : g));
             setEditingId(null);
             toast.success('Group updated');
         } catch {
@@ -68,13 +61,7 @@ export function GroupManager({ isOpen, onClose, groups, setGroups }: GroupManage
         if (!confirm('Are you sure? Devices in this group will be ungrouped.')) return;
 
         try {
-            const response = await fetch(`/api/groups/${id}`, {
-                method: 'DELETE'
-            });
-
-            if (!response.ok) throw new Error('Failed to delete group');
-
-            setGroups(groups.filter(g => g.id !== id));
+            await deleteGroupMutation.mutateAsync(id);
             toast.success('Group deleted');
         } catch {
             toast.error('Failed to delete group');
@@ -143,21 +130,21 @@ export function GroupManager({ isOpen, onClose, groups, setGroups }: GroupManage
 
                     {/* Group List */}
                     <div className="space-y-2">
-                        {groups.map(group => (
+                        {localGroups.map(group => (
                             <div key={group.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 group hover:border-white/10 transition-colors">
                                 {editingId === group.id ? (
                                     <div className="flex-1 flex gap-2 items-center">
                                         <input
                                             type="text"
                                             value={group.name}
-                                            onChange={(e) => setGroups(groups.map(g => g.id === group.id ? { ...g, name: e.target.value } : g))}
+                                            onChange={(e) => setLocalGroups(localGroups.map(g => g.id === group.id ? { ...g, name: e.target.value } : g))}
                                             className="flex-1 bg-black/20 border border-white/10 rounded-lg px-2 py-1 text-sm"
                                         />
                                         <div className="flex gap-1">
                                             {colors.slice(0, 5).map(color => (
                                                 <button
                                                     key={color}
-                                                    onClick={() => setGroups(groups.map(g => g.id === group.id ? { ...g, color } : g))}
+                                                    onClick={() => setLocalGroups(localGroups.map(g => g.id === group.id ? { ...g, color } : g))}
                                                     className={`w-4 h-4 rounded-full ${group.color === color ? 'ring-1 ring-white' : ''}`}
                                                     style={{ backgroundColor: color }}
                                                 />
@@ -194,7 +181,7 @@ export function GroupManager({ isOpen, onClose, groups, setGroups }: GroupManage
                                 )}
                             </div>
                         ))}
-                        {groups.length === 0 && !isAdding && (
+                        {localGroups.length === 0 && !isAdding && (
                             <div className="text-center text-gray-500 py-8 text-sm">
                                 No groups created yet.
                             </div>

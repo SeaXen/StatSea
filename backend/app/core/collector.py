@@ -801,6 +801,105 @@ class PacketCollector:
             # Return latest N
             return list(filtered[-limit:])
 
+    def get_analytics_heatmap(self) -> list[dict]:
+        """Returns a 7x24 matrix for the weekly traffic heatmap."""
+        # Generating a realistic synthetic heatmap:
+        # Days 0-6 (Mon-Sun), Hours 0-23
+        # Higher traffic on weekends and evenings
+        import random
+        from datetime import datetime
+        
+        heatmap_data = []
+        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        
+        for d_idx, day_name in enumerate(days):
+            for h in range(24):
+                # Base volume
+                base = 100
+                
+                # Evening peak (17:00 - 23:00)
+                if 17 <= h <= 23:
+                    base += random.randint(200, 400)
+                # Morning peak (08:00 - 11:00)
+                elif 8 <= h <= 11:
+                    base += random.randint(100, 200)
+                # Night drop (02:00 - 05:00)
+                elif 2 <= h <= 5:
+                    base = random.randint(10, 50)
+                else:
+                    base += random.randint(50, 150)
+                    
+                # Weekend bump
+                if d_idx >= 5:
+                    base = int(base * 1.5)
+                    
+                # Add some randomness
+                volume_mb = base + random.randint(-20, 50)
+                volume_mb = max(0, volume_mb)
+                
+                heatmap_data.append({
+                    "day": day_name,
+                    "hour": h,
+                    "value": volume_mb
+                })
+                
+        return heatmap_data
+
+    def get_device_history(self, mac: str) -> dict:
+        """Returns synthetic timeseries bandwidth data for a specific device."""
+        import random
+        from datetime import datetime, timedelta
+        
+        now = datetime.now()
+        
+        # 5-minute intervals for last 24h (288 items)
+        five_minute = []
+        for i in range(288, 0, -1):
+            t = now - timedelta(minutes=5 * i)
+            five_minute.append({
+                "time": t.strftime("%H:%M"),
+                "upload": random.randint(10, 500) * 1024,   # bytes
+                "download": random.randint(50, 2000) * 1024 # bytes
+            })
+            
+        # Hourly intervals for last 24h
+        hourly = []
+        for i in range(24, 0, -1):
+            t = now - timedelta(hours=i)
+            hourly.append({
+                "time": t.strftime("%H:00"),
+                "upload": random.randint(500, 5000) * 1024,
+                "download": random.randint(2000, 20000) * 1024
+            })
+            
+        # Daily intervals for last 30 days
+        daily = []
+        for i in range(30, 0, -1):
+            t = now - timedelta(days=i)
+            daily.append({
+                "date": t.strftime("%Y-%m-%d"),
+                "upload": random.randint(10000, 50000) * 1024,
+                "download": random.randint(50000, 200000) * 1024
+            })
+            
+        # Monthly intervals for last 12 months
+        monthly = []
+        for i in range(12, 0, -1):
+            t = now - timedelta(days=30 * i)
+            monthly.append({
+                "month": t.strftime("%b %Y"),
+                "upload": random.randint(300000, 1500000) * 1024,
+                "download": random.randint(1500000, 6000000) * 1024
+            })
+            
+        return {
+            "mac": mac,
+            "five_minute": five_minute,
+            "hourly": hourly,
+            "daily": daily,
+            "monthly": monthly
+        }
+
     def _flush_dns_logs(self):
         """Persists buffered DNS logs to valid database entries."""
         with self.stats_lock:
@@ -811,39 +910,15 @@ class PacketCollector:
 
         db = SessionLocal()
         try:
-            # Optimize: Get IP->DeviceID mapping cache
-            # For now, just simplistic lookup or using collector's active_devices if possible?
-            # Queries might be frequent, so we should rely on active_devices cache to resolve Device ID quickly if possible,
-            # but active_devices only stores MAC -> IP.
-            # We have IP. We need IP -> DeviceID.
-            # Let's query relevant devices from DB or just do a join later?
-            # For insertion, let's try to find device_id by IP.
-
-            # Note: This is a bit inefficient if buffer is large.
-            # Ideally we have a IP->ID cache.
-
-            # Simple approach: Store IP, resolve to device ID if possible.
-            # We can use a small cache of ip->device_id updated occasionally.
+            # Batch-load to fix N+1 query problem (O(n) queries -> 1 query)
+            client_ips = list(set(entry["client_ip"] for entry in buffer_copy))
+            
+            # Fetch all matching devices in one query
+            devices = db.query(Device).filter(Device.ip_address.in_(client_ips)).all()
+            ip_to_device_id = {d.ip_address: d.id for d in devices}
 
             for entry in buffer_copy:
-                # Try to map IP to device
-                # We can iterate active_devices to find MAC for this IP
-                device_id = None
-                with self.stats_lock:
-                    for mac, meta in self.active_devices.items():
-                        if meta.get("ip") == entry["client_ip"]:
-                            # Resolve device_id from DB? Too slow to query every time.
-                            # Just storing IP is enough, we can link in UI or query time.
-                            # But defining the relationship in model uses ForeignKey.
-                            # Let's look up device by MAC (which is indexed)
-                            # But wait, we need the ID.
-                            pass
-
-                # To properly link, we need the Device link.
-                # Let's do a quick lookup.
-                device = db.query(Device).filter(Device.ip_address == entry["client_ip"]).first()
-                if device:
-                    device_id = device.id
+                device_id = ip_to_device_id.get(entry["client_ip"])
 
                 dns_log = DnsLog(
                     timestamp=entry["timestamp"],

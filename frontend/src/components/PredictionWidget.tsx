@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Brain, TrendingUp, TrendingDown, AlertTriangle, ShieldCheck, Zap } from 'lucide-react';
-import axiosInstance from '../config/axiosInstance';
-import { API_CONFIG } from '../config/apiConfig';
+import { usePrediction, useAnomalies } from '../hooks/useAnalytics';
 
 interface PredictionData {
     predicted_bytes: number;
@@ -21,30 +20,9 @@ interface Anomaly {
 }
 
 const PredictionWidget: React.FC = () => {
-    const [prediction, setPrediction] = useState<PredictionData | null>(null);
-    const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [predRes, anomRes] = await Promise.all([
-                    axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.PREDICTION),
-                    axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.ANOMALIES)
-                ]);
-                setPrediction(predRes.data);
-                setAnomalies(anomRes.data);
-            } catch (err) {
-                console.error('Failed to fetch AI data', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-        const interval = setInterval(fetchData, 300000); // 5 mins
-        return () => clearInterval(interval);
-    }, []);
+    const { data: prediction, isLoading: predLoading } = usePrediction() as { data: PredictionData | undefined; isLoading: boolean };
+    const { data: anomalies = [], isLoading: anomLoading } = useAnomalies() as { data: Anomaly[]; isLoading: boolean };
+    const loading = predLoading || anomLoading;
 
     const formatBytes = (bytes: number) => {
         if (bytes === 0) return '0 B';

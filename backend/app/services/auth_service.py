@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 import sqlalchemy.exc
 from sqlalchemy.orm import Session
@@ -7,6 +7,7 @@ from ..core.auth_jwt import create_access_token, create_refresh_token
 from ..core.exceptions import AuthenticationException, ValidationException
 from ..core.logging import get_logger
 from ..models import models
+from .audit_service import AuditService
 
 logger = get_logger("AuthService")
 
@@ -19,12 +20,30 @@ class AuthService:
         Raises AuthenticationException on failure.
         """
         user = db.query(models.User).filter(models.User.username == username).first()
+        
+        if user and user.locked_until and user.locked_until > datetime.utcnow():
+            logger.warning(f"Auth failure: Account locked for {username}")
+            raise AuthenticationException("Account is locked due to too many failed attempts. Try again later.")
+
         if not user or not user.verify_password(password):
+            if user:
+                user.failed_login_attempts += 1
+                if user.failed_login_attempts >= 5:
+                    user.locked_until = datetime.utcnow() + timedelta(minutes=15)
+                    logger.warning(f"Account locked: Too many failed attempts for {username}")
+                db.commit()
             logger.warning(f"Auth failure: Incorrect credentials for {username}")
             raise AuthenticationException("Incorrect username or password")
+
         if not user.is_active:
             logger.warning(f"Auth failure: Inactive account {username}")
             raise AuthenticationException("User account is inactive")
+            
+        if user.failed_login_attempts > 0 or user.locked_until:
+            user.failed_login_attempts = 0
+            user.locked_until = None
+            db.commit()
+
         return user
 
     @staticmethod
@@ -44,11 +63,22 @@ class AuthService:
             )
             db.add(db_refresh_token)
 
-            user.last_login = datetime.now(timezone.utc)
+            user.last_login = datetime.utcnow()
             db.commit()
 
             access_token = create_access_token(data={"sub": user.username})
             logger.info(f"Session created for {user.username}")
+            
+            org_id = user.organizations[0].organization_id if user.organizations else None
+            AuditService.log_action(
+                db=db,
+                actor_id=user.id,
+                action="LOGIN",
+                resource_type="USER",
+                resource_id=str(user.id),
+                organization_id=org_id,
+            )
+            
             return {
                 "access_token": access_token,
                 "refresh_token": refresh_token_str,
@@ -70,7 +100,7 @@ class AuthService:
             .filter(
                 models.RefreshToken.token == refresh_token,
                 models.RefreshToken.is_revoked == False,
-                models.RefreshToken.expires_at > datetime.now(timezone.utc),
+                models.RefreshToken.expires_at > datetime.utcnow(),
             )
             .first()
         )
@@ -121,6 +151,16 @@ class AuthService:
             user.hashed_password = models.User.get_password_hash(new_password)
             db.commit()
             logger.info(f"Password changed for {user.username}")
+            
+            org_id = user.organizations[0].organization_id if user.organizations else None
+            AuditService.log_action(
+                db=db,
+                actor_id=user.id,
+                action="CHANGE_PASSWORD",
+                resource_type="USER",
+                resource_id=str(user.id),
+                organization_id=org_id,
+            )
         except sqlalchemy.exc.SQLAlchemyError as e:
             logger.exception(f"Database error during password change for {user.username}")
             db.rollback()
@@ -139,9 +179,21 @@ class AuthService:
                     .first()
                 )
                 if db_token:
+                    user_id = db_token.user_id
+                    org_id = db_token.user.organizations[0].organization_id if db_token.user and db_token.user.organizations else None
+                    
                     db_token.is_revoked = True
                     db.commit()
                     logger.info("Session revoked (logout)")
+                    
+                    AuditService.log_action(
+                        db=db,
+                        actor_id=user_id,
+                        action="LOGOUT",
+                        resource_type="USER",
+                        resource_id=str(user_id),
+                        organization_id=org_id,
+                    )
             except sqlalchemy.exc.SQLAlchemyError:
                 logger.exception("Database error during logout")
                 db.rollback()

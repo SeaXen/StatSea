@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Settings, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import axiosInstance from '../config/axiosInstance';
-import { API_CONFIG } from '../config/apiConfig';
+import { useQuota, useSaveQuota } from '../hooks/useQuotas';
 
 interface QuotaManagerProps {
     deviceId: number;
@@ -11,41 +10,29 @@ interface QuotaManagerProps {
 }
 
 export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManagerProps) {
+    const { data: quotaData, isLoading: loading } = useQuota(deviceId);
+    const saveQuotaMutation = useSaveQuota();
+
     const [dailyLimit, setDailyLimit] = useState<number | null>(null);
     const [monthlyLimit, setMonthlyLimit] = useState<number | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
 
-    // Initial fetch
+    // Sync fetched quota into local state
     useEffect(() => {
-        const fetchQuota = async () => {
-            try {
-                const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.QUOTA.BY_ID(deviceId));
-                setDailyLimit(res.data.daily_limit_bytes);
-                setMonthlyLimit(res.data.monthly_limit_bytes);
-            } catch (err) {
-                console.error("Failed to fetch quota", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchQuota();
-    }, [deviceId]);
+        if (quotaData) {
+            setDailyLimit(quotaData.daily_limit_bytes);
+            setMonthlyLimit(quotaData.monthly_limit_bytes);
+        }
+    }, [quotaData]);
 
     const handleSave = async () => {
-        setSaving(true);
-        try {
-            await axiosInstance.put(API_CONFIG.ENDPOINTS.QUOTA.BY_ID(deviceId), {
-                daily_limit_bytes: dailyLimit,
-                monthly_limit_bytes: monthlyLimit,
-                device_id: deviceId
-            });
-            toast.success("Quota updated successfully");
-        } catch {
-            toast.error("Failed to update quota");
-        } finally {
-            setSaving(false);
-        }
+        saveQuotaMutation.mutate({
+            deviceId,
+            daily_limit_bytes: dailyLimit,
+            monthly_limit_bytes: monthlyLimit,
+        }, {
+            onSuccess: () => toast.success("Quota updated successfully"),
+            onError: () => toast.error("Failed to update quota"),
+        });
     };
 
     // Helper to convert bytes to GB/MB for display
@@ -167,11 +154,11 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
             <div className="mt-4 flex justify-end">
                 <button
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saveQuotaMutation.isPending}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-sm font-medium transition-colors border border-blue-500/20"
                 >
                     <Save className="w-4 h-4" />
-                    {saving ? "Saving..." : "Save Quotas"}
+                    {saveQuotaMutation.isPending ? "Saving..." : "Save Quotas"}
                 </button>
             </div>
         </div>

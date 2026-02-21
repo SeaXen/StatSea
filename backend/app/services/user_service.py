@@ -6,6 +6,7 @@ from ..core import sanitization
 from ..core.exceptions import UserNotFoundException, ValidationException
 from ..core.logging import get_logger
 from ..models import models
+from .audit_service import AuditService
 
 logger = get_logger("UserService")
 
@@ -24,12 +25,17 @@ class UserService:
         return user
 
     @staticmethod
-    def list_users(db: Session, skip: int = 0, limit: int = 100) -> list[models.User]:
-        """Returns a paginated list of all users in the system."""
-        return db.query(models.User).offset(skip).limit(limit).all()
+    def list_users(db: Session, cursor: int | None = None, limit: int = 100) -> schemas.CursorPage[schemas.User]:
+        """Returns a cursor-paginated list of all users in the system."""
+        query = db.query(models.User)
+        if cursor is not None:
+             query = query.filter(models.User.id > cursor)
+        users = query.order_by(models.User.id.asc()).limit(limit).all()
+        next_cursor = users[-1].id if len(users) == limit else None
+        return schemas.CursorPage(items=users, next_cursor=next_cursor)
 
     @staticmethod
-    def create_user(db: Session, user_data: schemas.UserCreate) -> models.User:
+    def create_user(db: Session, user_data: schemas.UserCreate, actor_id: int | None = None) -> models.User:
         """
         Creates a new user with sanitized inputs.
         Checks for existing username or email before creation.
@@ -65,6 +71,15 @@ class UserService:
             db.commit()
             db.refresh(new_user)
             logger.info(f"User created: {sanitized_username}")
+            
+            AuditService.log_action(
+                db=db,
+                actor_id=actor_id,
+                action="CREATE",
+                resource_type="USER",
+                resource_id=str(new_user.id),
+                details={"username": new_user.username, "is_admin": new_user.is_admin}
+            )
             return new_user
         except sqlalchemy.exc.SQLAlchemyError as e:
             logger.exception("Database error during user creation")
@@ -72,7 +87,7 @@ class UserService:
             raise ValidationException("Could not create user due to a database error") from e
 
     @staticmethod
-    def update_user(db: Session, user_id: int, update_data: schemas.UserUpdate) -> models.User:
+    def update_user(db: Session, user_id: int, update_data: schemas.UserUpdate, actor_id: int | None = None) -> models.User:
         """
         Updates an existing user's profile or status.
         Only fields provided in update_data are modified.
@@ -96,6 +111,15 @@ class UserService:
             db.commit()
             db.refresh(db_user)
             logger.info(f"User updated: {db_user.username}")
+            
+            AuditService.log_action(
+                db=db,
+                actor_id=actor_id,
+                action="UPDATE",
+                resource_type="USER",
+                resource_id=str(db_user.id),
+                details={"updates": update_data.model_dump(exclude_unset=True)}
+            )
             return db_user
         except sqlalchemy.exc.SQLAlchemyError as e:
             logger.exception(f"Database error updating user {user_id}")
@@ -117,6 +141,15 @@ class UserService:
             db.delete(db_user)
             db.commit()
             logger.info(f"User deleted: {username}")
+            
+            AuditService.log_action(
+                db=db,
+                actor_id=current_admin_id,
+                action="DELETE",
+                resource_type="USER",
+                resource_id=str(user_id),
+                details={"username": username}
+            )
         except sqlalchemy.exc.SQLAlchemyError as e:
             logger.exception(f"Database error deleting user {user_id}")
             db.rollback()

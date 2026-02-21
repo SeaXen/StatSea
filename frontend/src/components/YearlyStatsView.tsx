@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { Calendar, TrendingUp, Download, Upload, Activity } from 'lucide-react';
-import { API_CONFIG } from '../config/apiConfig';
-import axiosInstance from '../config/axiosInstance';
+import { useSystemHistory } from '../hooks/useAnalytics';
 
 interface HistoryPoint {
     date: string;
@@ -14,30 +13,15 @@ interface HistoryPoint {
 
 const YearlyStatsView = () => {
     const [period, setPeriod] = useState<'daily' | 'monthly' | 'yearly'>('daily');
-    const [data, setData] = useState<HistoryPoint[]>([]);
-    const [loading, setLoading] = useState(false);
 
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY_SYSTEM, {
-                params: { period }
-            });
-
-            // Backend returns oldest first for charts usually, but we should sort just in case
-            const sortedData = res.data.sort((a: { date: string }, b: { date: string }) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            setData(sortedData);
-        } catch (error) {
-            console.error('Failed to fetch historical stats:', error);
-        } finally {
-            setLoading(false);
-        }
+    const { data: rawData = [], isLoading: loading } = useSystemHistory({ period }) as {
+        data: HistoryPoint[];
+        isLoading: boolean;
     };
 
-    useEffect(() => {
-        fetchData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [period]);
+    const data = useMemo(() => {
+        return [...rawData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }, [rawData]);
 
     const formatBytes = (bytes: number) => {
         if (bytes === 0) return '0 B';

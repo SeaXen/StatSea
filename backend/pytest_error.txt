@@ -1,0 +1,90 @@
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    import app.main
+  File "D:\Gravity\StatSea\backend\app\main.py", line 27, in <module>
+    from .api import audit, billing, api_keys, saas_extras
+  File "D:\Gravity\StatSea\backend\app\api\audit.py", line 7, in <module>
+    from app.api.endpoints import get_current_org_id, get_current_user
+  File "D:\Gravity\StatSea\backend\app\api\endpoints.py", line 28, in <module>
+    from ..services.user_service import UserService
+  File "D:\Gravity\StatSea\backend\app\services\user_service.py", line 14, in <module>
+    class UserService:
+    ...<141 lines>...
+                raise ValidationException("Could not delete user") from e
+  File "D:\Gravity\StatSea\backend\app\services\user_service.py", line 28, in UserService
+    def list_users(db: Session, cursor: int | None = None, limit: int = 100) -> schemas.CursorPage[models.User]:
+                                                                                ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\main.py", line 806, in __class_getitem__
+    submodel = _generics.create_generic_submodel(model_name, origin, args, params)
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generics.py", line 137, in create_generic_submodel
+    created_model = meta(
+        model_name,
+    ...<8 lines>...
+        **kwds,
+    )
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_model_construction.py", line 226, in __new__
+    complete_model_class(
+    ~~~~~~~~~~~~~~~~~~~~^
+        cls,
+        ^^^^
+    ...<4 lines>...
+        create_model_module=_create_model_module,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_model_construction.py", line 658, in complete_model_class
+    schema = cls.__get_pydantic_core_schema__(cls, handler)
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\main.py", line 697, in __get_pydantic_core_schema__
+    return handler(source)
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_schema_generation_shared.py", line 84, in __call__
+    schema = self._handler(source_type)
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 612, in generate_schema
+    schema = self._generate_schema_inner(obj)
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 881, in _generate_schema_inner
+    return self._model_schema(obj)
+           ~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 693, in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 1073, in _generate_md_field_schema
+    common_field = self._common_field_schema(name, field_info, decorators)
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 1261, in _common_field_schema
+    schema = self._apply_annotations(
+        source_type,
+        annotations + validators_from_decorators,
+    )
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 2051, in _apply_annotations
+    schema = get_inner_schema(source_type)
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_schema_generation_shared.py", line 84, in __call__
+    schema = self._handler(source_type)
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 2032, in inner_handler
+    schema = self._generate_schema_inner(obj)
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 886, in _generate_schema_inner
+    return self.match_type(obj)
+           ~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 988, in match_type
+    return self._match_generic_type(obj, origin)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 1020, in _match_generic_type
+    return self._list_schema(self._get_first_arg_or_any(obj))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 369, in _list_schema
+    return core_schema.list_schema(self.generate_schema(items_type))
+                                   ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 612, in generate_schema
+    schema = self._generate_schema_inner(obj)
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 886, in _generate_schema_inner
+    return self.match_type(obj)
+           ~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 997, in match_type
+    return self._unknown_type_schema(obj)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_generate_schema.py", line 515, in _unknown_type_schema
+    raise PydanticSchemaGenerationError(
+    ...<7 lines>...
+    )
+pydantic.errors.PydanticSchemaGenerationError: Unable to generate pydantic-core schema for <class 'app.models.models.User'>. Set `arbitrary_types_allowed=True` in the model_config to ignore this error or implement `__get_pydantic_core_schema__` on your type to fully support it.
+
+If you got this error by calling handler(<some type>) within `__get_pydantic_core_schema__` then you likely need to call `handler.generate_schema(<some type>)` since we do not call `__get_pydantic_core_schema__` on `<some type>` otherwise to avoid infinite recursion.
+
+For further information visit https://errors.pydantic.dev/2.10/u/schema-for-unknown-type

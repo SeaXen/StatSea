@@ -76,15 +76,19 @@ class AIPredictor:
         finally:
             db.close()
 
-    def detect_anomalies(self) -> list[dict]:
+    def detect_anomalies(self, organization_id: int = None) -> list[dict]:
         """
         Detects devices with unusual bandwidth consumption profiles.
+        Scoped to the given organization_id to prevent cross-tenant data leakage.
         """
         db = SessionLocal()
         anomalies = []
         try:
-            # Check devices one by one
-            devices = db.query(Device).all()
+            # Scope query to the organization
+            query = db.query(Device)
+            if organization_id is not None:
+                query = query.filter(Device.organization_id == organization_id)
+            devices = query.all()
             for dev in devices:
                 summaries = (
                     db.query(DeviceDailySummary)

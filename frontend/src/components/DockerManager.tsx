@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Box,
@@ -16,8 +16,14 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
-import { API_CONFIG } from '../config/apiConfig';
-import axiosInstance from '../config/axiosInstance';
+import {
+    useContainers,
+    useContainerLogs,
+    useContainerHistory,
+    useContainerUsage,
+    useContainerAction,
+    useDockerPrune
+} from '../hooks/useDocker';
 
 // --- Interfaces ---
 
@@ -211,7 +217,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
 }) => {
     const logsEndRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (logsEndRef.current) {
             logsEndRef.current.scrollIntoView({ behavior: "smooth" });
         }
@@ -428,131 +434,55 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
 // --- Main DockerManager Component ---
 
 const DockerManager: React.FC = () => {
-    const [containers, setContainers] = useState<DockerContainer[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [history, setHistory] = useState<ContainerHistoryPoint[]>([]);
-    const [usage, setUsage] = useState<ContainerUsage | null>(null);
-    const [logs, setLogs] = useState<string[]>([]);
-    const [logsLoading, setLogsLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    const fetchContainers = useCallback(async () => {
-        try {
-            if (!localStorage.getItem('statsea_cache_containers')) {
-                setLoading(true);
-            }
-            const response = await axiosInstance.get(API_CONFIG.ENDPOINTS.DOCKER.CONTAINERS);
-            const data = Array.isArray(response.data) ? response.data : [];
-            setContainers(data);
-            localStorage.setItem('statsea_cache_containers', JSON.stringify(data));
-        } catch (error) {
-            console.error("Error fetching containers:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    // TanStack Query hooks
+    const { data: containersRaw = [], isLoading: loading } = useContainers();
+    const containers: DockerContainer[] = Array.isArray(containersRaw) ? containersRaw : [];
 
-    const fetchLogs = useCallback(async (containerId: string) => {
-        if (!containerId) return;
-        setLogsLoading(true);
-        try {
-            const response = await axiosInstance.get(`${API_CONFIG.ENDPOINTS.DOCKER.LOGS(containerId)}?tail=100`);
-            setLogs(response.data.logs || []);
-        } catch (error) {
-            console.error("Failed to fetch logs:", error);
-        } finally {
-            setLogsLoading(false);
-        }
-    }, []);
+    const { data: logs = [], isLoading: logsLoading } = useContainerLogs(selectedId);
 
-    const fetchHistory = useCallback(async (containerId: string) => {
-        try {
-            const response = await axiosInstance.get(`${API_CONFIG.ENDPOINTS.DOCKER.HISTORY(containerId)}?minutes=60`);
-            setHistory(response.data || []);
-        } catch (error) {
-            console.error("Failed to fetch history:", error);
-        }
-    }, []);
+    const { data: history = [] } = useContainerHistory(selectedId) as { data: ContainerHistoryPoint[] };
+    const { data: usage = null } = useContainerUsage(selectedId) as { data: ContainerUsage | null };
 
-    const fetchUsage = useCallback(async (containerId: string) => {
-        try {
-            const response = await axiosInstance.get(API_CONFIG.ENDPOINTS.DOCKER.USAGE(containerId));
-            setUsage(response.data);
-        } catch (error) {
-            console.error("Failed to fetch usage:", error);
-        }
-    }, []);
+    const containerActionMutation = useContainerAction();
+    const pruneMutation = useDockerPrune();
 
-    const handleAction = useCallback(async (containerId: string, action: string) => {
+    const handleAction = async (containerId: string, action: string) => {
         setActionLoading(`${containerId}-${action}`);
         try {
-            const response = await axiosInstance.post(`${API_CONFIG.ENDPOINTS.DOCKER.CONTAINERS}/${containerId}/action`, { action });
-            if (response.data.status === "success") {
+            const result = await containerActionMutation.mutateAsync({ containerId, action });
+            if (result.status === "success") {
                 toast.success(`Container ${action}ed successfully`);
-                fetchContainers();
             } else {
-                toast.error(response.data.message || `Failed to ${action} container`);
+                toast.error(result.message || `Failed to ${action} container`);
             }
         } catch {
             toast.error(`Error performing ${action}`);
         } finally {
             setActionLoading(null);
         }
-    }, [fetchContainers]);
+    };
 
-    const handlePrune = useCallback(async () => {
+    const handlePrune = async () => {
         if (!window.confirm("Are you sure you want to remove all stopped containers? This action cannot be undone.")) return;
 
         const toastId = toast.loading("Pruning stopped containers...");
         try {
-            const response = await axiosInstance.post(API_CONFIG.ENDPOINTS.DOCKER.PRUNE);
-            const result = response.data;
+            const result = await pruneMutation.mutateAsync();
             if (result.error) throw new Error(result.error);
 
             const deletedCount = result.ContainersDeleted?.length || 0;
             const spaceReclaimed = formatBytes(result.SpaceReclaimed || 0);
 
             toast.success(`Pruned ${deletedCount} containers. Reclaimed ${spaceReclaimed}`, { id: toastId });
-            fetchContainers();
         } catch (error) {
             console.error("Prune error:", error);
             toast.error("Failed to prune containers", { id: toastId });
         }
-    }, [fetchContainers]);
-
-    useEffect(() => {
-        // Load from cache initially
-        const cachedContainers = localStorage.getItem('statsea_cache_containers');
-        if (cachedContainers) {
-            setContainers(JSON.parse(cachedContainers));
-            setLoading(false);
-        }
-        fetchContainers();
-        const interval = setInterval(fetchContainers, 3000);
-        return () => clearInterval(interval);
-    }, [fetchContainers]);
-
-    useEffect(() => {
-        if (selectedId) {
-            fetchLogs(selectedId);
-            fetchHistory(selectedId);
-            fetchUsage(selectedId);
-
-            const intervals = [
-                setInterval(() => fetchLogs(selectedId), 5000),
-                setInterval(() => fetchHistory(selectedId), 10000),
-                setInterval(() => fetchUsage(selectedId), 60000)
-            ];
-
-            return () => intervals.forEach(clearInterval);
-        } else {
-            setLogs([]);
-            setHistory([]);
-            setUsage(null);
-        }
-    }, [selectedId, fetchLogs, fetchHistory, fetchUsage]);
+    };
 
     const selectedContainer = useMemo(() =>
         containers.find(c => c.id === selectedId), [containers, selectedId]

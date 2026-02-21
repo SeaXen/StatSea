@@ -1,4 +1,5 @@
 import re
+import bleach
 
 
 def sanitize_string(text: str | None, max_length: int = 255) -> str | None:
@@ -11,9 +12,8 @@ def sanitize_string(text: str | None, max_length: int = 255) -> str | None:
     if text is None:
         return None
 
-    # Strip HTML tags using regex
-    clean = re.compile("<.*?>")
-    text = re.sub(clean, "", text)
+    # Strip HTML tags using bleach
+    text = bleach.clean(text, tags=[], attributes={}, strip=True)
 
     # Trim whitespace
     text = text.strip()

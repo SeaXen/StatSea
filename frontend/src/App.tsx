@@ -1,13 +1,17 @@
 import { useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { queryClient } from './config/queryClient';
 import { Activity, Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Toaster } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { TopDevicesWidget } from './components/TopDevicesWidget';
 import { ActiveConnectionsWidget } from './components/ActiveConnectionsWidget';
 import { CommandPalette } from './components/CommandPalette';
 import { SecurityAlertsWidget } from './components/SecurityAlertsWidget';
+import { BandwidthSummaryWidget } from './components/BandwidthSummaryWidget';
 import { ConnectionGlobe } from './components/ConnectionGlobe';
 import TopStatsRow from './components/TopStatsRow';
 import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
@@ -28,7 +32,9 @@ const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'))
 const DockerManager = lazy(() => import('./components/DockerManager'));
 const UserManagement = lazy(() => import('./components/UserManagement').then(m => ({ default: m.UserManagement })));
 const SpeedtestPage = lazy(() => import('./components/SpeedtestPage'));
+const BandwidthPage = lazy(() => import('./components/BandwidthPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
+const DeviceBandwidthPage = lazy(() => import('./components/DeviceBandwidthPage'));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const { token, isLoading } = useAuth();
@@ -144,14 +150,17 @@ const Dashboard = () => {
             />
 
             {/* Bottom Widgets Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-1">
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-4">
+                <div className="col-span-1">
+                    <BandwidthSummaryWidget />
+                </div>
+                <div className="col-span-1">
                     <TopDevicesWidget />
                 </div>
-                <div className="lg:col-span-1">
+                <div className="col-span-1">
                     <ActiveConnectionsWidget />
                 </div>
-                <div className="lg:col-span-1">
+                <div className="col-span-1">
                     <SecurityAlertsWidget />
                 </div>
             </div>
@@ -164,22 +173,25 @@ import { ThemeProvider } from './context/ThemeContext';
 export default function App() {
     return (
         <ErrorBoundary>
-            <BrowserRouter>
-                <ThemeProvider>
-                    <AuthProvider>
-                        <WebSocketProvider>
-                            <Routes>
-                                <Route path="/login" element={<LoginPage />} />
-                                <Route path="/*" element={
-                                    <ProtectedRoute>
-                                        <AppContent />
-                                    </ProtectedRoute>
-                                } />
-                            </Routes>
-                        </WebSocketProvider>
-                    </AuthProvider>
-                </ThemeProvider>
-            </BrowserRouter>
+            <QueryClientProvider client={queryClient}>
+                <BrowserRouter>
+                    <ThemeProvider>
+                        <AuthProvider>
+                            <WebSocketProvider>
+                                <Routes>
+                                    <Route path="/login" element={<LoginPage />} />
+                                    <Route path="/*" element={
+                                        <ProtectedRoute>
+                                            <AppContent />
+                                        </ProtectedRoute>
+                                    } />
+                                </Routes>
+                            </WebSocketProvider>
+                        </AuthProvider>
+                    </ThemeProvider>
+                </BrowserRouter>
+                <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+            </QueryClientProvider>
         </ErrorBoundary>
     );
 }
@@ -189,6 +201,7 @@ function AppContent() {
     const [commandOpen, setCommandOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [selectedDeviceMac, setSelectedDeviceMac] = useState<string | null>(null);
 
     return (
         <div className="flex min-h-screen bg-background text-foreground font-sans selection:bg-primary/30">
@@ -224,12 +237,14 @@ function AppContent() {
                         }>
                             <div key={activeTab} className="page-enter">
                                 {activeTab === 'dashboard' && <Dashboard />}
-                                {activeTab === 'devices' && <DevicesPage />}
+                                {activeTab === 'devices' && <DevicesPage onDeviceHistory={(mac: string) => { setSelectedDeviceMac(mac); setActiveTab('deviceBandwidth'); }} />}
                                 {activeTab === 'network' && <NetworkMap />}
                                 {activeTab === 'geo' && <ConnectionGlobe />}
                                 {activeTab === 'analytics' && <AnalyticsDashboard />}
                                 {activeTab === 'containers' && <DockerManager />}
                                 {activeTab === 'speedtest' && <SpeedtestPage />}
+                                {activeTab === 'bandwidth' && <BandwidthPage />}
+                                {activeTab === 'deviceBandwidth' && <DeviceBandwidthPage macAddress={selectedDeviceMac} onBack={() => setActiveTab('devices')} />}
                                 {activeTab === 'users' && <UserManagement />}
                                 {activeTab === 'settings' && <SettingsPage />}
                             </div>

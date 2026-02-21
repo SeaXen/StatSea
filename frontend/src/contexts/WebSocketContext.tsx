@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { toast } from 'sonner';
 import { getWsUrl } from '../config/apiConfig';
+import { useAuth } from '../context/AuthContext';
 
 export interface Notification {
     id: string;
@@ -42,15 +43,19 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         setNotifications([]);
     };
 
+    const { token } = useAuth();
+
     useEffect(() => {
         let ws: WebSocket | null = null;
         let eventWs: WebSocket | null = null;
         let reconnectTimeout: NodeJS.Timeout;
         let isMounted = true;
 
+        if (!token) return;
+
         const connect = () => {
-            const wsUrl = getWsUrl('/ws/live');
-            const eventWsUrl = getWsUrl('/ws/events');
+            const wsUrl = `${getWsUrl('/ws/live')}?token=${token}`;
+            const eventWsUrl = `${getWsUrl('/ws/events')}?token=${token}`;
 
             ws = new WebSocket(wsUrl);
             eventWs = new WebSocket(eventWsUrl);
@@ -138,7 +143,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
             if (eventWs) eventWs.close();
             clearTimeout(reconnectTimeout);
         };
-    }, []);
+    }, [token]);
 
     return (
         <WebSocketContext.Provider value={{

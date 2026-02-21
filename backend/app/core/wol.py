@@ -1,4 +1,7 @@
+import logging
 import socket
+
+logger = logging.getLogger(__name__)
 
 
 def send_magic_packet(mac_address: str, ip_address: str = "255.255.255.255", port: int = 9):
@@ -31,5 +34,5 @@ def wake_device(mac: str):
         send_magic_packet(mac)
         return True
     except Exception as e:
-        print(f"Failed to send WoL packet to {mac}: {e}")
+        logger.error(f"Failed to send WoL packet to {mac}: {e}")
         return False

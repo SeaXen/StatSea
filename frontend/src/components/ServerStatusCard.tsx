@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
     Server,
@@ -10,9 +10,8 @@ import {
     Thermometer
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { API_CONFIG } from '../config/apiConfig';
-import axiosInstance from '../config/axiosInstance';
 import { WidgetSkeleton } from './skeletons/WidgetSkeleton';
+import { useSystemInfo } from '../hooks/useSystem';
 
 interface SystemInfo {
     hostname: string;
@@ -31,26 +30,12 @@ interface ServerStatusCardProps {
 }
 
 const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ onDetailClick }) => {
-    const [info, setInfo] = useState<SystemInfo | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-
-    useEffect(() => {
-        const fetchInfo = async () => {
-            try {
-                const res = await axiosInstance.get(API_CONFIG.ENDPOINTS.SYSTEM.INFO);
-                setInfo(res.data);
-                setLoading(false);
-                setLastUpdated(new Date());
-            } catch (error) {
-                console.error('Failed to fetch system info:', error);
-            }
-        };
-
-        fetchInfo();
-        const interval = setInterval(fetchInfo, 5000);
-        return () => clearInterval(interval);
-    }, []);
+    const { data: info, isLoading: loading, dataUpdatedAt } = useSystemInfo() as {
+        data: SystemInfo | undefined;
+        isLoading: boolean;
+        dataUpdatedAt: number;
+    };
+    const lastUpdated = useMemo(() => new Date(dataUpdatedAt), [dataUpdatedAt]);
 
     const formatBytes = (bytes: number) => {
         if (bytes === 0) return '0 B';

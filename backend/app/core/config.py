@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     PROJECT_NAME: str = "StatSea"
     PROJECT_VERSION: str = "0.1.0"
+    ENVIRONMENT: str = "development"
+    PASSWORD_MIN_LENGTH: int = 8
 
     # Security
     JWT_SECRET_KEY: str = "statsea-jwt-secret-key-change-me-at-least-thirty-two-chars"
@@ -26,6 +28,11 @@ class Settings(BaseSettings):
 
     # Features
     DEBUG: bool = False
+    NETWORK_MONITOR_INTERVAL: int = 60
+
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    LOG_FILE: str = "logs/statsea.log"
 
     class Config:
         env_file = ".env"

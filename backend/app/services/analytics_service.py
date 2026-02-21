@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import sqlalchemy.exc
@@ -18,13 +18,16 @@ docker_usage_cache = TTLCache(maxsize=100, ttl=60)  # 1 minute
 
 class AnalyticsService:
     @staticmethod
-    def get_network_history(db: Session, limit: int = 60) -> list[dict[str, Any]]:
+    def get_network_history(db: Session, organization_id: int = None, limit: int = 60) -> list[dict[str, Any]]:
         """
-        Retrieves recent bandwidth history snapshots.
+        Retrieves recent bandwidth history snapshots, scoped to organization.
         """
         try:
+            query = db.query(models.BandwidthHistory)
+            if organization_id is not None and hasattr(models.BandwidthHistory, 'organization_id'):
+                query = query.filter(models.BandwidthHistory.organization_id == organization_id)
             history = (
-                db.query(models.BandwidthHistory)
+                query
                 .order_by(models.BandwidthHistory.timestamp.desc())
                 .limit(limit)
                 .all()
@@ -90,7 +93,7 @@ class AnalyticsService:
         Retrieves historical performance metrics for a specific Docker container.
         """
         try:
-            since = datetime.now() - timedelta(minutes=minutes)
+            since = datetime.now(timezone.utc) - timedelta(minutes=minutes)
             metrics = (
                 db.query(models.DockerContainerMetric)
                 .filter(
@@ -120,12 +123,12 @@ class AnalyticsService:
         if container_id in docker_usage_cache:
             return docker_usage_cache[container_id]
 
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         periods = {
             "daily": now - timedelta(days=1),
             "monthly": now - timedelta(days=30),
             "yearly": now - timedelta(days=365),
-            "all_time": datetime(2000, 1, 1),
+            "all_time": datetime(2000, 1, 1, tzinfo=timezone.utc),
         }
 
         result = {}

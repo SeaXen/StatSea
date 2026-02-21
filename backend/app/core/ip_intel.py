@@ -9,20 +9,26 @@ cache = TTLCache(maxsize=1000, ttl=86400)
 logger = logging.getLogger("statsea.ip_intel")
 
 
+import ipaddress
+
 def get_ip_info(ip_address: str):
     """
     Retrieves WHOIS and location information for an IP address.
     Returns cached result if available.
     """
-    # Skip private IPs
-    if ip_address.startswith(("192.168.", "10.", "172.16.", "127.")):
-        return {
-            "ip": ip_address,
-            "private": True,
-            "org": "Local Network",
-            "country": "LAN",
-            "asn": "N/A",
-        }
+    # Skip private IPs using robust check
+    try:
+        ip_obj = ipaddress.ip_address(ip_address)
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local:
+            return {
+                "ip": ip_address,
+                "private": True,
+                "org": "Local Network",
+                "country": "LAN",
+                "asn": "N/A",
+            }
+    except ValueError:
+        return {"ip": ip_address, "error": "Invalid IP", "org": "Unknown", "country": "Unknown"}
 
     if ip_address in cache:
         return cache[ip_address]

@@ -10,6 +10,7 @@ from ..db import database
 from ..models import models
 from .logging import get_logger
 from .security import security_engine
+from .config import settings
 
 logger = get_logger("NetworkMonitor")
 
@@ -121,11 +122,11 @@ class NetworkMonitor:
                 # 1. Capture latency & check anomalies
                 await self.log_latency(db)
 
-                # 3. Security Checks (every loop for now, maybe throttle later)
+                # 3. Security Checks (every 30s)
                 security_engine.detect_port_changes(db)
 
                 # Wait for next interval
-                await asyncio.sleep(5)
+                await asyncio.sleep(settings.NETWORK_MONITOR_INTERVAL)
         except asyncio.CancelledError:
             logger.info("Network Monitor: Loop cancelled.")
         except Exception:

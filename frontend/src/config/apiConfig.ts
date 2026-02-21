@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 // Basic API Configuration
-const API_PORT = import.meta.env.VITE_API_PORT || '8000';
+const API_PORT = import.meta.env.VITE_API_PORT || '8001';
 export const API_CONFIG = {
     BASE_URL: `http://${window.location.hostname}:${API_PORT}/api`,
     WS_URL: `ws://${window.location.hostname}:${API_PORT}/api`,
@@ -12,6 +12,7 @@ export const API_CONFIG = {
             PACKETS: '/analytics/packets',
             PREDICTION: '/analytics/prediction',
             ANOMALIES: '/analytics/anomalies',
+            HEATMAP: '/analytics/heatmap',
             HISTORY_SYSTEM: '/analytics/history/system',
             HISTORY_DEVICE: (mac: string) => `/analytics/history/device/${mac}`,
             YEARLY: '/analytics/yearly',
@@ -19,6 +20,7 @@ export const API_CONFIG = {
         SECURITY: {
             EVENTS: '/security/events',
             ALERTS: '/alerts',
+            RULES: '/alerts/rules',
             RESOLVE: (id: number) => `/alerts/${id}/resolve`,
         },
         NETWORK: {
@@ -53,6 +55,19 @@ export const API_CONFIG = {
         AUTH: {
             LOGOUT: '/auth/logout',
             ME: '/auth/me',
+        },
+        ADMIN: {
+            AUDIT_LOG: '/admin/audit-log',
+        },
+        BANDWIDTH: {
+            INTERFACES: '/bandwidth/interfaces',
+            SUMMARY: '/bandwidth/summary',
+            FIVEMINUTE: '/bandwidth/fiveminute',
+            HOURLY: '/bandwidth/hourly',
+            DAILY: '/bandwidth/daily',
+            MONTHLY: '/bandwidth/monthly',
+            YEARLY: '/bandwidth/yearly',
+            TOP: '/bandwidth/top',
         }
     }
 } as const; // Add 'as const' to infer literal types correctly

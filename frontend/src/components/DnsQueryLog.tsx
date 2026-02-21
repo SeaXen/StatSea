@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Activity, Globe } from 'lucide-react';
-import axiosInstance from '../config/axiosInstance';
-import { API_CONFIG } from '../config/apiConfig';
+import { useDnsLogs, useTopDomains } from '../hooks/useDns';
 
 interface DnsLog {
     id: number;
@@ -18,31 +17,9 @@ interface TopDomain {
 }
 
 const DnsQueryLog: React.FC = () => {
-    const [logs, setLogs] = useState<DnsLog[]>([]);
-    const [topDomains, setTopDomains] = useState<TopDomain[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    const fetchDnsData = async () => {
-        try {
-            const [logsRes, topRes] = await Promise.all([
-                axiosInstance.get(`${API_CONFIG.ENDPOINTS.DNS.LOGS}?limit=50`),
-                axiosInstance.get(`${API_CONFIG.ENDPOINTS.DNS.TOP}?limit=5`)
-            ]);
-
-            setLogs(logsRes.data);
-            setTopDomains(topRes.data);
-        } catch (error) {
-            console.error("Failed to fetch DNS data", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchDnsData();
-        const interval = setInterval(fetchDnsData, 5000); // Live update
-        return () => clearInterval(interval);
-    }, []);
+    const { data: logs = [], isLoading: logsLoading } = useDnsLogs(50) as { data: DnsLog[]; isLoading: boolean };
+    const { data: topDomains = [], isLoading: topLoading } = useTopDomains(5) as { data: TopDomain[]; isLoading: boolean };
+    const loading = logsLoading || topLoading;
 
     if (loading) return <div className="animate-pulse h-64 bg-gray-800/50 rounded-xl" />;
 

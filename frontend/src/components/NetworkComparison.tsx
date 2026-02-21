@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     Legend
@@ -8,8 +8,7 @@ import {
     ArrowRightLeft, Calendar, TrendingUp, TrendingDown, Activity,
     Timer
 } from 'lucide-react';
-import { API_CONFIG } from '../config/apiConfig';
-import axiosInstance from '../config/axiosInstance';
+import { useSystemHistory } from '../hooks/useAnalytics';
 
 interface HistoryPoint {
     timestamp: string;
@@ -33,8 +32,6 @@ interface MetricSummary {
 const NetworkComparison: React.FC = () => {
     const [rangeA, setRangeA] = useState('24h'); // 1h, 24h, 7d
     const [rangeB, setRangeB] = useState('prev_24h'); // prev_1h, prev_24h, prev_7d
-    const [data, setData] = useState<ComparisonData>({ periodA: [], periodB: [] });
-    const [loading, setLoading] = useState(false);
 
     // Helpers
     const formatBytes = (bytes: number) => {
@@ -72,33 +69,21 @@ const NetworkComparison: React.FC = () => {
         return { start, end };
     };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const datesA = getRangeDates(rangeA);
-                const datesB = getRangeDates(rangeB);
+    const datesA = useMemo(() => getRangeDates(rangeA), [rangeA]);
+    const datesB = useMemo(() => getRangeDates(rangeB), [rangeB]);
 
-                // Fetch concurrently
-                const [resA, resB] = await Promise.all([
-                    axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY_SYSTEM, {
-                        params: { start: datesA.start.toISOString(), end: datesA.end.toISOString() }
-                    }),
-                    axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.HISTORY_SYSTEM, {
-                        params: { start: datesB.start.toISOString(), end: datesB.end.toISOString() }
-                    })
-                ]);
+    const { data: periodAData = [], isLoading: loadingA } = useSystemHistory({
+        start: datesA.start.toISOString(),
+        end: datesA.end.toISOString(),
+    }) as { data: HistoryPoint[]; isLoading: boolean };
 
-                setData({ periodA: resA.data, periodB: resB.data });
-            } catch (error) {
-                console.error("Failed to fetch comparison data", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const { data: periodBData = [], isLoading: loadingB } = useSystemHistory({
+        start: datesB.start.toISOString(),
+        end: datesB.end.toISOString(),
+    }) as { data: HistoryPoint[]; isLoading: boolean };
 
-        fetchData();
-    }, [rangeA, rangeB]);
+    const loading = loadingA || loadingB;
+    const data: ComparisonData = { periodA: periodAData, periodB: periodBData };
 
     const calculateMetrics = (points: HistoryPoint[]): MetricSummary => {
         if (!points.length) return { totalUpload: 0, totalDownload: 0, avgUploadRate: 0, avgDownloadRate: 0 };

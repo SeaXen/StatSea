@@ -1,7 +1,10 @@
+import logging
 import os
 from datetime import datetime, timezone
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationService:
@@ -60,7 +63,7 @@ class NotificationService:
         try:
             requests.post(url, json=payload, timeout=5)
         except Exception as e:
-            print(f"Failed to send Telegram alert: {e}")
+            logger.error(f"Failed to send Telegram alert: {e}")
 
     def _send_telegram(self, title: str, description: str, severity: str):
         # Uses env var credentials
@@ -103,7 +106,7 @@ class NotificationService:
         try:
             requests.post(target_url, json=payload, timeout=5)
         except Exception as e:
-            print(f"Failed to send Discord alert: {e}")
+            logger.error(f"Failed to send Discord alert: {e}")
 
 
 notification_service = NotificationService()

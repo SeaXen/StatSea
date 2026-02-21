@@ -22,12 +22,14 @@ def subscribe_to_plan(
     """
     Simulates subscribing to a plan.
     """
-    if not current_user.is_admin: # Assuming org owner check is handled by app logic or we check role
-        # For now, simplistic check: only admins/owners can subscribe. 
-        # But get_current_org_id only ensures membership. 
-        # Real app needs permission check (RBAC). 
-        # Skipping for "stub".
-        pass
+    member = db.query(models.OrganizationMember).filter(
+        models.OrganizationMember.user_id == current_user.id,
+        models.OrganizationMember.organization_id == organization_id,
+        models.OrganizationMember.role == "owner"
+    ).first()
+    
+    if not member and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Only organization owners can subscribe to plans")
 
     try:
         org = BillingService.subscribe_org(db, organization_id, req.plan)

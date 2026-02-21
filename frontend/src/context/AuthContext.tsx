@@ -58,6 +58,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const logout = () => {
+        // Revoke the server-side refresh token before clearing local state
+        const rt = localStorage.getItem('statsea_refresh_token');
+        if (rt) {
+            axiosInstance.post('/auth/logout', { refresh_token: rt }).catch(() => {
+                // Best-effort: if the server call fails, still clear local state
+            });
+        }
         localStorage.removeItem('statsea_token');
         localStorage.removeItem('statsea_refresh_token');
         setToken(null);

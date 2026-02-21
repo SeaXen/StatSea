@@ -36,3 +36,4 @@ Thumbs.db
 test_ai.db
 .pytest_cache/
 coverage/
+.vite

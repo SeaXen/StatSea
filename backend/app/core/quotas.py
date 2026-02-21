@@ -1,10 +1,13 @@
-from datetime import datetime
+import logging
+from datetime import datetime, timezone
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..db.database import SessionLocal
 from ..models import models
+
+logger = logging.getLogger(__name__)
 
 
 def check_quotas(db: Session = None):
@@ -19,7 +22,7 @@ def check_quotas(db: Session = None):
 
     try:
         quotas = db.query(models.BandwidthQuota).all()
-        today = datetime.now().date()
+        today = datetime.now(timezone.utc).date()
         current_month_start = today.replace(day=1)
 
         for quota in quotas:
@@ -68,7 +71,7 @@ def check_quotas(db: Session = None):
                     _trigger_alert(db, device, "Monthly", monthly_usage, quota.monthly_limit_bytes)
 
     except Exception as e:
-        print(f"Error checking quotas: {e}")
+        logger.error(f"Error checking quotas: {e}")
     finally:
         if close_db:
             db.close()
@@ -86,7 +89,7 @@ def _trigger_alert(db: Session, device: models.Device, period: str, usage: int, 
     # Check for recent existing alert
     from datetime import timedelta
 
-    recent = datetime.now() - timedelta(hours=24)
+    recent = datetime.now(timezone.utc) - timedelta(hours=24)
 
     existing = (
         db.query(models.SecurityAlert)
@@ -115,4 +118,4 @@ def _trigger_alert(db: Session, device: models.Device, period: str, usage: int, 
     )
     db.add(alert)
     db.commit()
-    print(f"Quota Alert Triggered: {device.hostname} - {period} Limit Exceeded")
+    logger.info(f"Quota Alert Triggered: {device.hostname} - {period} Limit Exceeded")

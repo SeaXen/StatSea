@@ -10,6 +10,8 @@ from ..models.models import (
     DeviceMonthlySummary,
     DeviceYearlySummary,
     SystemDailySummary,
+    SystemInterfaceDailySummary,
+    SystemInterfaceMonthlySummary,
     SystemMonthlySummary,
     SystemNetworkHistory,
     SystemYearlySummary,
@@ -56,6 +58,40 @@ def aggregate_system_daily(db_session=None):
                 summary.packets_sent = stats.packets_sent or 0
                 summary.packets_recv = stats.packets_recv or 0
 
+            # --- Interface-level aggregation ---
+            interface_stats = (
+                db.query(
+                    SystemNetworkHistory.interface,
+                    func.sum(SystemNetworkHistory.bytes_sent).label("bytes_sent"),
+                    func.sum(SystemNetworkHistory.bytes_recv).label("bytes_recv"),
+                    func.sum(SystemNetworkHistory.packets_sent).label("packets_sent"),
+                    func.sum(SystemNetworkHistory.packets_recv).label("packets_recv"),
+                )
+                .filter(func.date(SystemNetworkHistory.timestamp) == target_date)
+                .group_by(SystemNetworkHistory.interface)
+                .all()
+            )
+
+            for istat in interface_stats:
+                if istat.bytes_sent or istat.bytes_recv:
+                    isummary = (
+                        db.query(SystemInterfaceDailySummary)
+                        .filter(
+                            SystemInterfaceDailySummary.date == target_date,
+                            SystemInterfaceDailySummary.interface == istat.interface
+                        )
+                        .first()
+                    )
+
+                    if not isummary:
+                        isummary = SystemInterfaceDailySummary(date=target_date, interface=istat.interface)
+                        db.add(isummary)
+
+                    isummary.bytes_sent = istat.bytes_sent or 0
+                    isummary.bytes_recv = istat.bytes_recv or 0
+                    isummary.packets_sent = istat.packets_sent or 0
+                    isummary.packets_recv = istat.packets_recv or 0
+
         db.commit()
     except Exception as e:
         logger.error(f"System daily aggregation failed: {e}")
@@ -90,6 +126,34 @@ def aggregate_system_monthly(db_session=None):
                 db.add(summary)
             summary.bytes_sent = stats.bytes_sent or 0
             summary.bytes_recv = stats.bytes_recv or 0
+            
+        # --- Interface-level aggregation ---
+        interface_stats = (
+            db.query(
+                SystemInterfaceDailySummary.interface,
+                func.sum(SystemInterfaceDailySummary.bytes_sent).label("bytes_sent"),
+                func.sum(SystemInterfaceDailySummary.bytes_recv).label("bytes_recv"),
+            )
+            .filter(func.strftime("%Y-%m", SystemInterfaceDailySummary.date) == month_str)
+            .group_by(SystemInterfaceDailySummary.interface)
+            .all()
+        )
+
+        for istat in interface_stats:
+            if istat.bytes_sent or istat.bytes_recv:
+                isummary = (
+                    db.query(SystemInterfaceMonthlySummary)
+                    .filter(
+                        SystemInterfaceMonthlySummary.month == month_str,
+                        SystemInterfaceMonthlySummary.interface == istat.interface
+                    )
+                    .first()
+                )
+                if not isummary:
+                    isummary = SystemInterfaceMonthlySummary(month=month_str, interface=istat.interface)
+                    db.add(isummary)
+                isummary.bytes_sent = istat.bytes_sent or 0
+                isummary.bytes_recv = istat.bytes_recv or 0
         db.commit()
     except Exception as e:
         logger.error(f"System monthly aggregation failed: {e}")
