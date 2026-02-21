@@ -1,14 +1,12 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/lucide-react/lucide/main/icons/network.svg" alt="StatSea Logo" width="120" />
-
-  # 🌊 StatSea
-  **Premium Real-time Network Intelligence & Telemetry Dashboard**
+  <h1>🌊 StatSea</h1>
+  <strong>Premium Real-time Network Intelligence & Telemetry Dashboard</strong>
 
   <p align="center">
     <a href="#features">Features</a> •
     <a href="#tech-stack">Tech Stack</a> •
-    <a href="#installation">Installation</a> •
-    <a href="#architecture">Architecture</a>
+    <a href="#getting-started">Getting Started</a> •
+    <a href="#architecture-overview">Architecture</a>
   </p>
 
   ![License](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -21,10 +19,7 @@
 
 **StatSea** is a state-of-the-art network monitoring dashboard precision-engineered for home-lab enthusiasts, sysadmins, and developers. Built with a stunning modern glassmorphism UI, it provides deep packet inspection, real-time bandwidth metrics, device discovery, and Docker container network tracking all in one place.
 
-<div align="center">
-  <!-- TODO: Add actual screenshot path here -->
-  <img src="https://via.placeholder.com/1000x600/09090b/4f46e5?text=StatSea+Dashboard+Preview" alt="StatSea Dashboard" width="100%" />
-</div>
+> **📸 Note to developer:** Take a screenshot of your beautiful dashboard and place it in the repository (e.g., `docs/screenshot.png`), then add `![StatSea Dashboard](docs/screenshot.png)` here!
 
 ## ✨ Key Features
 
