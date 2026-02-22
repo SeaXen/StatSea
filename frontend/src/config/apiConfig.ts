@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 // Basic API Configuration
-const API_PORT = import.meta.env.VITE_API_PORT || '8001';
+const API_PORT = import.meta.env.VITE_API_PORT || '21081';
 export const API_CONFIG = {
     BASE_URL: `http://${window.location.hostname}:${API_PORT}/api`,
     WS_URL: `ws://${window.location.hostname}:${API_PORT}/api`,
