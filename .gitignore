@@ -38,9 +38,11 @@ coverage/
 .vite/
 
 # Debug / Error logs (dev artifacts)
+*.log
 *_errors*.txt
 *_output*.txt
 debug_*.txt
+debug_*.py
 build_log.txt
 lint_errors.txt
 lint_output.txt
