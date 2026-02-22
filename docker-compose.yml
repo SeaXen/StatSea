@@ -1,6 +1,8 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      network: host
     cap_add:
       - NET_RAW
       - NET_ADMIN
@@ -15,7 +17,9 @@ services:
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      network: host
     ports:
       - "21080:8080"
     restart: unless-stopped

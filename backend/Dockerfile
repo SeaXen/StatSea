@@ -15,8 +15,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Allow python to use raw sockets for scapy without being root
-RUN setcap cap_net_raw,cap_net_admin=eip /usr/local/bin/python
+# Note: Raw socket permissions are granted via cap_add in docker-compose.yml
+# No setcap needed when container has NET_RAW and NET_ADMIN capabilities
 
 # Copy application code
 COPY . .
@@ -27,8 +27,6 @@ RUN mkdir -p /app/data
 # Create non-root user and set ownership
 RUN useradd -m -r statsea && \
     chown -R statsea:statsea /app
-
-USER statsea
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \

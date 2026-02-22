@@ -1,6 +1,6 @@
 # Frontend Dockerfile - Multi-stage
 # Stage 1: Build
-FROM node:20-slim as build
+FROM node:20-slim AS build
 
 WORKDIR /app
 
