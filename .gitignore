@@ -9,9 +9,8 @@ venv/
 
 # Node
 node_modules/
-dist/
 
-# Data
+# Data & Databases
 *.db
 data/
 
@@ -25,15 +24,25 @@ data/
 .idea/
 *.swp
 
-# Agent
+# Agent / AI
 /.agent
+/.gemini
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Test artifacts
-test_ai.db
+# Test & Build artifacts
 .pytest_cache/
 coverage/
-.vite
+.vite/
+
+# Debug / Error logs (dev artifacts)
+*_errors*.txt
+*_output*.txt
+debug_*.txt
+build_log.txt
+lint_errors.txt
+lint_output.txt
+pytest_error.txt
+ruff_errors*.txt

@@ -1,4 +1,0 @@
-src/App.tsx(9,18): error TS6133: 'AnimatePresence' is declared but its value is never read.
-src/App.tsx(187,59): error TS2322: Type '"bottom-right"' is not assignable to type 'DevtoolsPosition | undefined'.
-src/components/DevicesPage.tsx(1,20): error TS6133: 'useEffect' is declared but its value is never read.
-src/config/queryClient.ts(7,13): error TS2353: Object literal may only specify known properties, and 'cacheTime' does not exist in type 'OmitKeyof<QueryObserverOptions<unknown, Error, unknown, unknown, readonly unknown[], never>, "suspense" | "queryKey", "strictly">'.
