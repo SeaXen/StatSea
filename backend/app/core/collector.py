@@ -703,8 +703,10 @@ class PacketCollector:
                     return
             except requests.exceptions.RequestException as e:
                 logger.error(f"GeoIP resolution network error for {ip}: {e}")
+                return
             except Exception:
                 logger.exception(f"Unexpected GeoIP resolution error for {ip}")
+                return
 
         with self.stats_lock:
             if ip in self.external_connections:

@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     curl \
     libcap2-bin \
+    iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -35,5 +36,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
 # Expose port (Internal FastAPI port)
 EXPOSE 21081
 
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "21081", "--workers", "2"]
+# Run the application (Single worker to prevent SQLite lock races)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "21081"]
