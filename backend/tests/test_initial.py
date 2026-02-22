@@ -28,7 +28,7 @@ def test_admin_users_list(auth_client):
     """Admin can list users."""
     response = auth_client.get("/api/admin/users")
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert "items" in response.json()
 
 
 def test_settings_get(auth_client):
@@ -45,4 +45,4 @@ def test_alerts(auth_client):
     """Security alerts endpoint is accessible for admin users."""
     response = auth_client.get("/api/alerts")
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert "items" in response.json()

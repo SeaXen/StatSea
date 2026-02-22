@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import requests
 import speedtest
@@ -141,7 +141,7 @@ class SpeedtestService:
                     "country": "Anycast",
                     "cc": "Unknown",
                 },
-                "timestamp": datetime.now(),
+                "timestamp": datetime.now(timezone.utc),
                 "provider": "cloudflare",
             }
 
@@ -242,7 +242,7 @@ class SpeedtestService:
                 "ping": st.results.ping,
                 "server": st.results.server,
                 "client": st.results.client,
-                "timestamp": datetime.now(),
+                "timestamp": datetime.now(timezone.utc),
                 "provider": "ookla",
             }
         except Exception as e:
@@ -250,7 +250,7 @@ class SpeedtestService:
             raise e
 
     async def run_speedtest(self, db: Session, server_id: int = None, provider: str = "ookla", progress_callback=None):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         try:
             # Helper to run blocking function with callback
             def run_with_callback():

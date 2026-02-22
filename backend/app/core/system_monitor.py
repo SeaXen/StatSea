@@ -1,6 +1,6 @@
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import psutil
 import sqlalchemy.exc
@@ -50,7 +50,7 @@ class SystemMonitor:
 
     def _capture_snapshot(self):
         current_net_io = psutil.net_io_counters(pernic=True)
-        timestamp = datetime.now()
+        timestamp = datetime.now(timezone.utc)
 
         db = SessionLocal()
         try:

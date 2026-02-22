@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -80,7 +80,7 @@ def get_system_network_history(
             models.SystemNetworkHistory.timestamp <= end,
         )
     else:
-        since = datetime.now() - timedelta(hours=hours)
+        since = datetime.now(timezone.utc) - timedelta(hours=hours)
         query = query.filter(models.SystemNetworkHistory.timestamp >= since)
     history = query.order_by(models.SystemNetworkHistory.timestamp.asc()).all()
     return [

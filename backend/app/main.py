@@ -158,7 +158,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# CORS origin validation
+# CORS setup with safe wildcard/LAN support in development
 valid_origins = app_settings.CORS_ORIGINS
 if app_settings.ENVIRONMENT != "development" and "*" in valid_origins:
     logger.critical("SECURITY BREACH PREVENTION: Wildcard CORS origin (*) is not allowed in production.")
@@ -166,7 +166,8 @@ if app_settings.ENVIRONMENT != "development" and "*" in valid_origins:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=app_settings.CORS_ORIGINS,
+    allow_origins=[] if "*" in valid_origins or app_settings.ENVIRONMENT == "development" else valid_origins,
+    allow_origin_regex=".*" if ("*" in valid_origins or app_settings.ENVIRONMENT == "development") else None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

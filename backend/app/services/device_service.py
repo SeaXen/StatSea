@@ -1,5 +1,5 @@
 import sqlalchemy.exc
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from ..schemas import defaults as schemas
 from ..core.exceptions import DeviceNotFoundException, StatSeaException
@@ -19,7 +19,7 @@ class DeviceService:
         If empty, seeds mock devices for initial setup.
         """
         try:
-            query = db.query(models.Device).filter(models.Device.organization_id == organization_id)
+            query = db.query(models.Device).filter(models.Device.organization_id == organization_id).options(selectinload(models.Device.traffic_logs))
             
             # Check for empty db and seed if necessary (only on first page query)
             if cursor is None:

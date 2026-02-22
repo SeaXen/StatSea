@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends
@@ -33,7 +33,7 @@ async def get_alerts(
         severities = severity.upper().split(",")
         query = query.filter(models.SecurityAlert.severity.in_(severities))
     if timeframe:
-        since = datetime.now()
+        since = datetime.now(timezone.utc)
         if timeframe == "1h":
             since -= timedelta(hours=1)
         elif timeframe == "24h":

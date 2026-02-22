@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -30,9 +30,9 @@ def run_cleanup_job():
         retention_events = get_retention_days("retention_days_events", 30)
 
         # Cutoffs
-        cutoff_raw = datetime.now() - timedelta(days=retention_raw)
-        cutoff_daily = datetime.now() - timedelta(days=retention_daily)
-        cutoff_events = datetime.now() - timedelta(days=retention_events)
+        cutoff_raw = datetime.now(timezone.utc) - timedelta(days=retention_raw)
+        cutoff_daily = datetime.now(timezone.utc) - timedelta(days=retention_daily)
+        cutoff_events = datetime.now(timezone.utc) - timedelta(days=retention_events)
 
         logger.info(
             f"Running cleanup: raw (> {cutoff_raw}), daily (> {cutoff_daily}), events (> {cutoff_events})"

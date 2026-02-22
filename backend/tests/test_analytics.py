@@ -22,13 +22,13 @@ def test_network_topology(auth_client):
 def test_dns_logs(auth_client):
     response = auth_client.get("/api/analytics/dns-logs")
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert "items" in response.json()
 
 
 def test_device_logs(auth_client):
     response = auth_client.get("/api/analytics/device-logs")
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert "items" in response.json()
 
 
 def test_analytics_summary(auth_client):

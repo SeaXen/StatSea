@@ -67,7 +67,7 @@ class SchedulerService:
             )
             logger.info("Bandwidth quota check scheduled (Every 15 mins).")
 
-    def schedule_speedtest(self, interval_hours: int = 0):
+    def schedule_speedtest(self, interval_hours: float = 0):
         """Schedules the speedtest job. If interval_hours is 0, removes the job."""
         if self.scheduler.get_job(self.job_id):
             self.scheduler.remove_job(self.job_id)

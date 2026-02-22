@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -19,7 +19,7 @@ def check_device_availability():
     """
     db: Session = SessionLocal()
     try:
-        threshold_time = datetime.now() - timedelta(minutes=OFFLINE_THRESHOLD_MINUTES)
+        threshold_time = datetime.now(timezone.utc) - timedelta(minutes=OFFLINE_THRESHOLD_MINUTES)
 
         # Find devices that are currently marked online but haven't been seen since threshold
         offline_candidates = (
@@ -41,7 +41,7 @@ def check_device_availability():
 
             # Log status change
             status_log = DeviceStatusLog(
-                device_id=device.id, status="offline", timestamp=datetime.now()
+                device_id=device.id, status="offline", timestamp=datetime.now(timezone.utc)
             )
             db.add(status_log)
 

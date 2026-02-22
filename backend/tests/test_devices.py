@@ -9,7 +9,7 @@ from app.models.models import Device
 def test_list_devices_empty(auth_client):
     response = auth_client.get("/api/devices")
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert "items" in response.json()
 
 
 def test_list_devices_with_data(auth_client, db_session):
@@ -25,7 +25,7 @@ def test_list_devices_with_data(auth_client, db_session):
     response = auth_client.get("/api/devices")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) >= 1
+    assert len(data["items"]) >= 1
 
 
 def test_get_device_not_found(auth_client):

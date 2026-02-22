@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import sqlalchemy.exc
 from sqlalchemy.orm import Session
@@ -21,7 +21,7 @@ class AuthService:
         """
         user = db.query(models.User).filter(models.User.username == username).first()
         
-        if user and user.locked_until and user.locked_until > datetime.utcnow():
+        if user and user.locked_until and user.locked_until > datetime.now(timezone.utc):
             logger.warning(f"Auth failure: Account locked for {username}")
             raise AuthenticationException("Account is locked due to too many failed attempts. Try again later.")
 
@@ -29,7 +29,7 @@ class AuthService:
             if user:
                 user.failed_login_attempts += 1
                 if user.failed_login_attempts >= 5:
-                    user.locked_until = datetime.utcnow() + timedelta(minutes=15)
+                    user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
                     logger.warning(f"Account locked: Too many failed attempts for {username}")
                 db.commit()
             logger.warning(f"Auth failure: Incorrect credentials for {username}")
@@ -63,7 +63,7 @@ class AuthService:
             )
             db.add(db_refresh_token)
 
-            user.last_login = datetime.utcnow()
+            user.last_login = datetime.now(timezone.utc)
             db.commit()
 
             access_token = create_access_token(data={"sub": user.username})
@@ -100,7 +100,7 @@ class AuthService:
             .filter(
                 models.RefreshToken.token == refresh_token,
                 models.RefreshToken.is_revoked == False,
-                models.RefreshToken.expires_at > datetime.utcnow(),
+                models.RefreshToken.expires_at > datetime.now(timezone.utc),
             )
             .first()
         )

@@ -79,8 +79,6 @@ class PacketCollector:
         self.active_sessions: dict[str, float] = {}  # session_key -> last_seen
         self.SESSION_TIMEOUT = 30  # seconds
         self.connection_types: dict[str, int] = {"internal": 0, "external": 0}
-        self.SESSION_TIMEOUT = 30  # seconds
-        self.connection_types: dict[str, int] = {"internal": 0, "external": 0}
         self.bytes_per_protocol: dict[str, int] = {}  # protocol -> total bytes
 
         # Buffer for DB persistence (MAC -> {upload, download})
@@ -95,7 +93,7 @@ class PacketCollector:
         """Sets the callback for broadcasting events."""
         self.event_callback = callback
         try:
-            self._loop = asyncio.get_event_loop()
+            self._loop = asyncio.get_running_loop()
         except RuntimeError:
             self._loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._loop)
@@ -539,7 +537,7 @@ class PacketCollector:
 
                     # Log initial status
                     status_log = DeviceStatusLog(
-                        device_id=device.id, status="online", timestamp=datetime.now()
+                        device_id=device.id, status="online", timestamp=datetime.now(timezone.utc)
                     )
                     db.add(status_log)
 
@@ -550,7 +548,7 @@ class PacketCollector:
                     # Check for status change
                     if not device.is_online:
                         status_log = DeviceStatusLog(
-                            device_id=device.id, status="online", timestamp=datetime.now()
+                            device_id=device.id, status="online", timestamp=datetime.now(timezone.utc)
                         )
                         db.add(status_log)
 

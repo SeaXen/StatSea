@@ -42,7 +42,7 @@ def update_setting(
         db_setting.type = setting.type
         db_setting.description = setting.description
     else:
-        db_setting = models.SystemSettings(**setting.dict())
+        db_setting = models.SystemSettings(**setting.model_dump())
         db.add(db_setting)
     db.commit()
     db.refresh(db_setting)

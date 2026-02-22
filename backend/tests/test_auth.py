@@ -81,5 +81,5 @@ def test_get_me_unauthenticated(client):
 # --- Logout ---
 
 def test_logout(auth_client):
-    response = auth_client.post("/api/auth/logout")
+    response = auth_client.post("/api/auth/logout", json={"refresh_token": "fake"})
     assert response.status_code == 200

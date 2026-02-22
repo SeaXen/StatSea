@@ -106,12 +106,21 @@ def aggregate_system_monthly(db_session=None):
     db = db_session or SessionLocal()
     try:
         month_str = date.today().strftime("%Y-%m")
+        # Use date range filtering instead of SQLite-specific func.strftime
+        first_of_month = date.today().replace(day=1)
+        if first_of_month.month == 12:
+            first_of_next_month = first_of_month.replace(year=first_of_month.year + 1, month=1)
+        else:
+            first_of_next_month = first_of_month.replace(month=first_of_month.month + 1)
         stats = (
             db.query(
                 func.sum(SystemDailySummary.bytes_sent).label("bytes_sent"),
                 func.sum(SystemDailySummary.bytes_recv).label("bytes_recv"),
             )
-            .filter(func.strftime("%Y-%m", SystemDailySummary.date) == month_str)
+            .filter(
+                SystemDailySummary.date >= first_of_month,
+                SystemDailySummary.date < first_of_next_month,
+            )
             .first()
         )
 
@@ -134,7 +143,10 @@ def aggregate_system_monthly(db_session=None):
                 func.sum(SystemInterfaceDailySummary.bytes_sent).label("bytes_sent"),
                 func.sum(SystemInterfaceDailySummary.bytes_recv).label("bytes_recv"),
             )
-            .filter(func.strftime("%Y-%m", SystemInterfaceDailySummary.date) == month_str)
+            .filter(
+                SystemInterfaceDailySummary.date >= first_of_month,
+                SystemInterfaceDailySummary.date < first_of_next_month,
+            )
             .group_by(SystemInterfaceDailySummary.interface)
             .all()
         )
@@ -177,7 +189,8 @@ def aggregate_device_monthly(db_session=None):
                 )
                 .filter(
                     DeviceDailySummary.device_id == dev.id,
-                    func.strftime("%Y-%m", DeviceDailySummary.date) == month_str,
+                    DeviceDailySummary.date >= first_of_month,
+                    DeviceDailySummary.date < first_of_next_month,
                 )
                 .first()
             )

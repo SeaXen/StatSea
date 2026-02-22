@@ -167,12 +167,6 @@ const SpeedtestPage = () => {
             }
         };
 
-        socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            toast.error('Connection error');
-            setLoading(false);
-        };
-
         socket.onclose = () => {
             setLoading(false);
         };

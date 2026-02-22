@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Depends, Form
+from fastapi import APIRouter, Depends, Form, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.db.database import get_db
@@ -33,10 +33,10 @@ def login(
     summary="Refresh Token",
 )
 def refresh_token(
-    refresh_token: schemas.RefreshTokenRequest,
+    refresh_token: str = Query(...),
     db: Session = Depends(get_db),
 ):
-    return AuthService.refresh_session(db, refresh_token.refresh_token)
+    return AuthService.refresh_session(db, refresh_token)
 
 
 @router.post(
@@ -48,7 +48,7 @@ def logout(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    AuthService.end_session(db, logout_req.refresh_token)
+    AuthService.logout(db, logout_req.refresh_token)
     return {"status": "success"}
 
 

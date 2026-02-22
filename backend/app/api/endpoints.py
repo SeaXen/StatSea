@@ -293,12 +293,12 @@ def get_usage_anomalies(current_user: models.User = Depends(get_current_user)):
     description="Retrieve DNS query logs.",
 )
 def get_dns_logs(
-    skip: int = 0,
+    cursor: int | None = None,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    return LogService.get_dns_logs(db, skip, limit)
+    return LogService.get_dns_logs(db, cursor, limit)
 
 
 @router.get(
@@ -308,12 +308,12 @@ def get_dns_logs(
 )
 def get_device_logs(
     device_id: int | None = None,
-    skip: int = 0,
+    cursor: int | None = None,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    return LogService.get_device_logs(db, device_id, skip, limit)
+    return LogService.get_device_logs(db, device_id, cursor, limit)
 
 
 # --- Docker Endpoints ---
@@ -725,7 +725,7 @@ def update_setting(
         db_setting.type = setting.type
         db_setting.description = setting.description
     else:
-        db_setting = models.SystemSettings(**setting.dict())
+        db_setting = models.SystemSettings(**setting.model_dump())
         db.add(db_setting)
     db.commit()
     db.refresh(db_setting)

@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ws", tags=["WebSockets"])
 
+# Reference to the main event loop, set on first WebSocket connect
+_event_loop: asyncio.AbstractEventLoop | None = None
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, Set[WebSocket]] = {
@@ -43,8 +46,13 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+def _safe_broadcast(msg: dict):
+    """Safely broadcast from sync threads using run_coroutine_threadsafe."""
+    if _event_loop and not _event_loop.is_closed():
+        asyncio.run_coroutine_threadsafe(manager.broadcast(msg, "events"), _event_loop)
+
 # Hook the global collector's event callback to broadcast to "events" channel
-global_collector.set_event_callback(lambda msg: asyncio.create_task(manager.broadcast(msg, "events")))
+global_collector.set_event_callback(_safe_broadcast)
 
 async def authenticate_websocket(websocket: WebSocket, token: str) -> models.User | None:
     """Validate token for WebSocket connections."""
@@ -66,6 +74,10 @@ async def authenticate_websocket(websocket: WebSocket, token: str) -> models.Use
 
 @router.websocket("/live")
 async def websocket_live(websocket: WebSocket, token: str = Query(None)):
+    global _event_loop
+    if _event_loop is None:
+        _event_loop = asyncio.get_running_loop()
+
     user = await authenticate_websocket(websocket, token)
     if not user:
         await websocket.close(code=1008, reason="Authentication required")
@@ -153,11 +165,11 @@ async def speedtest_websocket(websocket: WebSocket, provider: str = "ookla", tok
 
         await task
         
-    except (WebSocketDisconnect, ConnectionStateError if 'ConnectionStateError' in globals() else Exception):
+    except WebSocketDisconnect:
         logger.debug("Speedtest WebSocket disconnected")
     except Exception as e:
         logger.error(f"Speedtest WebSocket error: {e}")
         try:
             await websocket.close(code=1011)
-        except:
+        except Exception:
             pass

@@ -10,7 +10,7 @@ try:
 except ImportError:
     DOCKER_AVAILABLE = False
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import sqlalchemy.exc
 
@@ -75,10 +75,10 @@ class DockerMonitor:
                     self._update_mock_stats()
                 else:
                     self._update_real_stats()
-            except docker.errors.DockerException:
-                logger.exception("Docker API error in monitor loop")
             except Exception:
-                logger.exception("Unexpected error in Docker monitor loop")
+                # Catches docker.errors.DockerException (when docker is available)
+                # and any other unexpected errors safely
+                logger.exception("Error in Docker monitor loop")
 
             # Persist stats every 60 seconds
             if time.time() - self.last_persist_time >= 60:
@@ -94,7 +94,7 @@ class DockerMonitor:
 
         db = SessionLocal()
         try:
-            timestamp = datetime.now()
+            timestamp = datetime.now(timezone.utc)
             with self.lock:
                 stats_copy = list(self.containers_stats.values())
 
