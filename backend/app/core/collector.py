@@ -544,7 +544,7 @@ class PacketCollector:
                     db.add(status_log)
 
                     # Trigger alert for truly new devices
-                    self._trigger_new_device_alert(mac, data["ip"])
+                    self._trigger_new_device_alert(db, mac, data["ip"])
                     logger.info(f"New device discovered and persisted: {mac} ({data['ip']})")
                 else:
                     # Check for status change
@@ -624,36 +624,32 @@ class PacketCollector:
         finally:
             db.close()
 
-    def _trigger_new_device_alert(self, mac, ip):
+    def _trigger_new_device_alert(self, db, mac, ip):
         """Triggers a security alert for a new device."""
-        db = SessionLocal()
-        try:
-            device = db.query(Device).filter(Device.mac_address == mac).first()
-            alert = SecurityAlert(
-                severity="info",
-                title="New Device Detected",
-                description=f"A new device with MAC {mac} and IP {ip} has joined the network.",
-                device_id=device.id if device else None,
-            )
-            db.add(alert)
-            db.commit()
+        device = db.query(Device).filter(Device.mac_address == mac).first()
+        alert = SecurityAlert(
+            severity="info",
+            title="New Device Detected",
+            description=f"A new device with MAC {mac} and IP {ip} has joined the network.",
+            device_id=device.id if device else None,
+        )
+        db.add(alert)
+        # Note: Caller is responsible for committing the transaction to prevent deadlocks
 
-            if self.event_callback and self._loop:
-                event_data = {
-                    "type": "NEW_DEVICE",
-                    "severity": "info",
-                    "title": "New Device Detected",
-                    "description": f"New device {mac} discovered.",
-                    "mac": mac,
-                    "ip": ip,
-                    "timestamp": time.time(),
-                }
-                # Call async callback from sync thread
-                self._loop.call_soon_threadsafe(
-                    lambda: asyncio.ensure_future(self.event_callback(event_data))
-                )
-        finally:
-            db.close()
+        if self.event_callback and self._loop:
+            event_data = {
+                "type": "NEW_DEVICE",
+                "severity": "info",
+                "title": "New Device Detected",
+                "description": f"New device {mac} discovered.",
+                "mac": mac,
+                "ip": ip,
+                "timestamp": time.time(),
+            }
+            # Call async callback from sync thread
+            self._loop.call_soon_threadsafe(
+                lambda: asyncio.ensure_future(self.event_callback(event_data))
+            )
 
     def _is_private_ip(self, ip_str: str) -> bool:
         """Checks if an IP address is internal/private."""

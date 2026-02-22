@@ -11,7 +11,7 @@ os.makedirs("data", exist_ok=True)
 # Use centralized config for database URL
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 15.0})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 from sqlalchemy.orm import DeclarativeBase
