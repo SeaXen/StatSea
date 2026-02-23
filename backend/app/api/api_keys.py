@@ -5,7 +5,8 @@ from typing import List
 
 from app.db.database import get_db
 from app.models import models
-from app.api.endpoints import get_current_org_id, get_current_user
+from app.api.deps import get_current_org_id
+from app.core.auth_jwt import get_current_user
 from app.services.api_key_service import ApiKeyService
 
 router = APIRouter()

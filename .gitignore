@@ -36,6 +36,8 @@ Thumbs.db
 .pytest_cache/
 coverage/
 .vite/
+frontend/dist/
+**/test_green.txt
 
 # Debug / Error logs (dev artifacts)
 *.log

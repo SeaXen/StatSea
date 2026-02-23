@@ -20,6 +20,7 @@ from .core.scheduler import scheduler
 from .core.system_monitor import system_monitor
 from .core.collector import global_collector
 from .core.metrics import metrics_manager
+from .services.docker_update_service import docker_update_service
 from .db.database import Base, SessionLocal, engine
 from .models import models
 
@@ -28,7 +29,8 @@ from .api import audit, billing, api_keys, saas_extras
 from .api.routes import (
     devices, analytics, docker, system, auth, network,
     admin, groups, settings as settings_router, websockets,
-    speedtests, alerts, health, reports, metrics, export, bandwidth
+    speedtests, alerts, health, reports, metrics, export, bandwidth, agents,
+    security
 )
 
 # Initialize structured logging
@@ -101,6 +103,7 @@ async def lifespan(app: FastAPI):
     # Start services
     global_collector.start()
     docker_monitor.start()
+    docker_update_service.start()
     await monitor.start()
     system_monitor.start()
     scheduler.update_scheduler_from_db()
@@ -197,7 +200,8 @@ routers = [
     auth.router, devices.router, analytics.router,
     docker.router, system.router, network.router, admin.router,
     groups.router, settings_router.router, websockets.router, speedtests.router,
-    alerts.router, health.router, reports.router, metrics.router, export.router, bandwidth.router
+    alerts.router, health.router, reports.router, metrics.router, export.router, bandwidth.router, agents.router,
+    security.router
 ]
 for r in routers:
     app.include_router(r, prefix="/api")
@@ -206,6 +210,7 @@ app.include_router(billing.router, prefix="/api/billing", tags=["Billing"])
 app.include_router(api_keys.router, prefix="/api/keys", tags=["API Keys"])
 app.include_router(saas_extras.notifications_router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(saas_extras.status_page_router, prefix="/api/status-settings", tags=["Status Page"])
+app.include_router(saas_extras.certificates_router, prefix="/api/certificates", tags=["Certificates"])
 app.include_router(saas_extras.public_status_router, prefix="/status", tags=["Public Status"])
 
 

@@ -61,6 +61,8 @@ interface DockerContainer {
     mem_usage: number;
     net_rx: number;
     net_tx: number;
+    update_available?: boolean;
+    remote_digest?: string;
     history?: ContainerHistory;
     state?: {
         Running: boolean;
@@ -169,6 +171,11 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
                                     <h3 className="text-base font-bold text-white truncate group-hover:text-blue-400 transition-colors uppercase tracking-tight">
                                         {container.name}
                                     </h3>
+                                    {container.update_available && (
+                                        <span className="text-[9px] px-1.5 py-0.5 rounded-full border border-blue-400/30 font-black uppercase text-blue-400 bg-blue-400/10 tracking-widest" title="Update Available">
+                                            Update
+                                        </span>
+                                    )}
                                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full border border-current font-black uppercase tracking-[0.1em] ${getStatusColor(container.status)}`}>
                                         {container.status}
                                     </span>
@@ -248,6 +255,11 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                 <div className="flex-1">
                     <div className="flex items-center gap-2">
                         <h2 className="text-xl font-bold text-white uppercase tracking-tight">{container.name}</h2>
+                        {container.update_available && (
+                            <span className="text-[9px] px-2 py-0.5 rounded-full border border-blue-400/30 font-black uppercase text-blue-400 bg-blue-400/10 tracking-widest" title="Update Available">
+                                Update Available
+                            </span>
+                        )}
                         <span className={`text-[9px] px-2 py-0.5 rounded-full border border-current font-black uppercase ${getStatusColor(container.status)}`}>
                             {container.status}
                         </span>

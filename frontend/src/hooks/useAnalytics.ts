@@ -144,3 +144,18 @@ export const useSystemHistory = (params?: {
         staleTime: 30000,
     });
 };
+
+// ─── Traffic Categories ───
+export const useTrafficCategories = (deviceId?: number) => {
+    return useQuery({
+        queryKey: ['analytics', 'traffic-categories', deviceId],
+        queryFn: async () => {
+            const url = deviceId
+                ? `${API_CONFIG.ENDPOINTS.ANALYTICS.TRAFFIC_CATEGORIES}?device_id=${deviceId}`
+                : API_CONFIG.ENDPOINTS.ANALYTICS.TRAFFIC_CATEGORIES;
+            const { data } = await axiosInstance.get(url);
+            return data;
+        },
+        refetchInterval: 5000,
+    });
+};

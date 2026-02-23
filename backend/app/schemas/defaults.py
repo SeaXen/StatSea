@@ -26,6 +26,7 @@ class DeviceBase(BaseModel):
     vendor: str | None = None
     type: str | None = "Unknown"  # IoT, Mobile, PC
     nickname: str | None = None
+    icon_type: str | None = None
     notes: str | None = None
     tags: list[str] | None = None
     group_id: int | None = None
@@ -37,6 +38,7 @@ class DeviceCreate(DeviceBase):
 
 class DeviceUpdate(BaseModel):
     nickname: str | None = None
+    icon_type: str | None = None
     notes: str | None = None
     type: str | None = None
     tags: list[str] | None = None
@@ -49,6 +51,7 @@ class Device(DeviceBase):
     last_seen: datetime | None
     is_online: bool
     traffic_logs: list["TrafficLog"] = []
+    ports: list["DevicePort"] = []
 
     @field_validator("tags", mode="before")
     def parse_tags(cls, v):
@@ -165,6 +168,23 @@ class DeviceStatusLog(DeviceStatusLogBase):
         from_attributes = True
 
 
+class DevicePortBase(BaseModel):
+    port: int
+    protocol: str = "TCP"
+    service: str | None = None
+    state: str = "open"
+    last_discovered: datetime
+
+
+class DevicePort(DevicePortBase):
+    id: int
+    device_id: int
+
+    class Config:
+        from_attributes = True
+
+
+
 class DeviceGroupBase(BaseModel):
     name: str
     color: str | None = "#3b82f6"
@@ -254,6 +274,17 @@ class RefreshTokenRequest(BaseModel):
 class LogoutRequest(BaseModel):
     refresh_token: str | None = None
 
+class SessionResponse(BaseModel):
+    id: int
+    created_at: datetime
+    expires_at: datetime
+    user_agent: str | None = None
+    ip_address: str | None = None
+    is_current: bool = False
+
+    class Config:
+        from_attributes = True
+
 class AuditLogBase(BaseModel):
     action: str
     resource_type: str
@@ -275,3 +306,122 @@ class AuditLogResponse(AuditLog):
 class AuditLogPaginated(BaseModel):
     items: list[AuditLogResponse]
     total: int
+
+
+# --- Phase 6: System & Self-Hosting Management ---
+
+class OSMetricHistoryBase(BaseModel):
+    cpu_pct: float
+    ram_used_gb: float
+    ram_total_gb: float
+    disk_used_gb: float
+    disk_total_gb: float
+
+class OSMetricHistory(OSMetricHistoryBase):
+    id: int
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+class HealthCheckBase(BaseModel):
+    name: str
+    url: str
+    method: str = "GET"
+    interval_seconds: int = 300
+    is_active: bool = True
+
+class HealthCheckCreate(HealthCheckBase):
+    pass
+
+class HealthCheckUpdate(BaseModel):
+    name: str | None = None
+    url: str | None = None
+    method: str | None = None
+    interval_seconds: int | None = None
+    is_active: bool | None = None
+
+class HealthCheck(HealthCheckBase):
+    id: int
+    last_status: int | None = None
+    last_checked: datetime | None = None
+    created_at: datetime
+    organization_id: int | None = None
+
+    class Config:
+        from_attributes = True
+
+class HealthCheckLogBase(BaseModel):
+    check_id: int
+    status_code: int | None = None
+    response_time_ms: float | None = None
+    is_up: bool
+    error: str | None = None
+
+class HealthCheckLog(HealthCheckLogBase):
+    id: int
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+class BackupRecordBase(BaseModel):
+    filename: str
+    size_bytes: int
+    created_at: datetime
+    is_manual: bool = False
+
+class BackupRecord(BackupRecordBase):
+    id: int
+    file_path: str
+
+    class Config:
+        from_attributes = True
+
+class SystemForecast(BaseModel):
+    ram_days_remaining: float | None = None
+    disk_days_remaining: float | None = None
+    ram_trend: str  # improving, stable, worsening
+    disk_trend: str # improving, stable, worsening
+
+class PushSubscriptionBase(BaseModel):
+    endpoint: str
+    keys: dict  # {"auth": "...", "p256dh": "..."}
+
+class PushSubscriptionCreate(PushSubscriptionBase):
+    pass
+
+class PushSubscription(PushSubscriptionBase):
+    id: int
+    user_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CertificateBase(BaseModel):
+    domain: str
+    port: int = 443
+    is_active: bool = True
+
+class CertificateCreate(CertificateBase):
+    pass
+
+class CertificateUpdate(BaseModel):
+    domain: str | None = None
+    port: int | None = None
+    is_active: bool | None = None
+
+class CertificateResponse(CertificateBase):
+    id: int
+    last_checked: datetime | None = None
+    expiration_date: datetime | None = None
+    issuer: str | None = None
+    days_until_expiration: int | None = None
+    error_message: str | None = None
+    created_at: datetime
+    organization_id: int | None = None
+
+    class Config:
+        from_attributes = True

@@ -8,12 +8,14 @@ import {
 import {
     Shield, AlertTriangle, Activity, Zap, Pause, Play, Search, Globe, Wifi, Server,
     Database, Radio, Layers, BarChart3, TrendingUp, Monitor, Network, Settings,
-    Flag, Plus, Trash2, X, Save, FileSpreadsheet
+    Flag, Plus, Trash2, X, Save, FileSpreadsheet, FileText
 } from 'lucide-react';
 import { API_CONFIG } from '../config/apiConfig';
 import axiosInstance from '../config/axiosInstance';
 import PredictionWidget from './PredictionWidget';
 import YearlyStatsView from './YearlyStatsView';
+import TrafficCategoriesWidget from './TrafficCategoriesWidget';
+import { NetworkTopology } from './NetworkTopology';
 
 
 // ─── Protocol Color Map ───
@@ -101,6 +103,8 @@ interface ExternalConnection {
     hits: number;
     city: string;
     country: string;
+    lat?: number;
+    lon?: number;
 }
 
 
@@ -111,6 +115,7 @@ interface DashboardConfig {
     showProtocolFilters: boolean;
     showProtocolCharts: boolean;
     showPacketCharts: boolean;
+    showTrafficCategories: boolean;
 }
 
 // ─── Helper ───
@@ -230,7 +235,7 @@ interface PacketLog {
 
 // ─── MAIN COMPONENT ───
 const AnalyticsDashboard = () => {
-    const [activeView, setActiveView] = useState<'interfaces' | 'live' | 'statistics' | 'connections' | 'security' | 'history' | 'dns' | 'comparison'>('live');
+    const [activeView, setActiveView] = useState<'interfaces' | 'live' | 'statistics' | 'connections' | 'security' | 'history' | 'dns' | 'comparison' | 'topology'>('live');
     const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
     const [bandwidthData, setBandwidthData] = useState<BandwidthPoint[]>([]);
     const [latencyData, setLatencyData] = useState<LatencyPoint[]>([]);
@@ -245,6 +250,32 @@ const AnalyticsDashboard = () => {
     const [flagFilter, setFlagFilter] = useState(''); // New state for flag filter
     const [loading, setLoading] = useState(true);
     const [paused, setPaused] = useState(false);
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+    const handleGenerateReport = async (reportType: 'network_summary' | 'security_audit') => {
+        setIsGeneratingReport(true);
+        try {
+            const response = await axiosInstance.get(`/reports/pdf/${reportType}`, {
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `statsea_${reportType}_${new Date().toISOString().split('T')[0]}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+
+            // toast might not be imported as toast, but sonner is often used as toast.
+            // I'll check if toast is imported. It seems sonner is not imported yet, but let me check.
+        } catch (error) {
+            console.error('Report generation failed:', error);
+        } finally {
+            setIsGeneratingReport(false);
+        }
+    };
     const [searchQuery, setSearchQuery] = useState('');
     const [activeProtocols, setActiveProtocols] = useState<Set<string>>(new Set(['TCP', 'UDP', 'HTTP', 'HTTPS', 'DNS', 'ICMP', 'SSH', 'FTP']));
     const [showSettings, setShowSettings] = useState(false);
@@ -256,7 +287,8 @@ const AnalyticsDashboard = () => {
             showGauges: true,
             showProtocolFilters: true,
             showProtocolCharts: true,
-            showPacketCharts: true
+            showPacketCharts: true,
+            showTrafficCategories: true
         };
     });
 
@@ -530,6 +562,18 @@ const AnalyticsDashboard = () => {
                             }`}>
                         {paused ? <><Play className="w-3.5 h-3.5" /> Resume</> : <><Pause className="w-3.5 h-3.5" /> Pause</>}
                     </button>
+                    <button
+                        onClick={() => handleGenerateReport('network_summary')}
+                        disabled={isGeneratingReport}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 rounded-lg text-xs font-medium hover:bg-indigo-500/20 transition-all disabled:opacity-50"
+                    >
+                        {isGeneratingReport ? (
+                            <div className="w-3.5 h-3.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <FileText className="w-3.5 h-3.5" />
+                        )}
+                        REPORT
+                    </button>
                     <div className="relative">
                         <button
                             onClick={() => setShowSettings(!showSettings)}
@@ -701,7 +745,7 @@ const AnalyticsDashboard = () => {
 
             {/* ─── Tab Navigation ─── */}
             <div className="flex gap-1 border-b border-border">
-                {(['interfaces', 'live', 'statistics', 'connections', 'security', 'history', 'dns', 'comparison'] as const).map(tab => (
+                {(['interfaces', 'live', 'statistics', 'topology', 'connections', 'security', 'history', 'dns', 'comparison'] as const).map(tab => (
                     <button key={tab} onClick={() => setActiveView(tab)}
                         className={`px-4 py-2 text-xs font-medium capitalize transition-all rounded-t-lg ${activeView === tab
                             ? 'text-cyan-400 bg-card/60 border border-border border-b-transparent -mb-px'
@@ -711,6 +755,13 @@ const AnalyticsDashboard = () => {
                     </button>
                 ))}
             </div>
+
+            {/* ═══════════════════ TOPOLOGY TAB ═══════════════════ */}
+            {activeView === 'topology' && (
+                <div className="space-y-4">
+                    <NetworkTopology />
+                </div>
+            )}
 
             {/* ═══════════════════ INTERFACES TAB ═══════════════════ */}
             {activeView === 'interfaces' && (
@@ -1055,6 +1106,13 @@ const AnalyticsDashboard = () => {
                         </div>
                     )}
 
+                    {/* Application Traffic Categories */}
+                    {dashboardConfig.showTrafficCategories && (
+                        <div className="grid grid-cols-1 gap-6">
+                            <TrafficCategoriesWidget />
+                        </div>
+                    )}
+
                     {/* 7x24 Traffic Heatmap */}
                     <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4 mt-6">
                         <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
@@ -1153,19 +1211,9 @@ const AnalyticsDashboard = () => {
                                     }
                                 </Geographies>
                                 {externalConnections.map((conn, idx) => {
-                                    // Generate mock coordinates if not provided (for visualization only)
-                                    // Using stable pseudo-random based on string to keep markers in place
-                                    let lon = 0; let lat = 0;
-                                    if (conn.country === 'US') { lon = -95; lat = 38; }
-                                    else if (conn.country === 'CN') { lon = 104; lat = 35; }
-                                    else if (conn.country === 'GB') { lon = -3; lat = 55; }
-                                    else if (conn.country === 'DE') { lon = 10; lat = 51; }
-                                    else if (conn.country === 'JP') { lon = 138; lat = 36; }
-                                    else {
-                                        // Fake coord for "other" based on char codes
-                                        lon = ((conn.ip.charCodeAt(0) * 10) % 360) - 180;
-                                        lat = ((conn.ip.charCodeAt(1) * 10) % 180) - 90;
-                                    }
+                                    if (!conn.lon || !conn.lat) return null;
+                                    let lon = conn.lon;
+                                    let lat = conn.lat;
 
                                     // Add minor jitter so dots don't fully overlap
                                     lon += (idx % 10 - 5) * 1.5;

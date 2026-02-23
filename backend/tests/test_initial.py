@@ -37,7 +37,7 @@ def test_settings_get(auth_client):
 
 
 def test_system_info(auth_client):
-    response = auth_client.get("/api/system/info")
+    response = auth_client.get("/api/system/metrics/live")
     assert response.status_code == 200
 
 

@@ -4,7 +4,8 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from ..db.database import SessionLocal
-from ..models.models import Device, DeviceStatusLog
+from ..models.models import Device, DeviceStatusLog, Organization
+from ..services.notification_service import NotificationService
 
 logger = logging.getLogger("UptimeMonitor")
 
@@ -44,6 +45,22 @@ def check_device_availability():
                 device_id=device.id, status="offline", timestamp=datetime.now(timezone.utc)
             )
             db.add(status_log)
+
+        # Send notifications for each offline candidate
+        try:
+            org = db.query(Organization).first()
+            org_id = org.id if org else 1
+            
+            for device in offline_candidates:
+                notif_title = "Device Offline"
+                notif_desc = (
+                    f"Device **{device.alias or device.hostname or 'Unknown'}** is now offline.\n\n"
+                    f"**MAC:** `{device.mac_address}`\n"
+                    f"**Last Seen:** {device.last_seen.strftime('%Y-%m-%d %H:%M:%S') if device.last_seen else 'N/A'}"
+                )
+                NotificationService.send_alert(db, org_id, notif_title, notif_desc, "WARNING")
+        except Exception as e:
+            logger.error(f"Failed to send uptime notifications: {e}")
 
         db.commit()
         if len(offline_candidates) > 0:

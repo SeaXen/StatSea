@@ -50,8 +50,15 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         let eventWs: WebSocket | null = null;
         let reconnectTimeout: NodeJS.Timeout;
         let isMounted = true;
+        let reconnectAttempt = 0;
+        const MAX_RECONNECT_DELAY = 30000; // 30 seconds max
 
         if (!token) return;
+
+        const getReconnectDelay = () => {
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempt), MAX_RECONNECT_DELAY);
+            return delay;
+        };
 
         const connect = () => {
             const wsUrl = `${getWsUrl('/ws/live')}?token=${token}`;
@@ -63,6 +70,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
             ws.onopen = () => {
                 if (isMounted) {
                     setIsConnected(true);
+                    reconnectAttempt = 0; // Reset backoff on successful connect
                     toast.success('Connected to Live Server');
                 }
             };
@@ -70,8 +78,9 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
             ws.onclose = () => {
                 if (isMounted) {
                     setIsConnected(false);
-                    // Reconnect after 3 seconds
-                    reconnectTimeout = setTimeout(connect, 3000);
+                    reconnectAttempt++;
+                    const delay = getReconnectDelay();
+                    reconnectTimeout = setTimeout(connect, delay);
                 }
             };
 
@@ -85,6 +94,10 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
 
                 try {
                     const data = JSON.parse(event.data);
+
+                    // Handle heartbeat ping from server
+                    if (data.type === 'ping') return;
+
                     setWsData(prev => {
                         const newData = [...prev, {
                             time: new Date(data.timestamp * 1000).toLocaleTimeString(),

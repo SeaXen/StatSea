@@ -1,0 +1,76 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: D:\Gravity\StatSea\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, mock-3.15.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 39 items
+
+tests\test_analytics.py .......                                          [ 17%]
+tests\test_auth.py ......                                                [ 33%]
+tests\test_devices.py ......                                             [ 48%]
+tests\test_docker.py .                                                   [ 51%]
+tests\test_initial.py .......                                            [ 69%]
+tests\test_reports.py F.....                                             [ 84%]
+tests\test_saas.py .....                                                 [ 97%]
+tests\test_simple.py .                                                   [100%]
+
+================================== FAILURES ===================================
+___________________________ test_export_devices_csv ___________________________
+tests\test_reports.py:12: in test_export_devices_csv
+    assert response.headers["content-type"] == "text/csv"
+E   AssertionError: assert 'text/csv; charset=utf-8' == 'text/csv'
+E     
+E     - text/csv
+E     + text/csv; charset=utf-8
+---------------------------- Captured stderr setup ----------------------------
+{"timestamp": "2026-02-23T05:46:21.793910", "level": "WARNING", "message": "SECURITY RISK: Using default JWT_SECRET_KEY. Change it in .env", "module": "main", "funcName": "lifespan", "line": 99, "request_id": null}
+----------------------------- Captured log setup ------------------------------
+WARNING  main:main.py:99 SECURITY RISK: Using default JWT_SECRET_KEY. Change it in .env
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-02-23T05:46:21.863322", "level": "INFO", "message": "HTTP Request: GET http://testserver/api/reports/export/devices?format=csv \"HTTP/1.1 200 OK\"", "module": "_client", "funcName": "_send_single_request", "line": 1025, "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/reports/export/devices?format=csv "HTTP/1.1 200 OK"
+============================== warnings summary ===============================
+C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\formparsers.py:12
+  C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_config.py:295: 19 warnings
+  C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pydantic\_internal\_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\mac_vendor_lookup.py:121
+  C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\mac_vendor_lookup.py:121: DeprecationWarning: There is no current event loop
+    self.loop = asyncio.get_event_loop()
+
+tests/test_analytics.py: 7 warnings
+tests/test_auth.py: 2 warnings
+tests/test_devices.py: 7 warnings
+tests/test_docker.py: 1 warning
+tests/test_initial.py: 4 warnings
+tests/test_reports.py: 6 warnings
+tests/test_saas.py: 9 warnings
+  C:\Users\Sagar-EB\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\jose\jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = timegm(datetime.utcnow().utctimetuple())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_reports.py::test_export_devices_csv - AssertionError: asser...
+================== 1 failed, 38 passed, 57 warnings in 6.22s ==================
+python : Exception ignored in: 
+<_Py3Utf8Output name=6 encoding='utf8'>
+At line:1 char:1
++ python -m pytest tests/ --tb=short 2>&1 | 
+Out-File -FilePath test_fin ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( 
+   Exception ignor...ncoding='utf8'>:String)  
+   [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandEr 
+   ror
+ 
+OSError: [Errno 9] Bad file descriptor
+Exception ignored in: <_Py3Utf8Output name=8 
+encoding='utf8'>
+OSError: [Errno 9] Bad file descriptor

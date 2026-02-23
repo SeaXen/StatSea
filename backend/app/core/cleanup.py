@@ -28,14 +28,19 @@ def run_cleanup_job():
         retention_raw = get_retention_days("retention_days_raw", 7)
         retention_daily = get_retention_days("retention_days_daily", 90)
         retention_events = get_retention_days("retention_days_events", 30)
+        retention_dns = get_retention_days("retention_days_dns", 7)
+        retention_traffic = get_retention_days("retention_days_traffic", 30)
 
         # Cutoffs
         cutoff_raw = datetime.now(timezone.utc) - timedelta(days=retention_raw)
         cutoff_daily = datetime.now(timezone.utc) - timedelta(days=retention_daily)
         cutoff_events = datetime.now(timezone.utc) - timedelta(days=retention_events)
+        cutoff_dns = datetime.now(timezone.utc) - timedelta(days=retention_dns)
+        cutoff_traffic = datetime.now(timezone.utc) - timedelta(days=retention_traffic)
 
         logger.info(
-            f"Running cleanup: raw (> {cutoff_raw}), daily (> {cutoff_daily}), events (> {cutoff_events})"
+            f"Running cleanup: raw (> {cutoff_raw}), daily (> {cutoff_daily}), events (> {cutoff_events}), "
+            f"dns (> {cutoff_dns}), traffic (> {cutoff_traffic})"
         )
 
         # 1. Raw Data (High frequency)
@@ -58,9 +63,17 @@ def run_cleanup_job():
         # 3. Events / Logs
         deleted_security = 0
         deleted_speedtest = 0
+        deleted_dns = 0
+        deleted_traffic_logs = 0
         if retention_events > 0:
             deleted_security = db.query(models.SecurityEvent).filter(models.SecurityEvent.timestamp < cutoff_events).delete()
             deleted_speedtest = db.query(models.SpeedtestResult).filter(models.SpeedtestResult.timestamp < cutoff_events).delete()
+            
+        if retention_dns > 0:
+            deleted_dns = db.query(models.DnsLog).filter(models.DnsLog.timestamp < cutoff_dns).delete()
+            
+        if retention_traffic > 0:
+            deleted_traffic_logs = db.query(models.TrafficLog).filter(models.TrafficLog.timestamp < cutoff_traffic).delete()
 
         db.commit()
 
@@ -68,7 +81,8 @@ def run_cleanup_job():
             f"Cleanup complete. Deleted: "
             f"{deleted_bandwidth} bandwidth logs, {deleted_latency} latency logs, {deleted_net} net history, "
             f"{deleted_traffic} traffic summaries, {deleted_docker} docker metrics, "
-            f"{deleted_security} security events, {deleted_speedtest} speedtests."
+            f"{deleted_security} security events, {deleted_speedtest} speedtests, "
+            f"{deleted_dns} dns logs, {deleted_traffic_logs} traffic logs."
         )
 
     except Exception as e:

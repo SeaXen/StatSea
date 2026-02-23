@@ -13,13 +13,19 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/docker", tags=["Docker"])
 
+from app.services.docker_update_service import docker_update_service
+
 @router.get(
     "/containers",
     summary="Get Docker containers",
     description="Retrieve status of all Docker containers.",
 )
 def get_docker_containers(current_user: models.User = Depends(get_current_user)):
-    return docker_monitor.get_stats()
+    stats = docker_monitor.get_stats()
+    for container in stats:
+        update_info = docker_update_service.get_update_status(container.get("id"))
+        container.update(update_info)
+    return stats
 
 
 @router.get(

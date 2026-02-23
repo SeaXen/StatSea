@@ -2,7 +2,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || `http://${window.location.hostname}:21081/api`,
+    baseURL: import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8001/api`,
     headers: {
         'Content-Type': 'application/json',
     },

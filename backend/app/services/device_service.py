@@ -15,49 +15,14 @@ class DeviceService:
     @staticmethod
     def get_devices(db: Session, organization_id: int, cursor: int | None = None, limit: int = 100) -> schemas.CursorPage[schemas.Device]:
         """
-        Retrieves devices from the database with pagination for a specific organization.
-        If empty, seeds mock devices for initial setup.
+        Retrieves devices from the database with cursor pagination for a specific organization.
         """
         try:
-            query = db.query(models.Device).filter(models.Device.organization_id == organization_id).options(selectinload(models.Device.traffic_logs))
+            query = db.query(models.Device).filter(models.Device.organization_id == organization_id).options(
+                selectinload(models.Device.traffic_logs),
+                selectinload(models.Device.ports)
+            )
             
-            # Check for empty db and seed if necessary (only on first page query)
-            if cursor is None:
-                first_device = query.first()
-                if not first_device:
-                    logger.info("Seeding initial mock devices")
-                    defaults = [
-                        models.Device(
-                            mac_address="AA:BB:CC:DD:EE:01",
-                            ip_address="192.168.1.10",
-                            hostname="iPhone-13",
-                            vendor="Apple",
-                            type="Mobile",
-                            is_online=True,
-                            organization_id=organization_id,
-                        ),
-                        models.Device(
-                            mac_address="AA:BB:CC:DD:EE:02",
-                            ip_address="192.168.1.11",
-                            hostname="Galaxy-S24",
-                            vendor="Samsung",
-                            type="Mobile",
-                            is_online=False,
-                            organization_id=organization_id,
-                        ),
-                        models.Device(
-                            mac_address="AA:BB:CC:DD:EE:03",
-                            ip_address="192.168.1.20",
-                            hostname="Desktop-PC",
-                            vendor="Microsoft",
-                            type="PC",
-                            is_online=True,
-                            organization_id=organization_id,
-                        ),
-                    ]
-                    db.add_all(defaults)
-                    db.commit()
-
             if cursor is not None:
                 query = query.filter(models.Device.id > cursor)
             
@@ -74,7 +39,13 @@ class DeviceService:
         """
         Retrieves a specific device by ID, ensuring it belongs to the organization.
         """
-        device = db.query(models.Device).filter(models.Device.id == device_id, models.Device.organization_id == organization_id).first()
+        device = db.query(models.Device).filter(
+            models.Device.id == device_id, 
+            models.Device.organization_id == organization_id
+        ).options(
+            selectinload(models.Device.traffic_logs),
+            selectinload(models.Device.ports)
+        ).first()
         if not device:
             raise DeviceNotFoundException(str(device_id))
         return device
@@ -92,6 +63,8 @@ class DeviceService:
 
         if device_update.nickname is not None:
             device.nickname = device_update.nickname
+        if device_update.icon_type is not None:
+            device.icon_type = device_update.icon_type
         if device_update.notes is not None:
             device.notes = device_update.notes
         # if device_update.tags is not None:

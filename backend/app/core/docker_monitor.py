@@ -1,5 +1,4 @@
 import os
-import random
 import threading
 import time
 
@@ -49,7 +48,7 @@ class DockerMonitor:
                 self.use_mock = True
 
         if self.use_mock:
-            logger.info("Docker monitor running in MOCK mode")
+            logger.info("Docker monitor disabled (Docker not available)")
 
         self.last_persist_time = 0
 
@@ -72,7 +71,7 @@ class DockerMonitor:
         while self.running:
             try:
                 if self.use_mock:
-                    self._update_mock_stats()
+                    pass
                 else:
                     self._update_real_stats()
             except Exception:
@@ -118,62 +117,7 @@ class DockerMonitor:
         finally:
             db.close()
 
-    def _update_mock_stats(self):
-        """Generates mock container data."""
-        mock_containers = [
-            {
-                "id": "c1",
-                "name": "statsea-backend",
-                "image": "statsea-api:latest",
-                "status": "running",
-            },
-            {
-                "id": "c2",
-                "name": "statsea-frontend",
-                "image": "statsea-web:latest",
-                "status": "running",
-            },
-            {"id": "c3", "name": "postgres-db", "image": "postgres:15-alpine", "status": "running"},
-            {"id": "c4", "name": "redis-cache", "image": "redis:7-alpine", "status": "running"},
-            {"id": "c5", "name": "pihole", "image": "pihole/pihole:latest", "status": "running"},
-            {
-                "id": "c6",
-                "name": "home-assistant",
-                "image": "ghcr.io/home-assistant/home-assistant:stable",
-                "status": "restarting",
-            },
-        ]
 
-        with self.lock:
-            for c in mock_containers:
-                cid = c["id"]
-                # Initialize trend if not exists
-                if cid not in self.containers_stats:
-                    self.containers_stats[cid] = {
-                        **c,
-                        "cpu_pct": random.uniform(0.1, 5.0),
-                        "mem_usage": random.randint(50, 200),  # MB
-                        "net_rx": 0,
-                        "net_tx": 0,
-                        "uptime": "2d 4h",
-                        "history": {"cpu": [], "mem": []},
-                    }
-
-                # Update with random variations
-                stats = self.containers_stats[cid]
-                stats["cpu_pct"] = max(
-                    0.1, min(100.0, stats["cpu_pct"] + random.uniform(-0.5, 0.5))
-                )
-                stats["mem_usage"] = max(10, stats["mem_usage"] + random.randint(-5, 5))
-                stats["net_rx"] += random.randint(10, 1000)
-                stats["net_tx"] += random.randint(5, 500)
-
-                # Keep history for sparklines
-                stats["history"]["cpu"].append(stats["cpu_pct"])
-                stats["history"]["mem"].append(stats["mem_usage"])
-                if len(stats["history"]["cpu"]) > 20:
-                    stats["history"]["cpu"].pop(0)
-                    stats["history"]["mem"].pop(0)
 
     def _update_real_stats(self):
         """Updates stats from real Docker API."""
@@ -193,7 +137,8 @@ class DockerMonitor:
                         self.containers_stats[cid] = {
                             "id": cid,
                             "name": container.name,
-                            "image": container.image.tags[0] if container.image.tags else "unknown",
+                            "image": container.image.tags[0] if container.image and getattr(container.image, "tags", None) else "unknown",
+                            "image_id": container.image.id if container.image and getattr(container.image, "id", None) else "",
                             "status": container.status,
                             "cpu_pct": 0,
                             "mem_usage": 0,
@@ -241,9 +186,10 @@ class DockerMonitor:
                             "name": container.name,
                             "image": (
                                 container.image.tags[0]
-                                if container.image and container.image.tags
+                                if container.image and getattr(container.image, "tags", None)
                                 else "unknown"
                             ),
+                            "image_id": container.image.id if container.image and getattr(container.image, "id", None) else "",
                             "status": container.status,
                             "cpu_pct": round(cpu_pct, 2),
                             "mem_usage": int(mem_usage),
@@ -276,7 +222,7 @@ class DockerMonitor:
     def get_logs(self, container_id: str, tail: int = 100) -> str:
         """Fetches recent logs for a container."""
         if self.use_mock:
-            return f"Mock logs for {container_id}...\n[INFO] Service started\n[DEBUG] Heartbeat sent\n[INFO] Processing request #42\n[ERROR] Failed to find consensus on block 1024 (Mock Error)"
+            return "Docker unavailable. Cannot fetch logs.\n"
 
         if not self.client:
             return "Docker client not available"
@@ -294,16 +240,8 @@ class DockerMonitor:
     def perform_action(self, container_id: str, action: str) -> bool:
         """Performs an action (start/stop/restart) on a container."""
         if self.use_mock:
-            logger.info(f"MOCK: Performing {action} on {container_id}")
-            with self.lock:
-                if container_id in self.containers_stats:
-                    if action == "stop":
-                        self.containers_stats[container_id]["status"] = "exited"
-                    elif action == "start":
-                        self.containers_stats[container_id]["status"] = "running"
-                    elif action == "restart":
-                        self.containers_stats[container_id]["status"] = "running"
-            return True
+            logger.error(f"Cannot perform {action} on {container_id}: Docker unavailable.")
+            return False
 
         if not self.client:
             return False
@@ -327,8 +265,7 @@ class DockerMonitor:
     def prune_containers(self) -> dict:
         """Prunes stopped containers."""
         if self.use_mock:
-            logger.info("MOCK: Pruning stopped containers")
-            return {"ContainersDeleted": ["mock-c1", "mock-c2"], "SpaceReclaimed": 1024}
+            return {"error": "Docker unavailable"}
 
         if not self.client:
             return {"error": "Docker client not available"}

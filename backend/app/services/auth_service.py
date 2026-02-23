@@ -47,7 +47,13 @@ class AuthService:
         return user
 
     @staticmethod
-    def create_session(db: Session, user: models.User, remember_me: bool = False) -> dict:
+    def create_session(
+        db: Session, 
+        user: models.User, 
+        remember_me: bool = False,
+        user_agent: str | None = None,
+        ip_address: str | None = None
+    ) -> dict:
         """
         Creates a new session for the user, including access and refresh tokens.
         Updates last_login timestamp.
@@ -59,7 +65,11 @@ class AuthService:
             )
 
             db_refresh_token = models.RefreshToken(
-                token=refresh_token_str, user_id=user.id, expires_at=expires_at
+                token=refresh_token_str, 
+                user_id=user.id, 
+                expires_at=expires_at,
+                user_agent=user_agent,
+                ip_address=ip_address
             )
             db.add(db_refresh_token)
 
@@ -197,3 +207,36 @@ class AuthService:
             except sqlalchemy.exc.SQLAlchemyError:
                 logger.exception("Database error during logout")
                 db.rollback()
+    @staticmethod
+    def get_active_sessions(db: Session, user_id: int):
+        """
+        Returns a list of active (non-revoked and not expired) refresh tokens for a user.
+        """
+        return (
+            db.query(models.RefreshToken)
+            .filter(
+                models.RefreshToken.user_id == user_id,
+                models.RefreshToken.is_revoked == False,
+                models.RefreshToken.expires_at > datetime.now(timezone.utc),
+            )
+            .order_by(models.RefreshToken.created_at.desc())
+            .all()
+        )
+
+    @staticmethod
+    def revoke_other_sessions(db: Session, user_id: int, current_refresh_token: str):
+        """
+        Revokes all refresh tokens for a user except the provided one.
+        """
+        try:
+            db.query(models.RefreshToken).filter(
+                models.RefreshToken.user_id == user_id,
+                models.RefreshToken.token != current_refresh_token,
+                models.RefreshToken.is_revoked == False
+            ).update({"is_revoked": True}, synchronize_session=False)
+            db.commit()
+            logger.info(f"Other sessions revoked for user {user_id}")
+        except sqlalchemy.exc.SQLAlchemyError:
+            db.rollback()
+            logger.exception(f"Failed to revoke other sessions for user {user_id}")
+            raise AuthenticationException("Could not revoke other sessions")

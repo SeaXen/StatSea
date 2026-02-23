@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Sun, Bell, Activity, Terminal, Database, Trash2, ShieldCheck, Cpu, User, Check, Download, Loader2, ClipboardList } from 'lucide-react';
+import { Save, Sun, Bell, Activity, Terminal, Database, Trash2, ShieldCheck, Cpu, User, Check, Download, Loader2, ClipboardList, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import axiosInstance from '../config/axiosInstance';
@@ -9,6 +9,9 @@ import { API_CONFIG } from '../config/apiConfig';
 import { presets, accentColors, ThemeMode } from '../lib/themes';
 import { useSettings as useSettingsQuery, useSaveSetting, useChangePassword } from '../hooks/useSettings';
 import AuditLogTab from './AuditLogTab';
+import ReportSettings from './ReportSettings';
+import NotificationSettings from './NotificationSettings';
+import { CertMonitor } from './CertMonitor';
 
 export default function Settings() {
     const { data: fetchedSettings = {} } = useSettingsQuery();
@@ -174,7 +177,9 @@ export default function Settings() {
                         <SidebarItem id="account" icon={User} label="Account" />
                         <SidebarItem id="appearance" icon={Sun} label="Appearance" />
                         <SidebarItem id="monitoring" icon={Activity} label="Monitoring" />
+                        <SidebarItem id="certificates" icon={ShieldCheck} label="SSL/TLS" />
                         <SidebarItem id="notifications" icon={Bell} label="Notifications" />
+                        <SidebarItem id="reports" icon={FileText} label="Reports" />
                         <SidebarItem id="backup" icon={Download} label="Backup" />
                         {user?.is_admin && <SidebarItem id="audit" icon={ClipboardList} label="Audit Log" />}
                     </div>
@@ -183,7 +188,9 @@ export default function Settings() {
                         <SidebarItem id="account" icon={User} label="Account" />
                         <SidebarItem id="appearance" icon={Sun} label="Appearance" />
                         <SidebarItem id="monitoring" icon={Activity} label="Monitoring" />
+                        <SidebarItem id="certificates" icon={ShieldCheck} label="SSL/TLS" />
                         <SidebarItem id="notifications" icon={Bell} label="Notifications" />
+                        <SidebarItem id="reports" icon={FileText} label="Reports" />
                         <SidebarItem id="backup" icon={Download} label="Backup" />
                         {user?.is_admin && <SidebarItem id="audit" icon={ClipboardList} label="Audit Log" />}
 
@@ -427,83 +434,19 @@ export default function Settings() {
                                 </div>
                             )}
 
+                            {/* Certificates Section */}
+                            {activeSection === 'certificates' && (
+                                <CertMonitor />
+                            )}
+
                             {/* Notifications Section */}
                             {activeSection === 'notifications' && (
-                                <div className="p-8 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400">
-                                            <Bell className="w-8 h-8" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-2xl font-semibold">Alert Integrations</h2>
-                                            <p className="text-muted-foreground">Receive real-time notifications where you need them</p>
-                                        </div>
-                                    </div>
+                                <NotificationSettings />
+                            )}
 
-                                    <div className="space-y-8">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-2 text-sm font-medium text-foreground/80">
-                                                <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
-                                                Discord Webhook
-                                            </div>
-                                            <div className="relative">
-                                                <input
-                                                    type="password"
-                                                    placeholder="https://discord.com/api/webhooks/..."
-                                                    className="bg-card/50 border border-border/50 rounded-xl pl-5 pr-14 py-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono text-sm"
-                                                    value={settings['DISCORD_WEBHOOK_URL'] || ''}
-                                                    onChange={(e) => setSettings(prev => ({ ...prev, DISCORD_WEBHOOK_URL: e.target.value }))}
-                                                />
-                                                <button
-                                                    onClick={() => saveSetting('DISCORD_WEBHOOK_URL', settings['DISCORD_WEBHOOK_URL'] || '', 'string')}
-                                                    className="absolute right-2 top-2 bottom-2 bg-indigo-600 text-white px-3 rounded-lg hover:bg-indigo-500 transition-colors"
-                                                >
-                                                    <Save className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-2 text-sm font-medium text-foreground/80">
-                                                <div className="w-2 h-2 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]"></div>
-                                                Telegram Configuration
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="relative">
-                                                    <input
-                                                        type="password"
-                                                        placeholder="Bot Token"
-                                                        className="bg-card/50 border border-border/50 rounded-xl pl-5 pr-14 py-3 w-full focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all font-mono text-sm"
-                                                        value={settings['TELEGRAM_BOT_TOKEN'] || ''}
-                                                        onChange={(e) => setSettings(prev => ({ ...prev, TELEGRAM_BOT_TOKEN: e.target.value }))}
-                                                    />
-                                                    <button
-                                                        onClick={() => saveSetting('TELEGRAM_BOT_TOKEN', settings['TELEGRAM_BOT_TOKEN'] || '', 'string')}
-                                                        className="absolute right-2 top-2 bottom-2 bg-sky-600 text-white px-3 rounded-lg hover:bg-sky-500 transition-colors"
-                                                    >
-                                                        <Save className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                                <div className="relative">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Chat ID"
-                                                        className="bg-card/50 border border-border/50 rounded-xl pl-5 pr-14 py-3 w-full focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all font-mono text-sm"
-                                                        value={settings['TELEGRAM_CHAT_ID'] || ''}
-                                                        onChange={(e) => setSettings(prev => ({ ...prev, TELEGRAM_CHAT_ID: e.target.value }))}
-                                                    />
-                                                    <button
-                                                        onClick={() => saveSetting('TELEGRAM_CHAT_ID', settings['TELEGRAM_CHAT_ID'] || '', 'string')}
-                                                        className="absolute right-2 top-2 bottom-2 bg-sky-600 text-white px-3 rounded-lg hover:bg-sky-500 transition-colors"
-                                                    >
-                                                        <Save className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            {/* Reports Section */}
+                            {activeSection === 'reports' && (
+                                <ReportSettings />
                             )}
 
                             {/* Backup Section */}

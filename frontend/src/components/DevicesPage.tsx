@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import {
     Search, Smartphone, Globe, Router, Laptop, Wifi, MoreVertical,
-    LayoutGrid, LayoutList, Power, Layers, Activity, Zap, BarChart3, SortDesc
+    LayoutGrid, LayoutList, Power, Layers, Activity, Zap, BarChart3, SortDesc,
+    Cast, Server, HelpCircle, Download, FileJson
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDevices, useDeviceGroups, useWakeDevice } from '../hooks/useDevices';
+import axiosInstance from '../config/axiosInstance';
 import { DeviceDetail } from './DeviceDetail';
 import { Device, DeviceGroup } from '../types';
 import { Skeleton, TableRowSkeleton } from './skeletons/WidgetSkeleton';
@@ -37,6 +39,37 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
     const [sortBy, setSortBy] = useState<'status' | 'bandwidth'>('status');
+    const [isExporting, setIsExporting] = useState(false);
+
+    const handleExport = async (resource: 'devices' | 'traffic', format: 'csv' | 'json') => {
+        setIsExporting(true);
+        try {
+            const response = await axiosInstance.get(`/reports/export/${resource}`, {
+                params: { format },
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `statsea_${resource}_${new Date().toISOString().split('T')[0]}.${format}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+
+            toast.success('Export successful', {
+                description: `Your ${resource} data has been exported as ${format.toUpperCase()}`
+            });
+        } catch (error) {
+            console.error('Export failed:', error);
+            toast.error('Export failed', {
+                description: 'Could not generate export file'
+            });
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     const openDetail = (device: Device) => {
         setSelectedDevice(device);
@@ -100,7 +133,17 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
         }
     });
 
-    const getIcon = (type: string = 'Unknown') => {
+    const getIcon = (type: string = 'Unknown', iconType?: string) => {
+        if (iconType) {
+            switch (iconType) {
+                case 'smartphone': return Smartphone;
+                case 'router': return Router;
+                case 'cast': return Cast;
+                case 'computer': return Laptop;
+                case 'server': return Server;
+                case 'help': return HelpCircle;
+            }
+        }
         switch ((type || 'Unknown').toLowerCase()) {
             case 'mobile': return Smartphone;
             case 'pc': return Laptop; // Laptop icon for PC
@@ -162,9 +205,29 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-wrap items-center gap-4"
+                    className="flex flex-wrap items-center gap-3"
                 >
-                    <button className="px-5 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-xs font-black text-white transition-all border border-white/10 flex items-center gap-3 group/btn hover:border-indigo-500/30 shadow-xl overflow-hidden relative">
+                    <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 shadow-xl overflow-hidden">
+                        <button
+                            onClick={() => handleExport('devices', 'csv')}
+                            disabled={isExporting}
+                            className="px-4 py-2 hover:bg-white/5 rounded-xl text-[10px] font-black text-white/60 hover:text-white transition-all flex items-center gap-2 group/btn disabled:opacity-50"
+                        >
+                            <Download className="w-3.5 h-3.5 text-indigo-400 group-hover/btn:scale-110 transition-transform" />
+                            CSV
+                        </button>
+                        <div className="w-[1px] bg-white/10 my-2" />
+                        <button
+                            onClick={() => handleExport('devices', 'json')}
+                            disabled={isExporting}
+                            className="px-4 py-2 hover:bg-white/5 rounded-xl text-[10px] font-black text-white/60 hover:text-white transition-all flex items-center gap-2 group/btn disabled:opacity-50"
+                        >
+                            <FileJson className="w-3.5 h-3.5 text-purple-400 group-hover/btn:scale-110 transition-transform" />
+                            JSON
+                        </button>
+                    </div>
+
+                    <button className="px-5 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black text-white transition-all border border-white/10 flex items-center gap-3 group/btn hover:border-indigo-500/30 shadow-xl overflow-hidden relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700" />
                         <Zap className="w-4 h-4 text-yellow-400 group-hover/btn:scale-110 transition-transform" />
                         SCAN NETWORK
@@ -289,7 +352,7 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                             <tbody className="divide-y divide-white/[0.03]">
                                 <AnimatePresence mode='popLayout'>
                                     {filteredDevices.map((device: Device, index: number) => {
-                                        const Icon = getIcon(device.type);
+                                        const Icon = getIcon(device.type, device.icon_type);
                                         return (
                                             <motion.tr
                                                 key={device.id || device.mac_address}
@@ -404,7 +467,7 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     <AnimatePresence mode='popLayout'>
                         {filteredDevices.map((device: Device, index: number) => {
-                            const Icon = getIcon(device.type);
+                            const Icon = getIcon(device.type, device.icon_type);
                             return (
                                 <PremiumCard
                                     key={device.id || device.mac_address}

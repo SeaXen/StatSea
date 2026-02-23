@@ -9,7 +9,7 @@ class BillingService:
         if not org:
             return None
         
-        # Mock Stripe Customer ID
+        # Initialize Stripe Customer ID Stub
         if not org.stripe_customer_id:
             org.stripe_customer_id = f"cus_{uuid.uuid4().hex[:14]}"
             db.commit()
@@ -34,5 +34,5 @@ class BillingService:
 
     @staticmethod
     def get_portal_url(organization_id: int):
-        # Return a mock portal URL
-        return f"https://billing.stripe.com/p/session/mock_portal_{organization_id}"
+        # Return a placeholder portal URL
+        return f"https://billing.stripe.com/p/session/stub_{organization_id}"

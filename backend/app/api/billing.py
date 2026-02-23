@@ -4,7 +4,8 @@ from pydantic import BaseModel
 
 from app.db.database import get_db
 from app.models import models
-from app.api.endpoints import get_current_org_id, get_current_user
+from app.api.deps import get_current_org_id
+from app.core.auth_jwt import get_current_user
 from app.services.billing_service import BillingService
 
 router = APIRouter()
@@ -44,7 +45,7 @@ def get_billing_portal(
     current_user: models.User = Depends(get_current_user)
 ):
     """
-    Returns a mock billing portal URL.
+    Returns a placeholder billing portal URL (Stripe integration pending).
     """
     url = BillingService.get_portal_url(organization_id)
     return {"url": url}

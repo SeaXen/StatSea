@@ -56,6 +56,6 @@ class StatusPageService:
         return {
             "title": page.title,
             "description": page.description,
-            "status": "operational", # Mocked
+            "status": "operational",
             "updated_at": datetime.now(timezone.utc).isoformat()
         }

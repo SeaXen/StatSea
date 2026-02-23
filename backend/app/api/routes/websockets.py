@@ -85,6 +85,7 @@ async def websocket_live(websocket: WebSocket, token: str = Query(None)):
 
     await websocket.accept()
     try:
+        heartbeat_counter = 0
         while True:
             stats = global_collector.get_current_stats()
             data = {
@@ -94,6 +95,17 @@ async def websocket_live(websocket: WebSocket, token: str = Query(None)):
                 "active_devices": stats["active_device_count"],
             }
             await websocket.send_json(data)
+
+            # Send ping every 30 seconds (30 iterations × 1s sleep)
+            heartbeat_counter += 1
+            if heartbeat_counter >= 30:
+                heartbeat_counter = 0
+                try:
+                    await asyncio.wait_for(websocket.send_json({"type": "ping"}), timeout=10)
+                except asyncio.TimeoutError:
+                    logger.debug("Live stats WebSocket heartbeat timeout, closing")
+                    break
+
             await asyncio.sleep(1)
     except Exception as e:
         logger.debug(f"Live stats WebSocket disconnected: {e}")

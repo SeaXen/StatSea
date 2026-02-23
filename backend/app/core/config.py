@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "StatSea"
-    PROJECT_VERSION: str = "0.1.0"
+    PROJECT_VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
     PASSWORD_MIN_LENGTH: int = 8
 
@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FILE: str = "logs/statsea.log"
+
+    # VAPID Keys for Push Notifications
+    VAPID_PUBLIC_KEY: str | None = None
+    VAPID_PRIVATE_KEY: str | None = None
+    VAPID_ADMIN_EMAIL: str = "admin@statsea.dev"
 
     class Config:
         env_file = ".env"

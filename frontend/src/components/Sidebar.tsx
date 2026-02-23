@@ -12,7 +12,8 @@ import {
     Menu,
     LogOut,
     Users,
-    BarChart3
+    BarChart3,
+    Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -42,9 +43,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'network', label: 'Map', icon: Network },
         { id: 'geo', label: 'Global', icon: Globe },
         { id: 'containers', label: 'Containers', icon: Box },
+        { id: 'system', label: 'System', icon: Activity },
         { id: 'analytics', label: 'Analytics', icon: Activity },
         { id: 'bandwidth', label: 'Bandwidth', icon: BarChart3 },
         { id: 'speedtest', label: 'Speed', icon: Zap },
+        { id: 'sessions', label: 'Sessions', icon: Shield },
         { id: 'settings', label: 'Settings', icon: Settings },
     ];
 

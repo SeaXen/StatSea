@@ -110,6 +110,9 @@ class RefreshToken(Base):
     expires_at = Column(DateTime(timezone=True), index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_revoked = Column(Boolean, default=False)
+    
+    user_agent = Column(String, nullable=True)
+    ip_address = Column(String, nullable=True)
 
     user = relationship("User", back_populates="refresh_tokens")
 
@@ -137,6 +140,7 @@ class Device(Base):
     last_seen = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     is_online = Column(Boolean, default=False)
     nickname = Column(String, nullable=True)
+    icon_type = Column(String, nullable=True)
     notes = Column(String, nullable=True)
     tags = Column(JSON, nullable=True)  # JSON list of strings
     group_id = Column(Integer, ForeignKey("device_groups.id"), nullable=True)
@@ -152,6 +156,23 @@ class Device(Base):
     status_logs = relationship(
         "DeviceStatusLog", back_populates="device", cascade="all, delete-orphan"
     )
+    ports = relationship(
+        "DevicePort", back_populates="device", cascade="all, delete-orphan"
+    )
+
+
+class DevicePort(Base):
+    __tablename__ = "device_ports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(Integer, ForeignKey("devices.id"))
+    port = Column(Integer, index=True)
+    protocol = Column(String, default="TCP") # TCP, UDP
+    service = Column(String, nullable=True) # ssh, http, etc.
+    state = Column(String, default="open") # open, closed, filtered
+    last_discovered = Column(DateTime(timezone=True), server_default=func.now())
+
+    device = relationship("Device", back_populates="ports")
 
 
 class BandwidthQuota(Base):
@@ -499,4 +520,104 @@ class PushSubscription(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="push_subscriptions")
+
+
+class OSMetricHistory(Base):
+    __tablename__ = "os_metric_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    cpu_pct = Column(Float)
+    ram_used_gb = Column(Float)
+    ram_total_gb = Column(Float)
+    disk_used_gb = Column(Float)
+    disk_total_gb = Column(Float)
+
+
+class HealthCheck(Base):
+    __tablename__ = "health_checks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    url = Column(String)
+    method = Column(String, default="GET")  # GET, POST
+    interval_seconds = Column(Integer, default=300) # Default 5 mins
+    is_active = Column(Boolean, default=True)
+    last_status = Column(Integer, nullable=True)
+    last_checked = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+
+    logs = relationship("HealthCheckLog", back_populates="check", cascade="all, delete-orphan")
+
+
+class HealthCheckLog(Base):
+    __tablename__ = "health_check_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    check_id = Column(Integer, ForeignKey("health_checks.id"))
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    status_code = Column(Integer, nullable=True)
+    response_time_ms = Column(Float, nullable=True)
+    is_up = Column(Boolean)
+    error = Column(String, nullable=True)
+
+    check = relationship("HealthCheck", back_populates="logs")
+
+
+class BackupRecord(Base):
+    __tablename__ = "backup_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String, unique=True)
+    file_path = Column(String)
+    size_bytes = Column(BigInteger)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    is_manual = Column(Boolean, default=False)
+
+
+class MonitoredCertificate(Base):
+    __tablename__ = "monitored_certificates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    domain = Column(String, index=True)
+    port = Column(Integer, default=443)
+    is_active = Column(Boolean, default=True)
+    last_checked = Column(DateTime(timezone=True), nullable=True)
+    expiration_date = Column(DateTime(timezone=True), nullable=True)
+    issuer = Column(String, nullable=True)
+    days_until_expiration = Column(Integer, nullable=True)
+    error_message = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+
+class AgentNode(Base):
+    __tablename__ = "agent_nodes"
+
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String)
+    api_key_hash = Column(String, index=True)
+    ip_address = Column(String, nullable=True)
+    status = Column(String, default="offline") # 'online', 'offline'
+    last_seen = Column(DateTime(timezone=True), nullable=True)
+    system_info = Column(JSON, nullable=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    organization = relationship("Organization")
+    metrics = relationship("AgentMetric", back_populates="agent", cascade="all, delete-orphan")
+
+class AgentMetric(Base):
+    __tablename__ = "agent_metrics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    agent_id = Column(String, ForeignKey("agent_nodes.id"), index=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    cpu_pct = Column(Float)
+    mem_usage = Column(Float) # MB
+    disk_usage = Column(Float) # Percent
+    net_rx = Column(BigInteger, default=0)
+    net_tx = Column(BigInteger, default=0)
+
+    agent = relationship("AgentNode", back_populates="metrics")
 

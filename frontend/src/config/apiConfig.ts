@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 // Basic API Configuration
-const API_PORT = import.meta.env.VITE_API_PORT || '21081';
+const API_PORT = import.meta.env.VITE_API_PORT || '8001';
 export const API_CONFIG = {
     BASE_URL: `http://${window.location.hostname}:${API_PORT}/api`,
     WS_URL: `ws://${window.location.hostname}:${API_PORT}/api`,
@@ -16,6 +16,7 @@ export const API_CONFIG = {
             HISTORY_SYSTEM: '/analytics/history/system',
             HISTORY_DEVICE: (mac: string) => `/analytics/history/device/${mac}`,
             YEARLY: '/analytics/yearly',
+            TRAFFIC_CATEGORIES: '/analytics/traffic-categories',
         },
         SECURITY: {
             EVENTS: '/security/events',
@@ -59,6 +60,12 @@ export const API_CONFIG = {
         ADMIN: {
             AUDIT_LOG: '/admin/audit-log',
         },
+        NOTIFICATIONS: {
+            CHANNELS: '/notifications/channels',
+            CHANNEL_BY_ID: (id: number) => `/notifications/channels/${id}`,
+            TEST_CHANNEL: (id: number) => `/notifications/channels/${id}/test`,
+            PUSH_SUBSCRIPTION: '/notifications/push/subscribe',
+        },
         BANDWIDTH: {
             INTERFACES: '/bandwidth/interfaces',
             SUMMARY: '/bandwidth/summary',
@@ -68,6 +75,10 @@ export const API_CONFIG = {
             MONTHLY: '/bandwidth/monthly',
             YEARLY: '/bandwidth/yearly',
             TOP: '/bandwidth/top',
+        },
+        CERTIFICATES: {
+            BASE: '/certificates',
+            BY_ID: (id: number) => `/certificates/${id}`,
         }
     }
 } as const; // Add 'as const' to infer literal types correctly

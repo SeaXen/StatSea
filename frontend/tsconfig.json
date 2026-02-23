@@ -22,7 +22,8 @@
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
         "types": [
-            "vitest/globals"
+            "vitest/globals",
+            "vite-plugin-pwa/client"
         ],
         "baseUrl": ".",
         "paths": {

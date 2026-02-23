@@ -37,7 +37,7 @@ export const ConnectionGlobe = () => {
     const [connections, setConnections] = useState<Connection[]>([]);
     const globeRef = useRef<GlobeMethods>();
 
-    // Mock home location (Center of Map for demo, or detected)
+    // Default home location (Center of Map if not detected)
     const homeLocation: PointData = { lat: 23.8103, lon: 90.4125, label: 'Statsea Hub' };
 
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -73,14 +73,7 @@ export const ConnectionGlobe = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Sample data for initial 'Wow' factor if no real connections yet
-    const sampleConnections: Connection[] = [
-        { ip: '8.8.8.8', city: 'Mountain View', country: 'USA', lat: 37.386, lon: -122.0838, bytes: 1024, hits: 10 },
-        { ip: '1.1.1.1', city: 'Sydney', country: 'Australia', lat: -33.8688, lon: 151.2093, bytes: 2048, hits: 5 },
-        { ip: '142.250.72.110', city: 'Frankfurt', country: 'Germany', lat: 50.1109, lon: 8.6821, bytes: 512, hits: 2 },
-    ];
-
-    const displayConnections = connections.length > 0 ? connections : sampleConnections;
+    const displayConnections = connections;
 
     const getCountryFlag = (countryCode: string) => {
         if (!countryCode) return '🌐';

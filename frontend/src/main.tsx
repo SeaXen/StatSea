@@ -2,7 +2,11 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.tsx'
+import { registerSW } from 'virtual:pwa-register'
 import './index.css'
+
+// Register service worker for PWA
+registerSW({ immediate: true })
 
 import { setupErrorReporting } from './utils/errorReporting'
 

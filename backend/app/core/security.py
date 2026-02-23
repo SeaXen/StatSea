@@ -3,7 +3,7 @@ import logging
 import psutil
 from sqlalchemy.orm import Session
 
-from ..core.notifications import notification_service
+from ..services.notification_service import NotificationService
 from ..models import models
 
 logger = logging.getLogger(__name__)
@@ -52,12 +52,20 @@ class SecurityEngine:
                 )
                 logger.warning(f"SECURITY ALERT: {desc}")
                 # Send Notification
-                notification_service.send_alert(
-                    title="New Open Port Detected",
-                    description=desc,
-                    severity="MEDIUM",
-                    fields=[{"name": "Port", "value": str(port)}, {"name": "IP", "value": ip}],
-                )
+                try:
+                    # Default to org_id 1 if not easily available (system-wide alert)
+                    org = db.query(models.Organization).first()
+                    org_id = org.id if org else 1
+                    
+                    NotificationService.send_alert(
+                        db=db,
+                        organization_id=org_id,
+                        title="New Open Port Detected",
+                        description=f"{desc}\n\n**Port:** `{port}`\n**IP:** `{ip}`",
+                        severity="MEDIUM"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send port change notification: {e}")
 
             # Update known ports (so we don't alert repeatedly for the same one)
             self.known_ports = current_ports

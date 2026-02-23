@@ -7,10 +7,16 @@ from ..models import models
 from .aggregator import run_aggregation_job
 from .cleanup import run_cleanup_job
 from .logging import get_logger
-from .notifications import notification_service
+from ..services.notification_service import NotificationService
 from .quotas import check_quotas
 from .speedtest_service import speedtest_service
 from .uptime import check_device_availability
+from ..services.port_scanner import run_port_scan_job
+from ..services import system_metrics as system_service
+from ..services import backup_service as backup_service_lib
+from ..services import health_checker as health_service
+from ..services.certificate_service import CertificateMonitor
+import asyncio
 
 logger = get_logger("Scheduler")
 
@@ -35,6 +41,17 @@ class SchedulerService:
         # Schedule aggregation every hour
         self.schedule_aggregation()
 
+        # Schedule port scanning every 6 hours
+        self.schedule_port_scanning()
+
+        # Phase 6: System Management
+        self.schedule_system_metrics()
+        self.schedule_health_checks()
+        self.schedule_backups()
+
+        # Phase 11: SSL Monitoring
+        self.schedule_certificate_checks()
+
     def schedule_uptime_check(self):
         """Schedules the device uptime/offline check."""
         if not self.scheduler.get_job("uptime_monitor"):
@@ -58,6 +75,19 @@ class SchedulerService:
                 replace_existing=True,
             )
             logger.info("Daily aggregation scheduled (Every 1 hour).")
+
+    def schedule_port_scanning(self):
+        """Schedules the background port scanning job."""
+        if not self.scheduler.get_job("port_scanner"):
+            # Run every 6 hours
+            self.scheduler.add_job(
+                run_port_scan_job,
+                "interval",
+                hours=6,
+                id="port_scanner",
+                replace_existing=True,
+            )
+            logger.info("Background port scanner scheduled (Every 6 hours).")
 
     def schedule_quota_check(self):
         """Schedules the bandwidth quota check."""
@@ -148,7 +178,14 @@ class SchedulerService:
                     "provider": provider,
                     "server_name": result_data["server"]["name"],
                 }
-                notification_service.send_speedtest_alert(result_dict, notify_config)
+                
+                # Use new NotificationService - defaulting to first organization for now
+                try:
+                    org = db.query(models.Organization).first()
+                    org_id = org.id if org else 1
+                    NotificationService.send_speedtest_alert(db, org_id, result_dict)
+                except Exception as e:
+                    logger.error(f"Failed to send new-style speedtest alert: {e}")
 
         except sqlalchemy.exc.SQLAlchemyError:
             logger.exception("Database error during scheduled speedtest")
@@ -159,25 +196,102 @@ class SchedulerService:
         finally:
             db.close()
 
-    def update_scheduler_from_db(self):
-        """Refreshes scheduler config from DB."""
-        db: Session = SessionLocal()
-        try:
-            setting = (
-                db.query(models.SystemSettings)
-                .filter(models.SystemSettings.key == "speedtest_interval")
-                .first()
+    def schedule_system_metrics(self):
+        """Schedule metric collection every 5 minutes."""
+        if not self.scheduler.get_job("system_metrics"):
+            self.scheduler.add_job(
+                self._run_system_metrics,
+                "interval",
+                minutes=5,
+                id="system_metrics",
+                replace_existing=True
             )
-            if setting and setting.value:
-                try:
-                    interval = float(
-                        setting.value
-                    )  # Allow float for "0.5" hours etc if needed, though int is safer for hours
-                    self.schedule_speedtest(interval)
-                except ValueError:
-                    pass
+            logger.info("System metrics collection scheduled (Every 5 mins).")
+
+    def schedule_health_checks(self):
+        """Schedule health checks every 5 minutes."""
+        if not self.scheduler.get_job("health_checks"):
+            self.scheduler.add_job(
+                self._run_health_checks,
+                "interval",
+                minutes=5,
+                id="health_checks",
+                replace_existing=True
+            )
+            logger.info("Health checks scheduled (Every 5 mins).")
+
+    def schedule_backups(self):
+        """Schedule automated backups daily."""
+        if not self.scheduler.get_job("automated_backup"):
+            self.scheduler.add_job(
+                self._run_backup,
+                "interval",
+                days=1,
+                id="automated_backup",
+                replace_existing=True
+            )
+            logger.info("Automated backup scheduled (Daily).")
+
+    def schedule_certificate_checks(self):
+        """Schedule SSL certificate monitoring every 24 hours."""
+        if not self.scheduler.get_job("certificate_checks"):
+            self.scheduler.add_job(
+                self._run_certificate_checks,
+                "interval",
+                hours=24,
+                id="certificate_checks",
+                replace_existing=True
+            )
+            logger.info("SSL Certificate monitoring scheduled (Every 24 hours).")
+
+    def _run_system_metrics(self):
+        db = SessionLocal()
+        try:
+            system_service.record_system_metrics(db)
         finally:
             db.close()
 
+    def _run_health_checks(self):
+        db = SessionLocal()
+        try:
+            # Bridging sync APScheduler to async health check
+            asyncio.run(health_service.run_all_health_checks(db))
+        finally:
+            db.close()
+
+    def _run_backup(self):
+        db = SessionLocal()
+        try:
+            backup_service_lib.create_backup(db, is_manual=False)
+        finally:
+            db.close()
+
+    def _run_certificate_checks(self):
+        db = SessionLocal()
+        try:
+            CertificateMonitor.check_all_certificates(db)
+        finally:
+            db.close()
+
+    def update_scheduler_from_db(self):
+        db = SessionLocal()
+        try:
+            settings = db.query(models.SystemSettings).all()
+            settings_map = {s.key: s.value for s in settings}
+            
+            # Speedtest interval (minutes)
+            try:
+                st_interval = int(settings_map.get("speedtest_interval", 180))
+            except ValueError:
+                st_interval = 180
+                
+            if st_interval > 0:
+                self.schedule_speedtest(st_interval / 60.0)
+            else:
+                self.schedule_speedtest(0)
+                
+            logger.info("Scheduler updated from database settings.")
+        finally:
+            db.close()
 
 scheduler = SchedulerService()

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Cpu, Globe, Shield, HardDrive, Smartphone, Monitor, Clock, Calendar, Edit2, Check, Tag, Plus } from 'lucide-react';
+import { X, Cpu, Globe, Shield, HardDrive, Smartphone, Monitor, Clock, Calendar, Edit2, Check, Tag, Plus, Router, Cast, Server, HelpCircle, Laptop, Power } from 'lucide-react';
 import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Device, DeviceGroup } from '../types';
 import { QuotaManager } from './QuotaManager';
 import { UptimeTimeline } from './UptimeTimeline';
 import { formatBytes, cn } from '../lib/utils';
+import { useWakeDevice } from '../hooks/useDevices';
 
 interface DailyUsage {
     date: string;
@@ -23,6 +24,7 @@ interface DeviceDetailProps {
 
 export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: DeviceDetailProps) {
     const [stats, setStats] = useState<DailyUsage[]>([]);
+    const { mutate: wakeDevice, isPending: isWaking } = useWakeDevice();
 
 
     // Editing state
@@ -114,7 +116,17 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
 
     const monthlyUsage = stats.reduce((acc, curr) => acc + curr.upload + curr.download, 0);
 
-    const getIcon = (type?: string) => {
+    const getIcon = (type?: string, iconType?: string) => {
+        if (iconType) {
+            switch (iconType) {
+                case 'smartphone': return <Smartphone className="w-6 h-6" />;
+                case 'router': return <Router className="w-6 h-6" />;
+                case 'cast': return <Cast className="w-6 h-6" />;
+                case 'computer': return <Laptop className="w-6 h-6" />;
+                case 'server': return <Server className="w-6 h-6" />;
+                case 'help': return <HelpCircle className="w-6 h-6" />;
+            }
+        }
         switch (type?.toLowerCase()) {
             case 'mobile': return <Smartphone className="w-6 h-6" />;
             case 'pc': return <Monitor className="w-6 h-6" />;
@@ -189,7 +201,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                 <div className="mb-12">
                                     <div className="flex items-start gap-6">
                                         <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/20 shadow-[0_0_40px_rgba(99,102,241,0.1)]">
-                                            {getIcon(device.type)}
+                                            {getIcon(device.type, device.icon_type)}
                                         </div>
                                         <div className="flex-1 min-w-0 pt-1">
                                             {isEditing ? (
@@ -224,6 +236,19 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                         <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] pt-0.5">
                                                             {device.hostname}
                                                         </div>
+                                                        {!device.is_online && (
+                                                            <>
+                                                                <span className="text-white/20 text-[10px] font-bold uppercase tracking-widest leading-none">•</span>
+                                                                <button
+                                                                    onClick={() => wakeDevice(device.mac_address)}
+                                                                    disabled={isWaking}
+                                                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                                                                >
+                                                                    {isWaking ? <div className="w-3 h-3 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" /> : <Power className="w-3 h-3" />}
+                                                                    WAKE
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </>
                                             )}
@@ -491,6 +516,36 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                         </ResponsiveContainer>
                                     </div>
                                 </div>
+
+                                {device.ports && device.ports.length > 0 && (
+                                    <div className="mb-10">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                                                <Shield className="w-5 h-5 text-orange-400" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-black text-white tracking-tight">Open Ports</h3>
+                                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">EXTERNAL SERVICE MAP</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {device.ports.map((port) => (
+                                                <div key={port.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] group/port hover:bg-white/[0.04] transition-all">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="text-lg font-black text-white w-12">{port.port}</div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{port.service || 'UNKNOWN'}</span>
+                                                            <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{port.protocol} • {port.state}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-[9px] font-black text-white/10 uppercase tracking-widest">
+                                                        LAST SEEN: {new Date(port.last_discovered).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Security & Analysis Footer */}
                                 <div className="grid grid-cols-2 gap-6 pb-20">

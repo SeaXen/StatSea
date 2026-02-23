@@ -7,9 +7,8 @@ class EmailService:
     @staticmethod
     def send_daily_summary(email: str):
         """
-        Stubs the email sending process.
-        In a real implementation, this would use SMTP or an email API (SendGrid, SES, etc.)
+        [STUB] Email sending is not yet implemented.
+        In production, integrate with SMTP or an email API (SendGrid, SES, etc.)
         """
-        logger.info(f"STUB: Sending daily summary email to {email}")
-        # Logic to gather stats would go here
+        logger.info(f"[STUB] Daily summary email to {email} — email service not configured")
         return True
