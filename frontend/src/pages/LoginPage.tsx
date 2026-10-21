@@ -44,7 +44,7 @@ const LoginPage: React.FC = () => {
         <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
             {/* Background Glows */}
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[120px] rounded-full" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-500/10 blur-[120px] rounded-full" />
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -57,7 +57,7 @@ const LoginPage: React.FC = () => {
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500/10 rounded-2xl mb-4 border border-blue-500/20">
                             <Shield className="w-8 h-8 text-blue-500" />
                         </div>
-                        <h1 className="text-3xl font-bold text-white mb-2">StatSea</h1>
+                        <h1 className="text-3xl font-bold text-foreground mb-2">StatSea</h1>
                         <p className="text-muted-foreground">Secure Network Intelligence Dashboard</p>
                     </div>
 

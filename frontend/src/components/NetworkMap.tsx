@@ -196,23 +196,23 @@ export function NetworkMap() {
                     animate={{ scale: 1, opacity: 1 }}
                     className="relative z-20"
                 >
-                    <div className="w-40 h-40 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 p-[1px] shadow-[0_0_80px_rgba(79,70,229,0.2)] group">
-                        <div className="w-full h-full rounded-full bg-[#0a0a0c] flex flex-col items-center justify-center border border-white/10 overflow-hidden relative">
+                    <div className="w-40 h-40 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 p-[1px] shadow-[0_0_80px_rgba(6,182,212,0.2)] group">
+                        <div className="w-full h-full rounded-full bg-card flex flex-col items-center justify-center border border-border overflow-hidden relative">
                             {/* Scanning Pulse Effect */}
                             <motion.div
                                 animate={{ scale: [1, 1.5], opacity: [0.3, 0] }}
                                 transition={{ duration: 3, repeat: Infinity, ease: "easeOut" }}
-                                className="absolute inset-0 bg-indigo-500/20 rounded-full"
+                                className="absolute inset-0 bg-primary/20 rounded-full"
                             />
-                            <div className="absolute inset-0 bg-indigo-500/5 group-hover:bg-indigo-500/10 transition-colors" />
-                            <Router className="w-12 h-12 text-indigo-400 mb-2 relative z-10" />
-                            <span className="text-[10px] uppercase font-black tracking-[0.2em] text-indigo-500/80 relative z-10">Gateway</span>
+                            <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
+                            <Router className="w-12 h-12 text-primary mb-2 relative z-10" />
+                            <span className="text-[10px] uppercase font-black tracking-[0.2em] text-primary/80 relative z-10">Gateway</span>
 
                             {/* Spinning border fragment */}
                             <motion.div
                                 animate={{ rotate: 360 }}
                                 transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                                className="absolute inset-0 border-t border-indigo-500/40 rounded-full pointer-events-none"
+                                className="absolute inset-0 border-t border-primary/40 rounded-full pointer-events-none"
                             />
                         </div>
                     </div>
@@ -241,16 +241,16 @@ export function NetworkMap() {
                         >
                             <div className={cn(
                                 "w-20 h-20 rounded-[2rem] flex items-center justify-center transition-all duration-500 relative",
-                                "bg-[#111114]/60 backdrop-blur-2xl border border-white/10 group-hover:border-indigo-500/40 group-hover:shadow-[0_0_40px_rgba(99,101,241,0.15)]",
-                                selectedNode?.id === node.id && "border-indigo-500/60 bg-indigo-500/10 shadow-[0_0_50px_rgba(99,101,241,0.25)]"
+                                "bg-card/70 backdrop-blur-2xl border border-border group-hover:border-primary/40 group-hover:shadow-lg",
+                                selectedNode?.id === node.id && "border-primary/60 bg-primary/10 shadow-xl"
                             )}>
                                 <div className={cn(
                                     "transition-colors duration-500",
-                                    selectedNode?.id === node.id ? "text-indigo-400" : "text-white/40 group-hover:text-white"
+                                    selectedNode?.id === node.id ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                                 )}>
                                     {getIcon(node.type)}
                                 </div>
-                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0a0c] shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-background shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                             </div>
                             <div className="mt-4 flex flex-col items-center">
                                 <span className={cn(
@@ -277,54 +277,55 @@ export function NetworkMap() {
                         exit={{ opacity: 0, x: -30 }}
                         className="absolute bottom-10 left-10 z-50 w-[380px]"
                     >
-                        <PremiumCard className="p-8 border-white/10 bg-[#0a0a0c]/80 backdrop-blur-3xl shadow-[0_32px_64px_rgba(0,0,0,0.6)]">
+                        <PremiumCard className="p-8 border-border bg-card/90 backdrop-blur-3xl shadow-2xl">
                             <div className="flex items-center gap-5 mb-8">
-                                <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.1)]">
+                                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm">
                                     {getIcon(selectedNode.type)}
                                 </div>
                                 <div>
-                                    <h3 className="text-white text-xl font-black tracking-tight">{selectedNode.label}</h3>
+                                    <h3 className="text-foreground text-xl font-black tracking-tight">{selectedNode.label}</h3>
                                     <div className="flex items-center gap-2 mt-1">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        <p className="text-indigo-400/80 text-[11px] font-black uppercase tracking-widest leading-none">{selectedNode.ip}</p>
+                                        <p className="text-primary/90 text-[11px] font-black uppercase tracking-widest leading-none tabular-nums">{selectedNode.ip}</p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => setSelectedNode(null)}
-                                    className="ml-auto w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white/20 hover:text-white transition-all shadow-lg group/close"
+                                    aria-label="Close detail modal"
+                                    className="ml-auto w-10 h-10 flex items-center justify-center rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-all shadow-sm group/close"
                                 >
                                     <ShieldCheck className="w-5 h-5 group-hover/close:scale-110 transition-transform" />
                                 </button>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-5 rounded-3xl bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-all">
-                                    <span className="text-[10px] uppercase font-black text-white/20 tracking-widest block mb-2.5">Data Transmission</span>
+                                <div className="p-5 rounded-3xl bg-secondary/40 border border-border group hover:bg-secondary/60 transition-all">
+                                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest block mb-2.5">Data Transmission</span>
                                     <div className="flex items-center gap-2">
-                                        <Activity className="w-4 h-4 text-emerald-400" />
-                                        <span className="text-[13px] font-black text-white/90">2.4 MB/s</span>
+                                        <Activity className="w-4 h-4 text-emerald-500" />
+                                        <span className="text-[13px] font-black text-foreground tabular-nums">2.4 MB/s</span>
                                     </div>
                                 </div>
-                                <div className="p-5 rounded-3xl bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-all">
-                                    <span className="text-[10px] uppercase font-black text-white/20 tracking-widest block mb-2.5">Latency</span>
+                                <div className="p-5 rounded-3xl bg-secondary/40 border border-border group hover:bg-secondary/60 transition-all">
+                                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest block mb-2.5">Latency</span>
                                     <div className="flex items-center gap-2">
-                                        <Activity className="w-4 h-4 text-indigo-400 rotate-90" />
-                                        <span className="text-[13px] font-black text-white/90">14 ms</span>
+                                        <Activity className="w-4 h-4 text-primary rotate-90" />
+                                        <span className="text-[13px] font-black text-foreground tabular-nums">14 ms</span>
                                     </div>
                                 </div>
-                                <div className="p-5 rounded-3xl bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-all col-span-2">
-                                    <span className="text-[10px] uppercase font-black text-white/20 tracking-widest block mb-3">Recent Security Activity</span>
+                                <div className="p-5 rounded-3xl bg-secondary/40 border border-border group hover:bg-secondary/60 transition-all col-span-2">
+                                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest block mb-3">Recent Security Activity</span>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <ShieldCheck className="w-4 h-4 text-indigo-400" />
-                                            <span className="text-[11px] font-bold text-white/60">No threats detected</span>
+                                            <ShieldCheck className="w-4 h-4 text-primary" />
+                                            <span className="text-[11px] font-bold text-muted-foreground">No threats detected</span>
                                         </div>
-                                        <span className="text-[10px] font-black text-emerald-400/80 uppercase">Secured</span>
+                                        <span className="text-[10px] font-black text-emerald-500 uppercase">Secured</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <button className="w-full mt-6 py-4 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-2xl text-[11px] font-black uppercase tracking-[0.25em] text-indigo-300 hover:text-white transition-all shadow-xl">
+                            <button className="w-full mt-6 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-2xl text-[11px] font-black uppercase tracking-[0.25em] text-primary hover:text-foreground transition-all shadow-sm">
                                 Detailed Traffic Analysis
                             </button>
                         </PremiumCard>
@@ -337,21 +338,21 @@ export function NetworkMap() {
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="px-6 py-4 rounded-[2rem] bg-black/40 backdrop-blur-3xl border border-white/10 flex items-center gap-4 shadow-2xl"
+                    className="px-6 py-4 rounded-[2rem] bg-card/80 backdrop-blur-3xl border border-border flex items-center gap-4 shadow-xl"
                 >
                     <div className="flex -space-x-2">
                         {[Router, Monitor, Smartphone].map((Icon, i) => (
-                            <div key={i} className="w-8 h-8 rounded-full bg-[#111114] border border-white/10 flex items-center justify-center">
-                                <Icon className="w-3.5 h-3.5 text-indigo-400" />
+                            <div key={i} className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center">
+                                <Icon className="w-3.5 h-3.5 text-primary" />
                             </div>
                         ))}
                     </div>
-                    <div className="w-[1px] h-6 bg-white/10 mx-1" />
+                    <div className="w-[1px] h-6 bg-border mx-1" />
                     <div className="flex flex-col">
-                        <span className="text-[14px] font-black text-white leading-none">
+                        <span className="text-[14px] font-black text-foreground tabular-nums leading-none">
                             {deviceNodes.length + 1}
                         </span>
-                        <span className="text-[8px] font-black text-white/30 uppercase tracking-[0.15em] mt-1">
+                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.15em] mt-1">
                             Active Entities
                         </span>
                     </div>

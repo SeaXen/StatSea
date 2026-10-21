@@ -150,13 +150,14 @@ const NetworkComparison: React.FC = () => {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header / Controls */}
-            <div className="flex flex-col md:flex-row justify-between items-center bg-card/40 p-4 rounded-xl border border-border backdrop-blur-sm">
+            {/* Header / Controls */}
+            <div className="flex flex-col md:flex-row justify-between items-center bg-card/60 p-4 rounded-xl border border-border backdrop-blur-sm">
                 <div className="flex items-center gap-3 mb-4 md:mb-0">
-                    <div className="p-2 bg-indigo-500/20 rounded-lg">
-                        <ArrowRightLeft className="w-5 h-5 text-indigo-400" />
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <ArrowRightLeft className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold text-white">Network Comparison</h2>
+                        <h2 className="text-lg font-semibold text-foreground">Network Comparison</h2>
                         <p className="text-xs text-muted-foreground">Analyze performance across different timeframes</p>
                     </div>
                 </div>
@@ -167,7 +168,8 @@ const NetworkComparison: React.FC = () => {
                         <select
                             value={rangeA}
                             onChange={(e) => setRangeA(e.target.value)}
-                            className="bg-secondary border border-border text-foreground/90 text-sm rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                            aria-label="Period A selection"
+                            className="bg-secondary border border-border text-foreground/90 text-sm rounded-lg p-2 focus:ring-primary focus:border-primary outline-none"
                         >
                             <option value="1h">Last Hour</option>
                             <option value="24h">Last 24 Hours</option>
@@ -175,14 +177,15 @@ const NetworkComparison: React.FC = () => {
                         </select>
                     </div>
 
-                    <span className="text-muted-foreground mt-4">VS</span>
+                    <span className="text-muted-foreground mt-4 font-semibold text-xs">VS</span>
 
                     <div className="flex flex-col gap-1">
                         <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold ml-1">Period B</label>
                         <select
                             value={rangeB}
                             onChange={(e) => setRangeB(e.target.value)}
-                            className="bg-secondary border border-border text-foreground/90 text-sm rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                            aria-label="Period B selection"
+                            className="bg-secondary border border-border text-foreground/90 text-sm rounded-lg p-2 focus:ring-primary focus:border-primary outline-none"
                         >
                             <option value="prev_1h">Previous Hour</option>
                             <option value="prev_24h">Previous 24 Hours</option>
@@ -195,13 +198,13 @@ const NetworkComparison: React.FC = () => {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Period A Stats */}
-                <div className="bg-card/60 border border-indigo-500/30 rounded-xl p-5 relative overflow-hidden">
+                <div className="bg-card/60 border border-primary/30 rounded-xl p-5 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Calendar className="w-24 h-24 text-indigo-500" />
+                        <Calendar className="w-24 h-24 text-primary" />
                     </div>
                     <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-sm font-medium text-indigo-300">Period A (Current)</h3>
-                        <span className="px-2 py-1 bg-indigo-500/20 text-indigo-300 text-xs rounded-full">
+                        <h3 className="text-sm font-medium text-primary">Period A (Current)</h3>
+                        <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
                             {rangeA === '24h' ? 'Last 24h' : rangeA}
                         </span>
                     </div>
@@ -209,8 +212,8 @@ const NetworkComparison: React.FC = () => {
                         <div>
                             <p className="text-muted-foreground text-xs mb-1">Total Download</p>
                             <div className="flex items-end gap-2">
-                                <span className="text-2xl font-bold text-white">{formatBytes(statsA.totalDownload)}</span>
-                                <span className={`text-xs flex items-center ${getDiff(statsA.totalDownload, statsB.totalDownload) > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                <span className="text-2xl font-bold text-foreground tabular-nums">{formatBytes(statsA.totalDownload)}</span>
+                                <span className={`text-xs flex items-center tabular-nums ${getDiff(statsA.totalDownload, statsB.totalDownload) > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                                     {getDiff(statsA.totalDownload, statsB.totalDownload) > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
                                     {Math.abs(getDiff(statsA.totalDownload, statsB.totalDownload)).toFixed(1)}%
                                 </span>
@@ -219,8 +222,8 @@ const NetworkComparison: React.FC = () => {
                         <div>
                             <p className="text-muted-foreground text-xs mb-1">Total Upload</p>
                             <div className="flex items-end gap-2">
-                                <span className="text-2xl font-bold text-white">{formatBytes(statsA.totalUpload)}</span>
-                                <span className={`text-xs flex items-center ${getDiff(statsA.totalUpload, statsB.totalUpload) > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                <span className="text-2xl font-bold text-foreground tabular-nums">{formatBytes(statsA.totalUpload)}</span>
+                                <span className={`text-xs flex items-center tabular-nums ${getDiff(statsA.totalUpload, statsB.totalUpload) > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                                     {getDiff(statsA.totalUpload, statsB.totalUpload) > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
                                     {Math.abs(getDiff(statsA.totalUpload, statsB.totalUpload)).toFixed(1)}%
                                 </span>

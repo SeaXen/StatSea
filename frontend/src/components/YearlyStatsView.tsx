@@ -45,25 +45,25 @@ const YearlyStatsView = () => {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header & Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card border border-border rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-emerald-500/20 rounded-xl">
-                        <TrendingUp className="w-5 h-5 text-emerald-400" />
+                    <div className="p-2 bg-emerald-500/10 rounded-xl">
+                        <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
                     <div>
-                        <h3 className="text-white font-bold tracking-tight">Long-term Analytics</h3>
-                        <p className="text-white/40 text-xs">Historical network trends and growth</p>
+                        <h3 className="text-foreground font-bold tracking-tight">Long-term Analytics</h3>
+                        <p className="text-muted-foreground text-xs">Historical network trends and growth</p>
                     </div>
                 </div>
 
-                <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
+                <div className="flex bg-muted p-1 rounded-xl border border-border">
                     {(['daily', 'monthly', 'yearly'] as const).map((p) => (
                         <button
                             key={p}
                             onClick={() => setPeriod(p)}
                             className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${period === p
-                                ? 'bg-blue-600 text-white shadow-lg'
-                                : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                                 }`}
                         >
                             <span className="capitalize">{p}</span>
@@ -74,41 +74,41 @@ const YearlyStatsView = () => {
 
             {/* Summary Mini Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                    <div className="flex items-center gap-2 mb-2 text-blue-400">
+                <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2 text-blue-500">
                         <Download className="w-4 h-4" />
                         <span className="text-[10px] font-bold uppercase tracking-wider">Total Download</span>
                     </div>
-                    <div className="text-2xl font-bold text-white">{formatBytes(totalRecv)}</div>
-                    <div className="text-[10px] text-white/40 mt-1">For selected period</div>
+                    <div className="text-2xl font-bold text-foreground tabular-nums">{formatBytes(totalRecv)}</div>
+                    <div className="text-[10px] text-muted-foreground mt-1">For selected period</div>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                    <div className="flex items-center gap-2 mb-2 text-emerald-400">
+                <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2 text-emerald-500">
                         <Upload className="w-4 h-4" />
                         <span className="text-[10px] font-bold uppercase tracking-wider">Total Upload</span>
                     </div>
-                    <div className="text-2xl font-bold text-white">{formatBytes(totalSent)}</div>
-                    <div className="text-[10px] text-white/40 mt-1">For selected period</div>
+                    <div className="text-2xl font-bold text-foreground tabular-nums">{formatBytes(totalSent)}</div>
+                    <div className="text-[10px] text-muted-foreground mt-1">For selected period</div>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                    <div className="flex items-center gap-2 mb-2 text-purple-400">
+                <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2 text-cyan-500">
                         <Activity className="w-4 h-4" />
                         <span className="text-[10px] font-bold uppercase tracking-wider">Total Traffic</span>
                     </div>
-                    <div className="text-2xl font-bold text-white">{formatBytes(totalRecv + totalSent)}</div>
-                    <div className="text-[10px] text-white/40 mt-1">For selected period</div>
+                    <div className="text-2xl font-bold text-foreground tabular-nums">{formatBytes(totalRecv + totalSent)}</div>
+                    <div className="text-[10px] text-muted-foreground mt-1">For selected period</div>
                 </div>
             </div>
 
             {/* Main Chart */}
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 relative overflow-hidden group">
+            <div className="bg-card border border-border rounded-3xl p-6 relative overflow-hidden group shadow-sm">
                 <div className="flex items-center justify-between mb-8 relative z-10">
                     <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-blue-400" />
-                        <span className="text-xs font-bold text-white tracking-widest uppercase">Usage Timeline</span>
+                        <Calendar className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-bold text-foreground tracking-widest uppercase">Usage Timeline</span>
                     </div>
                     {loading && (
-                        <div className="flex items-center gap-2 text-blue-400 text-[10px] font-bold uppercase tracking-widest animate-pulse">
+                        <div className="flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-widest animate-pulse">
                             Refreshing...
                         </div>
                     )}
@@ -116,8 +116,8 @@ const YearlyStatsView = () => {
 
                 <div className="h-[400px] w-full">
                     {data.length === 0 && !loading ? (
-                        <div className="h-full flex flex-col items-center justify-center text-white/20 gap-4">
-                            <TrendingUp className="w-12 h-12 opacity-10" />
+                        <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-4">
+                            <TrendingUp className="w-12 h-12 opacity-20" />
                             <p className="text-sm">No historical data found for this period</p>
                             <p className="text-xs">Analytics generation might take up to 24 hours</p>
                         </div>
@@ -134,10 +134,11 @@ const YearlyStatsView = () => {
                                         <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border" vertical={false} />
                                 <XAxis
                                     dataKey="date"
-                                    stroke="rgba(255,255,255,0.2)"
+                                    stroke="currentColor"
+                                    className="text-muted-foreground"
                                     fontSize={10}
                                     tickFormatter={formatDate}
                                     tickLine={false}
@@ -145,7 +146,8 @@ const YearlyStatsView = () => {
                                     dy={10}
                                 />
                                 <YAxis
-                                    stroke="rgba(255,255,255,0.2)"
+                                    stroke="currentColor"
+                                    className="text-muted-foreground"
                                     fontSize={10}
                                     tickFormatter={formatBytes}
                                     tickLine={false}
@@ -154,12 +156,11 @@ const YearlyStatsView = () => {
                                 />
                                 <Tooltip
                                     contentStyle={{
-                                        backgroundColor: 'rgba(0,0,0,0.8)',
-                                        borderColor: 'rgba(255,255,255,0.1)',
-                                        borderRadius: '16px',
-                                        backdropFilter: 'blur(10px)',
+                                        backgroundColor: 'hsl(var(--card))',
+                                        borderColor: 'hsl(var(--border))',
+                                        borderRadius: '12px',
                                         fontSize: '11px',
-                                        color: '#fff'
+                                        color: 'hsl(var(--foreground))'
                                     }}
                                     itemStyle={{ padding: '2px 0' }}
                                     labelFormatter={(l) => new Date(l).toDateString()}
@@ -170,7 +171,7 @@ const YearlyStatsView = () => {
                                     dataKey="recv"
                                     name="Download"
                                     stroke="#3b82f6"
-                                    strokeWidth={3}
+                                    strokeWidth={2}
                                     fillOpacity={1}
                                     fill="url(#colorRecv)"
                                     animationDuration={1500}
@@ -180,7 +181,7 @@ const YearlyStatsView = () => {
                                     dataKey="sent"
                                     name="Upload"
                                     stroke="#10b981"
-                                    strokeWidth={3}
+                                    strokeWidth={2}
                                     fillOpacity={1}
                                     fill="url(#colorSent)"
                                     animationDuration={1500}

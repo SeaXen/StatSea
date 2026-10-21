@@ -191,7 +191,7 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
                                 </div>
                                 <div className="hidden sm:flex flex-col items-end">
                                     <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest leading-none mb-1">MEM</span>
-                                    <span className="font-mono text-xs text-purple-400 font-bold">{container.mem_usage || 0}MB</span>
+                                    <span className="font-mono text-xs text-cyan-400 font-bold">{container.mem_usage || 0}MB</span>
                                 </div>
                                 <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                             </div>
@@ -313,7 +313,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/5 rounded-2xl p-4">
+                    <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-border rounded-2xl p-4">
                         <div className="flex items-center gap-2 mb-4">
                             <Activity className="w-4 h-4 text-blue-400" />
                             <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Real-time Load</span>
@@ -321,11 +321,11 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                         <div className="flex justify-between items-end gap-2">
                             <div>
                                 <p className="text-[9px] text-muted-foreground font-black uppercase">CPU</p>
-                                <p className="text-2xl font-black text-white">{(container.cpu_pct || 0).toFixed(2)}%</p>
+                                <p className="text-2xl font-black text-foreground">{(container.cpu_pct || 0).toFixed(2)}%</p>
                             </div>
                             <div>
                                 <p className="text-[9px] text-muted-foreground font-black uppercase text-right">MEM</p>
-                                <p className="text-2xl font-black text-white text-right">{container.mem_usage || 0}<span className="text-xs ml-0.5">MB</span></p>
+                                <p className="text-2xl font-black text-foreground text-right">{container.mem_usage || 0}<span className="text-xs ml-0.5">MB</span></p>
                             </div>
                         </div>
                     </div>
@@ -333,7 +333,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
 
                 <div className="lg:col-span-2 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-black/40 border border-white/5 rounded-2xl p-4 h-[200px] flex flex-col">
+                        <div className="bg-card border border-border rounded-2xl p-4 h-[200px] flex flex-col">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Processor Intensity</span>
                                 <span className="text-xs font-mono text-blue-400 font-bold">{(container.cpu_pct || 0).toFixed(1)}%</span>
@@ -346,22 +346,22 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                                 </ResponsiveContainer>
                             </div>
                         </div>
-                        <div className="bg-black/40 border border-white/5 rounded-2xl p-4 h-[200px] flex flex-col">
+                        <div className="bg-card border border-border rounded-2xl p-4 h-[200px] flex flex-col">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Memory Isolation</span>
-                                <span className="text-xs font-mono text-purple-400 font-bold">{container.mem_usage || 0}MB</span>
+                                <span className="text-xs font-mono text-cyan-400 font-bold">{container.mem_usage || 0}MB</span>
                             </div>
                             <div className="flex-1 min-h-0">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={memData}>
-                                        <Area type="monotone" dataKey="v" stroke="#a855f7" fill="#a855f7" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
+                                        <Area type="monotone" dataKey="v" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-4 h-[200px] flex flex-col">
+                    <div className="bg-card border border-border rounded-2xl p-4 h-[200px] flex flex-col">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Network Throughput (RX/TX)</span>
                             <div className="flex gap-3 text-[9px] font-bold">

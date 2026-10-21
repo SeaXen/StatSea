@@ -177,10 +177,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         `}
                     >
                         {isCollapsed ? (
-                            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 ring-1 ring-white/10" />
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 ring-1 ring-border" />
                         ) : (
                             <div className="flex items-center gap-3 w-full">
-                                <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 ring-1 ring-white/10" />
+                                <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 ring-1 ring-border" />
                                 <div className="flex flex-col items-start truncate text-left">
                                     <span className="text-sm font-medium text-foreground truncate max-w-[120px]">{user?.full_name || user?.username}</span>
                                     <span className="text-[10px] text-primary capitalize">{user?.is_admin ? 'Administrator' : 'General User'}</span>

@@ -73,7 +73,7 @@ export default function NotificationSettings() {
             <div className="p-8 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400">
+                        <div className="p-3 rounded-2xl bg-primary/10 text-primary">
                             <Bell className="w-8 h-8" />
                         </div>
                         <div>

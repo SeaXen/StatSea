@@ -139,7 +139,7 @@ const DnsQueryLog: React.FC = () => {
                                         </td>
                                         <td className="py-2.5">
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider ${log.record_type === 'A' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                                                    log.record_type === 'AAAA' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
+                                                    log.record_type === 'AAAA' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' :
                                                         log.record_type === 'CNAME' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
                                                             'bg-secondary/30 text-foreground/80'
                                                 }`}>

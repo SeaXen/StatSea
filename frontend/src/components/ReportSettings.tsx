@@ -56,8 +56,8 @@ export default function ReportSettings() {
             title: 'Network Summary',
             description: 'Comprehensive overview of traffic, bandwidth, and device activity.',
             icon: BarChart3,
-            color: 'text-indigo-400',
-            bgColor: 'bg-indigo-500/10',
+            color: 'text-primary',
+            bgColor: 'bg-primary/10',
             formats: ['pdf', 'json']
         },
         {
@@ -83,8 +83,8 @@ export default function ReportSettings() {
             title: 'Device Inventory',
             description: 'Full list of discovered devices with their specifications and history.',
             icon: FileJson,
-            color: 'text-purple-400',
-            bgColor: 'bg-purple-500/10',
+            color: 'text-cyan-400',
+            bgColor: 'bg-cyan-500/10',
             formats: ['csv', 'json']
         }
     ];
@@ -125,27 +125,27 @@ export default function ReportSettings() {
                 ))}
             </div>
 
-            <PremiumCard className="p-8 border-indigo-500/20 bg-indigo-500/5">
+            <PremiumCard className="p-8 border-primary/20 bg-primary/5">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
-                            <Mail className="w-8 h-8 text-indigo-400" />
+                        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                            <Mail className="w-8 h-8 text-primary" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-white mb-1">Scheduled Email Reports</h3>
+                            <h3 className="text-xl font-bold text-foreground mb-1">Scheduled Email Reports</h3>
                             <p className="text-sm text-muted-foreground">Receive automated security and network summaries directly in your inbox.</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
+                        <div className="flex bg-secondary/50 p-1 rounded-xl border border-border">
                             {(['daily', 'weekly', 'monthly'] as const).map((freq) => (
                                 <button
                                     key={freq}
                                     onClick={() => setReportFrequency(freq)}
                                     className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${reportFrequency === freq
-                                        ? 'bg-indigo-600 text-white shadow-lg'
-                                        : 'text-white/40 hover:text-white/60'
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground'
                                         }`}
                                 >
                                     {freq.toUpperCase()}
@@ -160,7 +160,8 @@ export default function ReportSettings() {
                                     description: `Email reports are now ${!emailReports ? 'enabled' : 'disabled'}.`
                                 });
                             }}
-                            className={`w-14 h-8 rounded-full relative transition-all duration-300 ${emailReports ? 'bg-indigo-600' : 'bg-white/10'
+                            aria-label="Toggle scheduled email reports"
+                            className={`w-14 h-8 rounded-full relative transition-all duration-300 ${emailReports ? 'bg-primary' : 'bg-secondary border border-border'
                                 }`}
                         >
                             <div className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all duration-300 ${emailReports ? 'left-7 shadow-lg' : 'left-1'
@@ -169,18 +170,18 @@ export default function ReportSettings() {
                     </div>
                 </div>
 
-                <div className="mt-8 pt-8 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="mt-8 pt-8 border-t border-border/70 grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="flex items-center gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        <span className="text-sm text-white/60">PDF & JSON attachments</span>
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                        <span className="text-sm text-muted-foreground">PDF & JSON attachments</span>
                     </div>
                     <div className="flex items-center gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        <span className="text-sm text-white/60">Security anomaly alerts</span>
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                        <span className="text-sm text-muted-foreground">Security anomaly alerts</span>
                     </div>
                     <div className="flex items-center gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        <span className="text-sm text-white/60">Multi-recipient support</span>
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                        <span className="text-sm text-muted-foreground">Multi-recipient support</span>
                     </div>
                 </div>
             </PremiumCard>

@@ -49,11 +49,11 @@ const TopStatsRow = () => {
             title: 'Active Devices',
             value: stats ? stats.active_devices.toString() : '...',
             icon: Laptop,
-            color: 'text-purple-400',
-            bg: 'bg-purple-500/10',
-            border: 'border-purple-500/20',
+            color: 'text-cyan-400',
+            bg: 'bg-cyan-500/10',
+            border: 'border-cyan-500/20',
             chartData: null, // No history for devices yet
-            chartColor: '#c084fc'
+            chartColor: '#06b6d4'
         },
         {
             title: 'Network Health',

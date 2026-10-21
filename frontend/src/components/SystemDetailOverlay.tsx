@@ -203,7 +203,7 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${p.type === 'Container'
-                                                            ? 'bg-purple-500/10 border-purple-500/20 text-purple-400'
+                                                            ? 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'
                                                             : 'bg-blue-500/10 border-blue-500/20 text-blue-400'
                                                             }`}>
                                                             {p.type === 'Container' ? <Box className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
@@ -215,7 +215,7 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${p.type === 'Container'
-                                                        ? 'text-purple-400 border-purple-400/20 bg-purple-400/5'
+                                                        ? 'text-cyan-400 border-cyan-400/20 bg-cyan-400/5'
                                                         : 'text-blue-400 border-blue-400/20 bg-blue-400/5'
                                                         }`}>
                                                         {p.type}
@@ -243,7 +243,7 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <span className={`text-sm font-mono w-16 text-right ${p.ram > 1024 ? 'text-purple-500 dark:text-purple-400' : 'text-foreground'}`}>
+                                                        <span className={`text-sm font-mono w-16 text-right ${p.ram > 1024 ? 'text-cyan-500 dark:text-cyan-400' : 'text-foreground'}`}>
                                                             {p.ram.toFixed(0)} MB
                                                         </span>
                                                     </div>

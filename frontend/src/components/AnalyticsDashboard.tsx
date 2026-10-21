@@ -8,7 +8,7 @@ import {
 import {
     Shield, AlertTriangle, Activity, Zap, Pause, Play, Search, Globe, Wifi, Server,
     Database, Radio, Layers, BarChart3, TrendingUp, Monitor, Network, Settings,
-    Flag, Plus, Trash2, X, Save, FileSpreadsheet, FileText
+    Flag, FileSpreadsheet, FileText
 } from 'lucide-react';
 import { API_CONFIG } from '../config/apiConfig';
 import axiosInstance from '../config/axiosInstance';
@@ -16,6 +16,7 @@ import PredictionWidget from './PredictionWidget';
 import YearlyStatsView from './YearlyStatsView';
 import TrafficCategoriesWidget from './TrafficCategoriesWidget';
 import { NetworkTopology } from './NetworkTopology';
+import { RulesModal } from './analytics/RulesModal';
 
 
 // ─── Protocol Color Map ───
@@ -25,7 +26,7 @@ const PROTO_COLORS: Record<string, string> = {
     HTTP: '#f97316',
     HTTPS: '#3b82f6',
     DNS: '#eab308',
-    ICMP: '#a855f7',
+    ICMP: '#0ea5e9',
     SSH: '#14b8a6',
     FTP: '#f43f5e',
     OTHER: '#6b7280'
@@ -565,10 +566,11 @@ const AnalyticsDashboard = () => {
                     <button
                         onClick={() => handleGenerateReport('network_summary')}
                         disabled={isGeneratingReport}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 rounded-lg text-xs font-medium hover:bg-indigo-500/20 transition-all disabled:opacity-50"
+                        aria-label="Generate network summary report"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary border border-primary/30 rounded-lg text-xs font-medium hover:bg-primary/20 transition-all disabled:opacity-50"
                     >
                         {isGeneratingReport ? (
-                            <div className="w-3.5 h-3.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                            <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                         ) : (
                             <FileText className="w-3.5 h-3.5" />
                         )}
@@ -577,6 +579,7 @@ const AnalyticsDashboard = () => {
                     <div className="relative">
                         <button
                             onClick={() => setShowSettings(!showSettings)}
+                            aria-label="Dashboard settings"
                             className={`p-2 rounded-lg transition-colors border ${showSettings ? 'bg-secondary border-border text-cyan-400' : 'bg-card/60 border-border text-muted-foreground hover:text-foreground'}`}
                         >
                             <Settings className="w-4 h-4" />
@@ -662,12 +665,12 @@ const AnalyticsDashboard = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                     <StatCard label="Packets" value={formatNumber(analyticsData.total_packets)} icon={Zap} color="#22d3ee" sub="total captured" />
                     <StatCard label="Data" value={formatBytes(analyticsData.total_bytes)} icon={Database} color="#34d399" sub="transferred" />
-                    <StatCard label="PPS" value={`${analyticsData.packets_per_sec}`} icon={Activity} color="#a855f7" sub="packets/sec" trend="up" />
+                    <StatCard label="PPS" value={`${analyticsData.packets_per_sec}`} icon={Activity} color="#06b6d4" sub="packets/sec" trend="up" />
                     <StatCard label="Suspicious" value={analyticsData.suspicious} icon={AlertTriangle} color={analyticsData.suspicious > 0 ? '#f43f5e' : '#6b7280'} sub="flagged" trend={analyticsData.suspicious > 0 ? 'up' : 'neutral'} />
                     <StatCard label="DNS" value={formatNumber(analyticsData.dns_queries)} icon={Globe} color="#eab308" sub="queries" />
                     <StatCard label="HTTP" value={formatNumber(analyticsData.http_requests)} icon={Network} color="#f97316" sub="requests" />
                     <StatCard label="Sessions" value={analyticsData.active_sessions} icon={Radio} color="#14b8a6" sub="active" trend="up" />
-                    <StatCard label="Devices" value={analyticsData.active_device_count} icon={Monitor} color="#8b5cf6" sub="online" />
+                    <StatCard label="Devices" value={analyticsData.active_device_count} icon={Monitor} color="#0284c7" sub="online" />
                 </div>
             )}
 
@@ -814,7 +817,7 @@ const AnalyticsDashboard = () => {
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-muted-foreground">Total TX</span>
-                                        <span className="text-purple-400 font-mono">{formatBytes(iface.tx)}</span>
+                                        <span className="text-emerald-400 font-mono">{formatBytes(iface.tx)}</span>
                                     </div>
                                 </div>
 
@@ -996,7 +999,7 @@ const AnalyticsDashboard = () => {
                             {/* Protocol Distribution */}
                             <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
                                 <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                                    <Server className="w-4 h-4 text-purple-400" /> Protocol Distribution
+                                    <Server className="w-4 h-4 text-cyan-400" /> Protocol Distribution
                                 </h3>
                                 <div className="h-[250px] flex items-center">
                                     <ResponsiveContainer width="50%" height="100%">
@@ -1279,8 +1282,8 @@ const AnalyticsDashboard = () => {
             {activeView === 'security' && (
                 <div className="bg-card/60 border border-border rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
-                        <Shield className="h-4 w-4 text-indigo-400" />
-                        <h3 className="text-sm font-semibold text-white">Security Events</h3>
+                        <Shield className="h-4 w-4 text-primary" />
+                        <h3 className="text-sm font-semibold text-foreground">Security Events</h3>
                         <span className="ml-auto text-[10px] text-muted-foreground">{securityEvents.length} events</span>
                         <button
                             onClick={() => exportToCSV(securityEvents, 'security_events')}
@@ -1288,7 +1291,7 @@ const AnalyticsDashboard = () => {
                         >
                             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" /> Export CSV
                         </button>
-                        <button onClick={() => setShowRulesModal(true)} className="ml-2 px-2 py-1 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 rounded text-xs font-medium transition-colors flex items-center gap-1">
+                        <button onClick={() => setShowRulesModal(true)} className="ml-2 px-2 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded text-xs font-medium transition-colors flex items-center gap-1">
                             <Settings className="w-3 h-3" /> Configure Rules
                         </button>
                     </div>
@@ -1347,106 +1350,16 @@ const AnalyticsDashboard = () => {
             )}
 
             {/* Configure Rules Modal */}
-            {showRulesModal && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
-                        <div className="px-5 py-4 border-b border-border flex items-center justify-between sticky top-0 bg-card/95 backdrop-blur z-10">
-                            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                                <Shield className="w-5 h-5 text-indigo-400" />
-                                Security Alert Rules
-                            </h2>
-                            <button onClick={() => { setShowRulesModal(false); setEditingRule(null); }} className="p-1 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4">
-                            {!editingRule ? (
-                                <>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <p className="text-sm text-muted-foreground">Manage real-time alert rules for network traffic anomalies.</p>
-                                        <button onClick={() => setEditingRule({ name: '', description: '', condition: '', action: 'alert', is_active: true })} className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded shadow-lg transition-colors flex items-center gap-1">
-                                            <Plus className="w-3.5 h-3.5" /> New Rule
-                                        </button>
-                                    </div>
-
-                                    {rulesLoading ? (
-                                        <div className="py-8 text-center text-sm text-muted-foreground">Loading rules...</div>
-                                    ) : rules.length === 0 ? (
-                                        <div className="py-8 text-center border border-dashed border-border rounded-lg text-muted-foreground text-sm">
-                                            No alert rules configured yet.
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            {rules.map((rule) => (
-                                                <div key={rule.id} className={`p-4 rounded-lg border ${rule.is_active ? 'bg-secondary/40 border-border/50' : 'bg-card/40 border-border/80'} flex items-center justify-between group`}>
-                                                    <div>
-                                                        <div className="flex items-center gap-2">
-                                                            <div className={`w-2 h-2 rounded-full ${rule.is_active ? 'bg-green-400' : 'bg-muted-foreground/60'}`}></div>
-                                                            <h4 className={`font-medium text-sm ${rule.is_active ? 'text-foreground/90' : 'text-muted-foreground'}`}>{rule.name}</h4>
-                                                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-secondary border border-border text-muted-foreground uppercase">{rule.action}</span>
-                                                        </div>
-                                                        <p className="text-xs text-muted-foreground mt-1 max-w-md truncate">{rule.description || 'No description'}</p>
-                                                        <div className="mt-2 text-xs font-mono text-indigo-300 bg-indigo-900/20 px-2 py-1 rounded inline-block">
-                                                            {rule.condition}
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => setEditingRule(rule)} className="p-1.5 text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 rounded transition-colors">
-                                                            <Settings className="w-4 h-4" />
-                                                        </button>
-                                                        <button onClick={() => rule.id && handleDeleteRule(rule.id)} className="p-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded transition-colors">
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </>
-                            ) : (
-                                <form className="space-y-4" onSubmit={(e) => {
-                                    e.preventDefault();
-                                    handleSaveRule(editingRule);
-                                }}>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-medium text-foreground/80">Rule Name <span className="text-red-400">*</span></label>
-                                            <input required type="text" value={editingRule.name} onChange={e => setEditingRule({ ...editingRule, name: e.target.value })} className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground/90 focus:outline-none focus:border-indigo-500" placeholder="e.g. High HTTP Traffic" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-medium text-foreground/80">Action</label>
-                                            <select value={editingRule.action} onChange={e => setEditingRule({ ...editingRule, action: e.target.value })} className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground/90 focus:outline-none focus:border-indigo-500">
-                                                <option value="alert">Alert Only</option>
-                                                <option value="block">Block</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-foreground/80">Description</label>
-                                        <input type="text" value={editingRule.description} onChange={e => setEditingRule({ ...editingRule, description: e.target.value })} className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground/90 focus:outline-none focus:border-indigo-500" placeholder="Optional description..." />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-foreground/80">Condition Expression <span className="text-red-400">*</span></label>
-                                        <input required type="text" value={editingRule.condition} onChange={e => setEditingRule({ ...editingRule, condition: e.target.value })} className="w-full bg-background border border-border rounded px-3 py-2 text-sm font-mono text-indigo-300 focus:outline-none focus:border-indigo-500" placeholder="e.g. bytes > 500000 && proto == 'HTTP'" />
-                                        <p className="text-[10px] text-muted-foreground mt-1">Available variables: bytes, packets, proto, src_ip, dst_ip</p>
-                                    </div>
-                                    <div className="flex items-center gap-2 pt-2">
-                                        <input type="checkbox" id="isActive" checked={editingRule.is_active} onChange={e => setEditingRule({ ...editingRule, is_active: e.target.checked })} className="w-3.5 h-3.5 bg-background border-border rounded rounded text-indigo-500 focus:ring-0" />
-                                        <label htmlFor="isActive" className="text-sm text-foreground/80 cursor-pointer">Rule is active</label>
-                                    </div>
-                                    <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
-                                        <button type="button" onClick={() => setEditingRule(null)} className="px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">Cancel</button>
-                                        <button type="submit" className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded shadow-lg transition-colors flex items-center gap-1">
-                                            <Save className="w-4 h-4" /> Save Rule
-                                        </button>
-                                    </div>
-                                </form>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+            <RulesModal
+                isOpen={showRulesModal}
+                onClose={() => { setShowRulesModal(false); setEditingRule(null); }}
+                rules={rules}
+                rulesLoading={rulesLoading}
+                editingRule={editingRule}
+                setEditingRule={setEditingRule}
+                onSaveRule={handleSaveRule}
+                onDeleteRule={handleDeleteRule}
+            />
         </div>
     );
 };

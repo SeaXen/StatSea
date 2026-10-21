@@ -19,7 +19,7 @@ import { CustomSelect } from './ui/CustomSelect';
 import { motion } from 'framer-motion';
 
 // ─── Constants ───
-const COLORS = ['#84cc16', '#3f3f46', '#10b981', '#8b5cf6', '#ef4444', '#ec4899', '#06b6d4'];
+const COLORS = ['#84cc16', '#3f3f46', '#10b981', '#0ea5e9', '#ef4444', '#f59e0b', '#06b6d4'];
 const CHART_TOOLTIP_STYLE = { backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '12px' };
 
 // ─── Helpers ───
@@ -49,9 +49,9 @@ const SummaryCard = ({ title, data, icon: Icon, color, delay }: any) => (
         className="p-6 flex flex-col gap-4 group min-h-[160px] relative overflow-hidden"
     >
         <div className="flex items-center justify-between relative z-10">
-            <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{title}</span>
+            <span className="text-[10px] font-black text-muted-foreground/70 uppercase tracking-[0.2em]">{title}</span>
             <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10 group-hover:scale-110 transition-all duration-500"
+                className="w-10 h-10 rounded-2xl flex items-center justify-center bg-secondary/80 border border-border group-hover:scale-110 transition-all duration-500"
                 style={{ boxShadow: `0 0 20px ${color}20` }}
             >
                 <Icon className="h-5 w-5" style={{ color }} />
@@ -59,19 +59,19 @@ const SummaryCard = ({ title, data, icon: Icon, color, delay }: any) => (
         </div>
 
         <div className="flex flex-col gap-1 relative z-10">
-            <span className="text-3xl font-black text-white tracking-tighter">
+            <span className="text-3xl font-black text-foreground tracking-tighter tabular-nums">
                 {formatBytes(data?.total || 0).split(' ')[0]}
-                <span className="text-lg text-white/40 ml-1 font-medium">{formatBytes(data?.total || 0).split(' ')[1]}</span>
+                <span className="text-lg text-muted-foreground ml-1 font-medium">{formatBytes(data?.total || 0).split(' ')[1]}</span>
             </span>
 
             <div className="flex items-center gap-4 mt-3">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                    <span className="text-[11px] font-black text-white/60 tracking-tight">{formatBytes(data?.rx || 0)}</span>
+                    <span className="text-[11px] font-bold text-foreground/80 tracking-tight tabular-nums">{formatBytes(data?.rx || 0)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-                    <span className="text-[11px] font-black text-white/60 tracking-tight">{formatBytes(data?.tx || 0)}</span>
+                    <span className="text-[11px] font-bold text-foreground/80 tracking-tight tabular-nums">{formatBytes(data?.tx || 0)}</span>
                 </div>
             </div>
         </div>
@@ -90,7 +90,7 @@ const RateBar = ({ bps, maxBps }: { bps: number; maxBps: number }) => {
     return (
         <div className="flex items-center gap-2">
             <div className="w-16 h-2 bg-secondary/50 rounded-full overflow-hidden">
-                <div className="h-full bg-[#84cc16] rounded-full transition-all" style={{ width: `${pct}%` }} />
+                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
         </div>
     );
@@ -98,8 +98,8 @@ const RateBar = ({ bps, maxBps }: { bps: number; maxBps: number }) => {
 
 // ─── Table Components ───
 const TableHeader = ({ columns }: { columns: string[] }) => (
-    <thead className="border-b border-white/[0.03] bg-white/[0.01]">
-        <tr className="text-white/30 text-[10px] font-black uppercase tracking-[0.15em]">
+    <thead className="border-b border-border/50 bg-muted/20">
+        <tr className="text-muted-foreground/70 text-[10px] font-black uppercase tracking-[0.15em]">
             {columns.map((c, i) => (
                 <th key={i} className={cn("px-4 py-4 font-black", i === 0 ? 'text-left' : 'text-right')}>{c}</th>
             ))}
@@ -108,24 +108,28 @@ const TableHeader = ({ columns }: { columns: string[] }) => (
 );
 
 const EmptyRow = ({ cols, msg }: { cols: number; msg: string }) => (
-    <tr><td colSpan={cols} className="px-4 py-12 text-center text-white/20 text-xs font-bold uppercase tracking-widest">{msg}</td></tr>
+    <tr><td colSpan={cols} className="px-4 py-12 text-center text-muted-foreground/50 text-xs font-bold uppercase tracking-widest">{msg}</td></tr>
 );
 
 const LoadingRow = ({ cols }: { cols: number }) => (
-    <tr><td colSpan={cols} className="px-3 py-6 text-center text-muted-foreground text-sm animate-pulse">Loading...</td></tr>
+    <tr><td colSpan={cols} className="px-3 py-6 text-center text-muted-foreground text-sm animate-pulse">Loading…</td></tr>
 );
 
 // ─── Section Card (Premium style) ───
 const SectionCard = ({ title, icon: Icon, iconColor, children, className }: any) => (
-    <PremiumCard className={cn("p-0 flex flex-col border-white/5 bg-[#111114]/30 backdrop-blur-2xl overflow-hidden", className)}>
-        <div className="px-6 py-5 border-b border-white/[0.03] flex items-center justify-between bg-white/[0.01]">
+    <PremiumCard className={cn("p-0 flex flex-col border-border/70 bg-card/75 backdrop-blur-2xl overflow-hidden", className)}>
+        <div className="px-6 py-5 border-b border-border/50 flex items-center justify-between bg-muted/10">
             <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/5 border border-white/10">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-secondary/80 border border-border">
                     <Icon className="w-4.5 h-4.5" style={{ color: iconColor }} />
                 </div>
-                <h2 className="text-[13px] font-black text-white uppercase tracking-widest">{title}</h2>
+                <h2 className="text-[13px] font-black text-foreground uppercase tracking-widest">{title}</h2>
             </div>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors text-white/20 hover:text-white/60">
+            <button
+                aria-label="Section info"
+                title="Section info"
+                className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+            >
                 <Info className="w-4 h-4" />
             </button>
         </div>
@@ -139,14 +143,14 @@ const SectionCard = ({ title, icon: Icon, iconColor, children, className }: any)
 const InterfaceSummaryPanel = ({ iface, data }: { iface: string; data: any }) => (
     <PremiumCard className="p-5">
         <div className="flex items-center justify-between mb-5">
-            <h3 className="text-lg font-bold text-white flex items-center gap-3">
+            <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
                     <Server className="w-4 h-4 text-cyan-400" />
                 </div>
                 {iface}
             </h3>
             {data?.estimated && data.estimated.total > 0 && (
-                <div className="px-3 py-1 rounded-full bg-secondary/50 border border-white/5 text-[10px] font-bold text-white/40">
+                <div className="px-3 py-1 rounded-full bg-secondary/60 border border-border text-[10px] font-bold text-muted-foreground">
                     Est. {formatBytes(data.estimated.total)} / mo
                 </div>
             )}
@@ -161,23 +165,21 @@ const InterfaceSummaryPanel = ({ iface, data }: { iface: string; data: any }) =>
     </PremiumCard>
 );
 
-
-
 const MiniStat = ({ label, data }: { label: string; data: any }) => (
-    <div className="flex flex-col gap-2 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] transition-all hover:scale-[1.02] group">
-        <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white/40 transition-colors">{label}</span>
-        <span className="text-xl font-black text-white leading-none tracking-tighter">
+    <div className="flex flex-col gap-2 p-5 rounded-2xl bg-card border border-border/60 hover:border-border transition-all hover:scale-[1.02] group">
+        <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] group-hover:text-muted-foreground transition-colors">{label}</span>
+        <span className="text-xl font-black text-foreground leading-none tracking-tighter tabular-nums">
             {formatBytes(data?.total || 0).split(' ')[0]}
-            <span className="text-xs text-white/40 ml-1 font-medium">{formatBytes(data?.total || 0).split(' ')[1]}</span>
+            <span className="text-xs text-muted-foreground ml-1 font-medium">{formatBytes(data?.total || 0).split(' ')[1]}</span>
         </span>
         <div className="flex gap-4 mt-2">
             <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
-                <span className="text-[10px] font-black text-white/40 tracking-tight">{formatBytes(data?.rx || 0)}</span>
+                <span className="text-[10px] font-bold text-muted-foreground tracking-tight tabular-nums">{formatBytes(data?.rx || 0)}</span>
             </div>
             <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500/80 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
-                <span className="text-[10px] font-black text-white/40 tracking-tight">{formatBytes(data?.tx || 0)}</span>
+                <span className="text-[10px] font-bold text-muted-foreground tracking-tight tabular-nums">{formatBytes(data?.tx || 0)}</span>
             </div>
         </div>
     </div>
@@ -244,16 +246,16 @@ export default function BandwidthPage() {
                         className="flex items-center gap-3 mb-2"
                     >
                         <div className="w-12 h-12 rounded-2xl bg-emerald-600/20 flex items-center justify-center border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
-                            <Activity className="w-6 h-6 text-emerald-400" />
+                            <Activity className="w-6 h-6 text-emerald-500" />
                         </div>
-                        <h1 className="text-4xl font-black text-white tracking-tight">Traffic <span className="text-emerald-500">Flux</span></h1>
+                        <h1 className="text-4xl font-black text-foreground tracking-tight">Traffic <span className="text-emerald-500">Flux</span></h1>
                     </motion.div>
                     <p className="text-muted-foreground font-medium text-sm ml-15">Real-time throughput analysis and network data distribution</p>
                 </div>
 
                 <div className="flex items-center gap-4">
                     {interfaces.length > 0 && (
-                        <div className="flex items-center bg-[#111114] rounded-2xl border border-white/5 p-1">
+                        <div className="flex items-center bg-card rounded-2xl border border-border p-1">
                             <CustomSelect
                                 options={[
                                     { value: '', label: 'Global View' },
@@ -265,7 +267,7 @@ export default function BandwidthPage() {
                             />
                         </div>
                     )}
-                    <button className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:scale-[1.02] active:scale-[0.98]">
+                    <button className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-bold transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none">
                         Full Report
                     </button>
                 </div>
@@ -286,7 +288,7 @@ export default function BandwidthPage() {
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                         <SummaryCard title="Current Day" data={summary?.today} icon={Calendar} color="#3b82f6" delay={0.1} />
-                        <SummaryCard title="Prior Day" data={summary?.yesterday} icon={Clock} color="#8b5cf6" delay={0.2} />
+                        <SummaryCard title="Prior Day" data={summary?.yesterday} icon={Clock} color="#06b6d4" delay={0.2} />
                         <SummaryCard title="Monthly Usage" data={summary?.month} icon={Activity} color="#f59e0b" delay={0.3} />
                         <SummaryCard title="Historical Total" data={summary?.all_time} icon={Database} color="#10b981" delay={0.4} />
                         <SummaryCard title="Projected" data={summary?.estimated} icon={TrendingUp} color="#ef4444" delay={0.5} />
@@ -389,19 +391,19 @@ export default function BandwidthPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
                         {/* Daily Table */}
-                        <SectionCard title={`${activeInterface} / daily`} icon={Calendar} iconColor="#8b5cf6">
+                        <SectionCard title={`${activeInterface} / daily`} icon={Calendar} iconColor="#3b82f6">
                             <div className="overflow-x-auto max-h-[320px] overflow-y-auto">
                                 <table className="w-full text-xs">
                                     <TableHeader columns={['Day', 'RX', 'TX', 'Total', 'Avg. Rate', '']} />
                                     <tbody>
                                         {loadingDaily ? <LoadingRow cols={6} /> :
                                             daily.length > 0 ? daily.map((d: any, i: number) => (
-                                                <tr key={i} className="border-b border-white/[0.02] hover:bg-white/[0.02] transition-colors group">
-                                                    <td className="px-4 py-3.5 text-white/80 font-bold tracking-tight">{parseShortDate(d.date)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-emerald-400 font-bold font-mono">{formatBytes(d.rx)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-blue-400 font-bold font-mono">{formatBytes(d.tx)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-white font-black font-mono">{formatBytes(d.total)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-white/30 font-bold font-mono text-[10px]">{formatRate(d.avg_rate_bps)}</td>
+                                                <tr key={i} className="border-b border-border/40 hover:bg-muted/30 transition-colors group">
+                                                    <td className="px-4 py-3.5 text-foreground font-semibold tracking-tight">{parseShortDate(d.date)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(d.rx)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(d.tx)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(d.total)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-muted-foreground/70 font-bold font-mono text-[10px] tabular-nums">{formatRate(d.avg_rate_bps)}</td>
                                                     <td className="px-4 py-3.5"><RateBar bps={d.avg_rate_bps} maxBps={maxDailyRate} /></td>
                                                 </tr>
                                             )) : <EmptyRow cols={6} msg="No daily data" />}
@@ -418,13 +420,13 @@ export default function BandwidthPage() {
                                     <tbody>
                                         {loadingTop ? <LoadingRow cols={7} /> :
                                             top.length > 0 ? top.map((d: any, i: number) => (
-                                                <tr key={i} className="border-b border-white/[0.02] hover:bg-white/[0.02] transition-colors group">
-                                                    <td className="px-4 py-3.5 text-white/20 font-black font-mono text-center text-[10px]">{i + 1}</td>
-                                                    <td className="px-4 py-3.5 text-white/80 font-bold tracking-tight">{parseShortDate(d.date)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-emerald-400 font-bold font-mono">{formatBytes(d.rx)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-blue-400 font-bold font-mono">{formatBytes(d.tx)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-white font-black font-mono">{formatBytes(d.total)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-white/30 font-bold font-mono text-[10px]">{formatRate(d.avg_rate_bps)}</td>
+                                                <tr key={i} className="border-b border-border/40 hover:bg-muted/30 transition-colors group">
+                                                    <td className="px-4 py-3.5 text-muted-foreground/50 font-black font-mono text-center text-[10px]">{i + 1}</td>
+                                                    <td className="px-4 py-3.5 text-foreground font-semibold tracking-tight">{parseShortDate(d.date)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(d.rx)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(d.tx)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(d.total)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-muted-foreground/70 font-bold font-mono text-[10px] tabular-nums">{formatRate(d.avg_rate_bps)}</td>
                                                     <td className="px-4 py-3.5"><RateBar bps={d.avg_rate_bps} maxBps={maxTopRate} /></td>
                                                 </tr>
                                             )) : <EmptyRow cols={7} msg="No top days" />}
@@ -443,21 +445,21 @@ export default function BandwidthPage() {
                                             monthly.length > 0 ? (
                                                 <>
                                                     {monthly.map((m: any, i: number) => (
-                                                        <tr key={i} className="border-b border-white/[0.02] hover:bg-white/[0.02] transition-colors">
-                                                            <td className="px-4 py-3.5 text-white/80 font-bold tracking-tight">{parseMonth(m.month)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-emerald-400 font-bold font-mono">{formatBytes(m.rx)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-blue-400 font-bold font-mono">{formatBytes(m.tx)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-white font-black font-mono">{formatBytes(m.total)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-white/30 font-bold font-mono text-[10px]">{formatRate(m.avg_rate_bps)}</td>
+                                                        <tr key={i} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                                                            <td className="px-4 py-3.5 text-foreground font-semibold tracking-tight">{parseMonth(m.month)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(m.rx)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(m.tx)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(m.total)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-muted-foreground/70 font-bold font-mono text-[10px] tabular-nums">{formatRate(m.avg_rate_bps)}</td>
                                                         </tr>
                                                     ))}
                                                     {/* Estimated row for current month */}
                                                     {monthly[0]?.estimated_total && (
-                                                        <tr className="border-b border-white/[0.02] bg-white/[0.01]">
-                                                            <td className="px-4 py-3 text-white/20 italic font-bold text-[10px] uppercase tracking-widest pl-10">estimated</td>
-                                                            <td className="px-4 py-3 text-right text-emerald-500/40 font-bold font-mono">{formatBytes(monthly[0].estimated_rx)}</td>
-                                                            <td className="px-4 py-3 text-right text-blue-500/40 font-bold font-mono">{formatBytes(monthly[0].estimated_tx)}</td>
-                                                            <td className="px-4 py-3 text-right text-white/40 font-black font-mono">{formatBytes(monthly[0].estimated_total)}</td>
+                                                        <tr className="border-b border-border/40 bg-muted/20">
+                                                            <td className="px-4 py-3 text-muted-foreground/60 italic font-bold text-[10px] uppercase tracking-widest pl-10">estimated</td>
+                                                            <td className="px-4 py-3 text-right text-emerald-500/70 font-bold font-mono tabular-nums">{formatBytes(monthly[0].estimated_rx)}</td>
+                                                            <td className="px-4 py-3 text-right text-blue-500/70 font-bold font-mono tabular-nums">{formatBytes(monthly[0].estimated_tx)}</td>
+                                                            <td className="px-4 py-3 text-right text-foreground/80 font-black font-mono tabular-nums">{formatBytes(monthly[0].estimated_total)}</td>
                                                             <td className="px-4 py-3"></td>
                                                         </tr>
                                                     )}
@@ -478,21 +480,21 @@ export default function BandwidthPage() {
                                             yearly.length > 0 ? (
                                                 <>
                                                     {yearly.map((y: any, i: number) => (
-                                                        <tr key={i} className="border-b border-white/[0.02] hover:bg-white/[0.02] transition-colors">
-                                                            <td className="px-4 py-3.5 text-white/80 font-bold tracking-tight">{y.year}</td>
-                                                            <td className="px-4 py-3.5 text-right text-emerald-400 font-bold font-mono">{formatBytes(y.rx)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-blue-400 font-bold font-mono">{formatBytes(y.tx)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-white font-black font-mono">{formatBytes(y.total)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-white/30 font-bold font-mono text-[10px]">{formatRate(y.avg_rate_bps)}</td>
+                                                        <tr key={i} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                                                            <td className="px-4 py-3.5 text-foreground font-semibold tracking-tight">{y.year}</td>
+                                                            <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(y.rx)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(y.tx)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(y.total)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-muted-foreground/70 font-bold font-mono text-[10px] tabular-nums">{formatRate(y.avg_rate_bps)}</td>
                                                         </tr>
                                                     ))}
                                                     {/* Estimated row for current year */}
                                                     {yearly[0]?.estimated_total && (
-                                                        <tr className="border-b border-white/[0.02] bg-white/[0.01]">
-                                                            <td className="px-4 py-3 text-white/20 italic font-bold text-[10px] uppercase tracking-widest pl-10">estimated</td>
-                                                            <td className="px-4 py-3 text-right text-emerald-500/40 font-bold font-mono">{formatBytes(yearly[0].estimated_rx)}</td>
-                                                            <td className="px-4 py-3 text-right text-blue-500/40 font-bold font-mono">{formatBytes(yearly[0].estimated_tx)}</td>
-                                                            <td className="px-4 py-3 text-right text-white/40 font-black font-mono">{formatBytes(yearly[0].estimated_total)}</td>
+                                                        <tr className="border-b border-border/40 bg-muted/20">
+                                                            <td className="px-4 py-3 text-muted-foreground/60 italic font-bold text-[10px] uppercase tracking-widest pl-10">estimated</td>
+                                                            <td className="px-4 py-3 text-right text-emerald-500/70 font-bold font-mono tabular-nums">{formatBytes(yearly[0].estimated_rx)}</td>
+                                                            <td className="px-4 py-3 text-right text-blue-500/70 font-bold font-mono tabular-nums">{formatBytes(yearly[0].estimated_tx)}</td>
+                                                            <td className="px-4 py-3 text-right text-foreground/80 font-black font-mono tabular-nums">{formatBytes(yearly[0].estimated_total)}</td>
                                                             <td className="px-4 py-3"></td>
                                                         </tr>
                                                     )}

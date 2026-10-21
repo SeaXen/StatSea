@@ -140,7 +140,7 @@ def get_device_logs(
     dependencies=[Depends(get_cache_header(max_age=60))],
 )
 def get_system_history(
-    period: str = Query("daily", regex="^(daily|monthly|yearly)$"),
+    period: str = Query("daily", pattern="^(daily|monthly|yearly)$"),
     days: int = 30,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),

@@ -40,7 +40,10 @@ frontend/dist/
 **/test_green.txt
 
 # Debug / Error logs (dev artifacts)
-*.log
+logs/
+backend/logs/
+*.log*
+*.timestamp*
 *_errors*.txt
 *_output*.txt
 debug_*.txt

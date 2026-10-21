@@ -135,7 +135,7 @@ const MetricsTab = ({ token }: { token: string }) => {
                     total={`${live?.ram_total_gb} GB`}
                     percent={(live?.ram_used_gb / live?.ram_total_gb) * 100}
                     icon={Activity}
-                    color="text-purple-400"
+                    color="text-cyan-400"
                 />
                 <MetricCard
                     title="Disk Usage"
@@ -160,7 +160,7 @@ const MetricsTab = ({ token }: { token: string }) => {
                     title="RAM Exhaustion"
                     days={forecast?.ram_days_remaining}
                     trend={forecast?.ram_trend}
-                    color="purple"
+                    color="cyan"
                 />
                 <ForecastCard
                     title="Disk Exhaustion"
@@ -171,7 +171,7 @@ const MetricsTab = ({ token }: { token: string }) => {
             </div>
 
             {/* History Chart */}
-            <div className="glass-card p-6 rounded-xl border border-white/10 bg-black/20">
+            <div className="p-6 rounded-xl border border-border bg-card shadow-sm">
                 <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                     <History className="w-5 h-5 text-blue-400" />
                     Resource History
@@ -185,15 +185,15 @@ const MetricsTab = ({ token }: { token: string }) => {
                                     <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                            <XAxis dataKey="time" stroke="#ffffff40" fontSize={11} />
-                            <YAxis stroke="#ffffff40" fontSize={11} domain={[0, 100]} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border" vertical={false} />
+                            <XAxis dataKey="time" stroke="currentColor" className="text-muted-foreground" fontSize={11} />
+                            <YAxis stroke="currentColor" className="text-muted-foreground" fontSize={11} domain={[0, 100]} />
                             <Tooltip
-                                contentStyle={{ backgroundColor: '#000000dd', border: '1px solid #ffffff20', borderRadius: '8px' }}
+                                contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }}
                                 itemStyle={{ fontSize: '12px' }}
                             />
                             <Area type="monotone" dataKey="cpu" stroke="#60a5fa" fillOpacity={1} fill="url(#colorCpu)" name="CPU %" />
-                            <Area type="monotone" dataKey="ram" stroke="#c084fc" fillOpacity={0} name="RAM %" />
+                            <Area type="monotone" dataKey="ram" stroke="#06b6d4" fillOpacity={0} name="RAM %" />
                             <Area type="monotone" dataKey="disk" stroke="#34d399" fillOpacity={0} name="Disk %" />
                         </AreaChart>
                     </ResponsiveContainer>
@@ -201,14 +201,14 @@ const MetricsTab = ({ token }: { token: string }) => {
             </div>
 
             {/* Top Processes */}
-            <div className="glass-card p-6 rounded-xl border border-white/10 bg-black/20">
+            <div className="p-6 rounded-xl border border-border bg-card shadow-sm">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-amber-400" />
                     Top Processes
                 </h3>
                 <div className="space-y-3">
                     {live?.top_processes?.map((p: any) => (
-                        <div key={p.pid} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+                        <div key={p.pid} className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded bg-blue-500/10 text-blue-400">
                                     <Activity className="w-4 h-4" />
@@ -304,13 +304,19 @@ const BackupsTab = ({ token }: { token: string }) => {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all">
-                            <button className="p-2 hover:bg-white/10 rounded-lg text-muted-foreground hover:text-white transition-colors">
+                        <div className="flex items-center gap-2 translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:translate-x-0 group-focus-within:opacity-100 transition-all">
+                            <button
+                                className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+                                aria-label="Download backup"
+                                title="Download backup"
+                            >
                                 <Download className="w-4 h-4" />
                             </button>
                             <button
                                 onClick={() => deleteMutation.mutate(b.id)}
-                                className="p-2 hover:bg-red-500/10 rounded-lg text-muted-foreground hover:text-red-400 transition-colors"
+                                className="p-2 hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive transition-colors focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:outline-none"
+                                aria-label="Delete backup"
+                                title="Delete backup"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -318,8 +324,8 @@ const BackupsTab = ({ token }: { token: string }) => {
                     </div>
                 ))}
                 {backups?.length === 0 && (
-                    <div className="text-center p-12 border border-dashed border-white/10 rounded-xl">
-                        <Database className="w-8 h-8 text-white/20 mx-auto mb-3" />
+                    <div className="text-center p-12 border border-dashed border-border rounded-xl">
+                        <Database className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
                         <p className="text-muted-foreground">No backups found.</p>
                     </div>
                 )}
@@ -588,7 +594,7 @@ const MetricCard = ({ title, value, total, percent, icon: Icon, color, subtext }
 );
 
 const ForecastCard = ({ title, days, trend, color }: any) => (
-    <div className="p-4 rounded-xl border border-white/5 bg-white/5 flex items-center justify-between">
+    <div className="p-4 rounded-xl border border-border bg-card flex items-center justify-between">
         <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg bg-${color}-500/10 text-${color}-400`}>
                 {trend === 'worsening' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}

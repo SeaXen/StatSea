@@ -117,7 +117,7 @@ export default function DeviceBandwidthPage({ macAddress, onBack }: DeviceBandwi
                     <PremiumCard className="p-6">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-semibold flex items-center gap-2">
-                                <Calendar className="w-5 h-5 text-indigo-400" />
+                                <Calendar className="w-5 h-5 text-primary" />
                                 Daily Traffic (Last 30 Days)
                             </h3>
                         </div>
@@ -126,12 +126,12 @@ export default function DeviceBandwidthPage({ macAddress, onBack }: DeviceBandwi
                                 <AreaChart data={historyData.daily}>
                                     <defs>
                                         <linearGradient id="colorDailyDown" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                                            <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                                         </linearGradient>
                                         <linearGradient id="colorDailyUp" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#ec4899" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#ec4899" stopOpacity={0} />
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} vertical={false} />
@@ -142,8 +142,8 @@ export default function DeviceBandwidthPage({ macAddress, onBack }: DeviceBandwi
                                         itemStyle={{ color: '#e2e8f0' }}
                                         formatter={(val: number) => formatBytes(val)}
                                     />
-                                    <Area type="monotone" dataKey="download" name="Download" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorDailyDown)" />
-                                    <Area type="monotone" dataKey="upload" name="Upload" stroke="#ec4899" fillOpacity={1} fill="url(#colorDailyUp)" />
+                                    <Area type="monotone" dataKey="download" name="Download" stroke="#06b6d4" fillOpacity={1} fill="url(#colorDailyDown)" />
+                                    <Area type="monotone" dataKey="upload" name="Upload" stroke="#10b981" fillOpacity={1} fill="url(#colorDailyUp)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>

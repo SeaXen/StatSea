@@ -144,7 +144,7 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
 
                         {/* Notifications Section */}
                         <section className="space-y-4">
-                            <h3 className="text-sm font-medium text-purple-400 uppercase tracking-wider flex items-center gap-2">
+                            <h3 className="text-sm font-medium text-primary uppercase tracking-wider flex items-center gap-2">
                                 <MessageSquare className="w-4 h-4" /> Notifications
                             </h3>
 

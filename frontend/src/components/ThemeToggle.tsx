@@ -7,7 +7,8 @@ export function ThemeToggle() {
     return (
         <button
             onClick={() => updateTheme({ mode: themeConfig.mode === 'light' ? 'dark' : 'light' })}
-            className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
+            className="p-2 rounded-lg bg-secondary/80 border border-border hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+            aria-label="Toggle theme"
             title="Toggle theme"
         >
             <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

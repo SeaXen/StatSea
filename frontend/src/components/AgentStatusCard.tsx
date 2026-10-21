@@ -123,10 +123,10 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({ agent }) => {
 
                     {/* RAM */}
                     <div className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-accent/50 to-transparent border border-border relative overflow-hidden">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-purple-500 dark:text-purple-400 mb-1 z-10">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-cyan-500 dark:text-cyan-400 mb-1 z-10">
                             <Activity className="w-3.5 h-3.5" /> RAM
                         </div>
-                        <div className="z-10">{renderDonut(metrics.mem_usage, '#c084fc')}</div>
+                        <div className="z-10">{renderDonut(metrics.mem_usage, '#38bdf8')}</div>
                     </div>
 
                     {/* Disk */}

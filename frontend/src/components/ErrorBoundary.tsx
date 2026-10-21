@@ -62,7 +62,7 @@ class ErrorBoundary extends Component<Props, State> {
                             </button>
                             <button
                                 onClick={this.handleReset}
-                                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
+                                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium shadow-md transition-all active:scale-95"
                             >
                                 <Home size={18} />
                                 Back to Dashboard

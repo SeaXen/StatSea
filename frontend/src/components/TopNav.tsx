@@ -59,13 +59,13 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
                     {/* Search Trigger */}
                     <button
                         onClick={() => setCommandOpen(true)}
-                        className="group flex items-center gap-2 rounded-full border border-border bg-accent/50 px-3 py-1.5 text-sm text-muted-foreground hover:border-accent hover:bg-accent hover:text-foreground transition-all"
+                        className="group flex items-center gap-2 rounded-full border border-border bg-accent/50 px-3 py-1.5 text-sm text-muted-foreground hover:border-accent hover:bg-accent hover:text-foreground transition-all focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
                         aria-label="Search"
                     >
                         <Search className="h-4 w-4" />
-                        <span className="hidden sm:inline">Search...</span>
+                        <span className="hidden sm:inline">Search…</span>
                         <kbd className="hidden lg:inline-flex h-5 items-center gap-1 rounded border border-border bg-accent/50 px-1.5 font-mono text-[10px] text-muted-foreground">
-                            ⌘K
+                            ⌘&nbsp;K
                         </kbd>
                     </button>
 
@@ -73,16 +73,16 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
 
                     <button
                         onClick={() => setIsNotificationOpen(true)}
-                        className="relative rounded-full p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        className="relative rounded-full p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
                         aria-label="Notifications"
                     >
                         <Bell className="h-5 w-5" />
                         {unreadCount > 0 && (
-                            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-black" />
+                            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />
                         )}
                     </button>
 
-                    <div className="h-6 w-px bg-white/10 mx-2" />
+                    <div className="h-6 w-px bg-border mx-2" />
 
                     <div className="flex items-center gap-3 pl-2">
                         <div className="hidden lg:flex flex-col items-end">
@@ -95,7 +95,7 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
 
                         <button
                             onClick={handleLogout}
-                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-all"
+                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:outline-none"
                             title="Sign Out"
                             aria-label="Sign out"
                         >

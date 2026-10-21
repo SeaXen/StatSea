@@ -73,14 +73,15 @@
   }
 }
 
-/* ─── Glassmorphism Card ─── */
+/* ─── Theme-Aware Card ─── */
 .glass-card {
-  @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg;
+  @apply bg-card/85 backdrop-blur-xl border border-border/70 shadow-sm text-foreground transition-colors;
 }
 
 /* ─── Premium Custom Scrollbar ─── */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -88,18 +89,18 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: hsl(var(--muted-foreground) / 0.25);
   border-radius: 999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: hsl(var(--muted-foreground) / 0.45);
 }
 
 /* Firefox scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.25) transparent;
 }
 
 /* ─── Skeleton Shimmer Effect ─── */
@@ -116,23 +117,23 @@
 .animate-pulse {
   animation: shimmer 2s ease-in-out infinite;
   background: linear-gradient(90deg,
-      rgba(255, 255, 255, 0.06) 25%,
-      rgba(255, 255, 255, 0.12) 50%,
-      rgba(255, 255, 255, 0.06) 75%);
+      hsl(var(--muted) / 0.5) 25%,
+      hsl(var(--muted-foreground) / 0.15) 50%,
+      hsl(var(--muted) / 0.5) 75%);
   background-size: 200% 100%;
 }
 
-/* ─── Focus Visible — Premium Blue Ring ─── */
+/* ─── Focus Visible — Theme Ring ─── */
 *:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline: 2px solid hsl(var(--ring) / 0.7);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius);
 }
 
 /* ─── Selection Highlight ─── */
 ::selection {
-  background: rgba(59, 130, 246, 0.3);
-  color: white;
+  background: hsl(var(--primary) / 0.25);
+  color: inherit;
 }
 
 /* ─── Safe area for iOS bottom nav ─── */

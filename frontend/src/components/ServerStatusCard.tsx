@@ -140,14 +140,14 @@ const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ onDetailClick }) =>
 
                     {/* RAM */}
                     <div
-                        className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-accent/50 to-transparent border border-border hover:border-purple-500/30 transition-all cursor-pointer group/item relative overflow-hidden"
+                        className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-accent/50 to-transparent border border-border hover:border-cyan-500/30 transition-all cursor-pointer group/item relative overflow-hidden"
                         onClick={() => onDetailClick('ram')}
                     >
-                        <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                        <div className="flex items-center gap-2 text-xs font-semibold text-purple-500 dark:text-purple-400 mb-1 z-10">
+                        <div className="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                        <div className="flex items-center gap-2 text-xs font-semibold text-cyan-500 dark:text-cyan-400 mb-1 z-10">
                             <Activity className="w-3.5 h-3.5" /> RAM
                         </div>
-                        <div className="z-10">{renderDonut(info.ram.percent, '#c084fc')}</div>
+                        <div className="z-10">{renderDonut(info.ram.percent, '#38bdf8')}</div>
                         <div className="text-[10px] text-muted-foreground mt-1 font-mono z-10">
                             {formatBytes(info.ram.used)} / {formatBytes(info.ram.total)}
                         </div>

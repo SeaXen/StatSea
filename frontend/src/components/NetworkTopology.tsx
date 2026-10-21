@@ -96,32 +96,33 @@ export function NetworkTopology() {
     }, []);
 
     const getNodeColor = (node: Node) => {
-        if (node.group === 'core') return '#6366f1'; // Indigo for router
+        if (node.group === 'core') return '#06b6d4'; // Cyan for core router
 
         switch (node.type?.toLowerCase()) {
             case 'mobile': return '#10b981'; // Emerald
             case 'pc': return '#3b82f6'; // Blue
             case 'iot': return '#f59e0b'; // Amber
-            default: return '#8b5cf6'; // Violet
+            default: return '#14b8a6'; // Teal
         }
     };
 
     return (
-        <div className="glass-card rounded-3xl p-6 border border-white/5 relative h-[500px] flex flex-col overflow-hidden">
+        <div className="glass-card rounded-3xl p-6 border border-border relative h-[500px] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between mb-4 relative z-10">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                        <Share2 className="w-5 h-5 text-indigo-400" />
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                        <Share2 className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-white tracking-tight">Network Map</h2>
-                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">LIVE TOPOLOGY</p>
+                        <h2 className="text-xl font-black text-foreground tracking-tight">Network Map</h2>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">LIVE TOPOLOGY</p>
                     </div>
                 </div>
                 <button
                     onClick={fetchTopology}
                     disabled={loading}
-                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 disabled:opacity-50"
+                    aria-label="Refresh network topology"
+                    className="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-all border border-border disabled:opacity-50"
                 >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 </button>
@@ -131,8 +132,8 @@ export function NetworkTopology() {
                 {loading && graphData.nodes.length === 0 ? (
                     <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40 backdrop-blur-sm">
                         <div className="flex flex-col items-center gap-3">
-                            <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-                            <div className="text-xs font-black text-indigo-400 uppercase tracking-widest">Scanning Network...</div>
+                            <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                            <div className="text-xs font-black text-primary uppercase tracking-widest">Scanning Network...</div>
                         </div>
                     </div>
                 ) : error ? (

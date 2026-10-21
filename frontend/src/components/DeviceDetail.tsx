@@ -159,22 +159,22 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                             stiffness: 280,
                             mass: 0.8
                         }}
-                        className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-[#09090b]/90 backdrop-blur-3xl border-l border-white/5 z-50 shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
+                        className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-card/95 backdrop-blur-3xl border-l border-border z-50 shadow-2xl overflow-hidden flex flex-col"
                     >
                         <div className="flex-1 overflow-y-auto custom-scrollbar relative">
                             {/* Decorative background glow */}
-                            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/5 blur-[120px] pointer-events-none" />
-                            <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-purple-600/5 blur-[100px] pointer-events-none" />
+                            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] pointer-events-none" />
+                            <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-cyan-500/5 blur-[100px] pointer-events-none" />
 
                             <div className="p-10 relative">
                                 {/* Top bar */}
                                 <div className="flex justify-between items-center mb-10">
-                                    <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
+                                    <div className="flex bg-secondary/60 p-1 rounded-2xl border border-border">
                                         <button
                                             onClick={() => setIsEditing(false)}
                                             className={cn(
                                                 "px-4 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all",
-                                                !isEditing ? "bg-white/10 text-white shadow-lg" : "text-white/20 hover:text-white/40"
+                                                !isEditing ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                                             )}
                                         >
                                             OVERVIEW
@@ -183,7 +183,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                             onClick={() => setIsEditing(true)}
                                             className={cn(
                                                 "px-4 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all",
-                                                isEditing ? "bg-white/10 text-white shadow-lg" : "text-white/20 hover:text-white/40"
+                                                isEditing ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                                             )}
                                         >
                                             EDIT
@@ -191,7 +191,8 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                     </div>
                                     <button
                                         onClick={onClose}
-                                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 group"
+                                        aria-label="Close device details"
+                                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-all border border-border group"
                                     >
                                         <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
                                     </button>
@@ -200,7 +201,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                 {/* Header Section */}
                                 <div className="mb-12">
                                     <div className="flex items-start gap-6">
-                                        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/20 shadow-[0_0_40px_rgba(99,102,241,0.1)]">
+                                        <div className="w-20 h-20 rounded-3xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shadow-sm">
                                             {getIcon(device.type, device.icon_type)}
                                         </div>
                                         <div className="flex-1 min-w-0 pt-1">
@@ -211,40 +212,41 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                         value={editNickname}
                                                         onChange={(e) => setEditNickname(e.target.value)}
                                                         placeholder={device.hostname || 'Device Name'}
-                                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-2xl font-black text-white focus:outline-none focus:border-indigo-500/50 transition-all placeholder:text-white/10"
+                                                        className="w-full bg-secondary/50 border border-border rounded-2xl px-5 py-3 text-2xl font-black text-foreground focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted-foreground/40"
                                                     />
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <h2 className="text-4xl font-black text-white tracking-tighter truncate leading-tight">
+                                                    <h2 className="text-4xl font-black text-foreground tracking-tighter truncate leading-tight">
                                                         {device.nickname || device.hostname || 'Unknown Device'}
                                                     </h2>
                                                     <div className="flex items-center gap-3 mt-2">
                                                         <div className={cn(
                                                             "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all duration-700",
                                                             device.is_online
-                                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                                                : 'bg-white/5 text-white/20 border-white/5'
+                                                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                                                : 'bg-secondary text-muted-foreground border-border'
                                                         )}>
                                                             <div className={cn(
                                                                 "w-1.5 h-1.5 rounded-full",
-                                                                device.is_online ? 'bg-emerald-400 animate-pulse' : 'bg-white/10'
+                                                                device.is_online ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/30'
                                                             )} />
                                                             {device.is_online ? 'ONLINE' : 'OFFLINE'}
                                                         </div>
-                                                        <span className="text-white/20 text-[10px] font-bold uppercase tracking-widest leading-none">•</span>
-                                                        <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] pt-0.5">
+                                                        <span className="text-muted-foreground/40 text-[10px] font-bold uppercase tracking-widest leading-none">•</span>
+                                                        <div className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] pt-0.5">
                                                             {device.hostname}
                                                         </div>
                                                         {!device.is_online && (
                                                             <>
-                                                                <span className="text-white/20 text-[10px] font-bold uppercase tracking-widest leading-none">•</span>
+                                                                <span className="text-muted-foreground/40 text-[10px] font-bold uppercase tracking-widest leading-none">•</span>
                                                                 <button
                                                                     onClick={() => wakeDevice(device.mac_address)}
                                                                     disabled={isWaking}
-                                                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                                                                    aria-label="Wake device"
+                                                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
                                                                 >
-                                                                    {isWaking ? <div className="w-3 h-3 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" /> : <Power className="w-3 h-3" />}
+                                                                    {isWaking ? <div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <Power className="w-3 h-3" />}
                                                                     WAKE
                                                                 </button>
                                                             </>
@@ -257,9 +259,10 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                             <button
                                                 onClick={handleSave}
                                                 disabled={saving}
-                                                className="w-14 h-14 flex items-center justify-center rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-[0_0_30px_rgba(79,70,229,0.3)] disabled:opacity-50"
+                                                aria-label="Save changes"
+                                                className="w-14 h-14 flex items-center justify-center rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all shadow-md disabled:opacity-50"
                                             >
-                                                {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check className="w-7 h-7" />}
+                                                {saving ? <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Check className="w-7 h-7" />}
                                             </button>
                                         )}
                                     </div>
@@ -268,13 +271,13 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                 {/* Main Info Grid */}
                                 <div className="grid grid-cols-2 gap-6 mb-12">
                                     <InfoCard
-                                        icon={<Globe className="w-4 h-4 text-indigo-400" />}
+                                        icon={<Globe className="w-4 h-4 text-primary" />}
                                         label="NETWORK IP"
                                         value={device.ip_address || '---'}
                                         subValue="Internal Gateway"
                                     />
                                     <InfoCard
-                                        icon={<Shield className="w-4 h-4 text-purple-400" />}
+                                        icon={<Shield className="w-4 h-4 text-cyan-500" />}
                                         label="HARDWARE ID"
                                         value={device.mac_address}
                                         subValue="Unique Signal"
@@ -401,34 +404,34 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                 </div>
 
                                 {/* Traffic Insights */}
-                                <div className="bg-white/[0.02] rounded-3xl p-10 border border-white/5 mb-10 overflow-hidden relative group/chart">
-                                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[100px] pointer-events-none group-hover/chart:bg-indigo-500/10 transition-colors duration-1000" />
+                                <div className="bg-card/50 rounded-3xl p-10 border border-border mb-10 overflow-hidden relative group/chart">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] pointer-events-none group-hover/chart:bg-primary/10 transition-colors duration-1000" />
 
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-white/5">
-                                                <Calendar className="w-6 h-6 text-indigo-400" />
+                                            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                                <Calendar className="w-6 h-6 text-primary" />
                                             </div>
                                             <div>
-                                                <h3 className="text-xl font-black text-white tracking-tight">Traffic Activity</h3>
-                                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">30 DAY ANALYTICS ENGINE</p>
+                                                <h3 className="text-xl font-black text-foreground tracking-tight">Traffic Activity</h3>
+                                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">30 DAY ANALYTICS ENGINE</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-6">
                                             <div className="flex flex-col items-end">
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
-                                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">DOWNLOADS</span>
+                                                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">DOWNLOADS</span>
                                                 </div>
-                                                <span className="text-white font-mono font-bold text-sm">↓ {formatBytes(stats.reduce((acc, curr) => acc + (curr.download || 0), 0))}</span>
+                                                <span className="text-foreground font-mono font-bold text-sm tabular-nums">↓ {formatBytes(stats.reduce((acc, curr) => acc + (curr.download || 0), 0))}</span>
                                             </div>
-                                            <div className="w-[1px] h-8 bg-white/5" />
+                                            <div className="w-[1px] h-8 bg-border" />
                                             <div className="flex flex-col items-end">
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <div className="w-2 h-2 rounded-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.5)]" />
-                                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">UPLOADS</span>
+                                                    <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.5)]" />
+                                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">UPLOADS</span>
                                                 </div>
-                                                <span className="text-white font-mono font-bold text-sm">↑ {formatBytes(stats.reduce((acc, curr) => acc + (curr.upload || 0), 0))}</span>
+                                                <span className="text-foreground font-mono font-bold text-sm tabular-nums">↑ {formatBytes(stats.reduce((acc, curr) => acc + (curr.upload || 0), 0))}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -442,14 +445,14 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                         <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                                     </linearGradient>
                                                     <linearGradient id="colorU" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
+                                                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                                                     </linearGradient>
                                                 </defs>
                                                 <CartesianGrid strokeDasharray="0" stroke="rgba(255,255,255,0.03)" vertical={false} />
                                                 <XAxis
                                                     dataKey="date"
-                                                    stroke="rgba(255,255,255,0.1)"
+                                                    stroke="rgba(255,255,255,0.2)"
                                                     fontSize={9}
                                                     tickLine={false}
                                                     axisLine={false}
@@ -457,7 +460,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                     tickFormatter={(value) => new Date(value).toLocaleDateString(undefined, { day: '2-digit' })}
                                                 />
                                                 <YAxis
-                                                    stroke="rgba(255,255,255,0.1)"
+                                                    stroke="rgba(255,255,255,0.2)"
                                                     fontSize={9}
                                                     tickLine={false}
                                                     axisLine={false}
@@ -468,24 +471,24 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                     content={({ active, payload, label }) => {
                                                         if (active && payload && payload.length) {
                                                             return (
-                                                                <div className="bg-[#111114]/95 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl">
-                                                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-3">
+                                                                <div className="bg-card/95 backdrop-blur-xl border border-border p-4 rounded-2xl shadow-2xl">
+                                                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-3">
                                                                         {new Date(label).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                                                                     </p>
                                                                     <div className="space-y-2">
                                                                         <div className="flex items-center justify-between gap-8">
                                                                             <div className="flex items-center gap-2">
-                                                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                                                                <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">Down</span>
+                                                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Down</span>
                                                                             </div>
-                                                                            <span className="text-xs font-mono font-black text-emerald-400">{formatBytes(payload[0].value as number)}</span>
+                                                                            <span className="text-xs font-mono font-black text-emerald-500 tabular-nums">{formatBytes(payload[0].value as number)}</span>
                                                                         </div>
                                                                         <div className="flex items-center justify-between gap-8">
                                                                             <div className="flex items-center gap-2">
-                                                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                                                                                <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">Up</span>
+                                                                                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                                                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Up</span>
                                                                             </div>
-                                                                            <span className="text-xs font-mono font-black text-indigo-400">{formatBytes(payload[1].value as number)}</span>
+                                                                            <span className="text-xs font-mono font-black text-primary tabular-nums">{formatBytes(payload[1].value as number)}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -506,7 +509,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                 <Area
                                                     type="monotone"
                                                     dataKey="upload"
-                                                    stroke="#6366f1"
+                                                    stroke="#06b6d4"
                                                     strokeWidth={3}
                                                     fillOpacity={1}
                                                     fill="url(#colorU)"
@@ -524,21 +527,21 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                 <Shield className="w-5 h-5 text-orange-400" />
                                             </div>
                                             <div>
-                                                <h3 className="text-xl font-black text-white tracking-tight">Open Ports</h3>
-                                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">EXTERNAL SERVICE MAP</p>
+                                                <h3 className="text-xl font-black text-foreground tracking-tight">Open Ports</h3>
+                                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">EXTERNAL SERVICE MAP</p>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 gap-2">
                                             {device.ports.map((port) => (
-                                                <div key={port.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] group/port hover:bg-white/[0.04] transition-all">
+                                                <div key={port.id} className="flex items-center justify-between p-4 rounded-2xl bg-secondary/30 border border-border group/port hover:bg-secondary/50 transition-all">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="text-lg font-black text-white w-12">{port.port}</div>
+                                                        <div className="text-lg font-black text-foreground w-12 tabular-nums">{port.port}</div>
                                                         <div className="flex flex-col">
-                                                            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{port.service || 'UNKNOWN'}</span>
-                                                            <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{port.protocol} • {port.state}</span>
+                                                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{port.service || 'UNKNOWN'}</span>
+                                                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{port.protocol} • {port.state}</span>
                                                         </div>
                                                     </div>
-                                                    <div className="text-[9px] font-black text-white/10 uppercase tracking-widest">
+                                                    <div className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest tabular-nums">
                                                         LAST SEEN: {new Date(port.last_discovered).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </div>
                                                 </div>
@@ -554,7 +557,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                             <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20 group-hover/sec:scale-110 transition-transform">
                                                 <Shield className="w-5 h-5 text-red-400" />
                                             </div>
-                                            <h4 className="text-sm font-black text-white uppercase tracking-widest">Security</h4>
+                                            <h4 className="text-sm font-black text-foreground uppercase tracking-widest">Security</h4>
                                         </div>
                                         <div className="space-y-4">
                                             <SecurityItem label="Firewall" status="SHIELDED" />
@@ -562,21 +565,21 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                             <SecurityItem label="Risk Score" status="0.01" />
                                         </div>
                                     </div>
-                                    <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/10 group/sys hover:bg-white/[0.04] transition-all duration-500">
+                                    <div className="p-8 rounded-3xl bg-secondary/30 border border-border group/sys hover:bg-secondary/50 transition-all duration-500">
                                         <div className="flex items-center gap-4 mb-6">
                                             <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group-hover/sys:scale-110 transition-transform">
                                                 <Cpu className="w-5 h-5 text-blue-400" />
                                             </div>
-                                            <h4 className="text-sm font-black text-white uppercase tracking-widest">System</h4>
+                                            <h4 className="text-sm font-black text-foreground uppercase tracking-widest">System</h4>
                                         </div>
                                         <div className="space-y-4">
-                                            <div className="flex justify-between items-center text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
+                                            <div className="flex justify-between items-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
                                                 <span>OS</span>
-                                                <span className="text-white/60">Unknown</span>
+                                                <span className="text-foreground/80 font-bold">Unknown</span>
                                             </div>
-                                            <div className="flex justify-between items-center text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
+                                            <div className="flex justify-between items-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
                                                 <span>Uptime</span>
-                                                <span className="text-white/60">99.9%</span>
+                                                <span className="text-foreground/80 font-bold tabular-nums">99.9%</span>
                                             </div>
                                         </div>
                                     </div>
@@ -592,14 +595,14 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
 
 function InfoCard({ icon, label, value, subValue }: { icon: React.ReactNode, label: string, value: string, subValue?: string }) {
     return (
-        <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/[0.03] group/info hover:border-indigo-500/30 transition-all duration-300 relative overflow-hidden">
+        <div className="p-6 rounded-[2rem] bg-secondary/30 border border-border group/info hover:border-primary/30 transition-all duration-300 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/info:opacity-20 transition-opacity">
                 {icon}
             </div>
             <div className="relative">
-                <div className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">{label}</div>
-                <div className="text-lg font-black text-white truncate mb-1 tracking-tight">{value}</div>
-                {subValue && <div className="text-[9px] font-bold text-white/10 uppercase tracking-widest">{subValue}</div>}
+                <div className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-3">{label}</div>
+                <div className="text-lg font-black text-foreground truncate mb-1 tracking-tight">{value}</div>
+                {subValue && <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest">{subValue}</div>}
             </div>
         </div>
     );
@@ -607,9 +610,9 @@ function InfoCard({ icon, label, value, subValue }: { icon: React.ReactNode, lab
 
 function SecurityItem({ label, status }: { label: string, status: string }) {
     return (
-        <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
-            <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{label}</span>
-            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">{status}</span>
+        <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/40 border border-border">
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{label}</span>
+            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{status}</span>
         </div>
     );
 }

@@ -68,26 +68,26 @@ export const presets: Record<ThemeMode, ThemeDefinition> = {
         name: "Cyberpunk",
         type: "dark",
         colors: {
-            "--background": "260 50% 10%", // Deep Purple text
-            "--foreground": "60 100% 90%",  // Yellow-ish text
-            "--card": "260 50% 12%",
-            "--card-foreground": "280 20% 90%",
-            "--popover": "260 50% 10%",
-            "--popover-foreground": "280 20% 90%",
-            "--primary": "60 100% 50%",     // Neon Yellow
-            "--primary-foreground": "260 50% 10%",
-            "--secondary": "280 50% 20%",
+            "--background": "220 25% 7%",     // Deep Obsidian
+            "--foreground": "60 100% 90%",     // Electric Yellow-White
+            "--card": "220 25% 10%",
+            "--card-foreground": "60 90% 95%",
+            "--popover": "220 25% 8%",
+            "--popover-foreground": "60 90% 95%",
+            "--primary": "60 100% 50%",        // Neon Yellow
+            "--primary-foreground": "220 25% 7%",
+            "--secondary": "220 20% 16%",
             "--secondary-foreground": "60 100% 50%",
-            "--muted": "260 30% 20%",
-            "--muted-foreground": "280 20% 70%",
-            "--accent": "300 100% 50%",     // Neon Pink
-            "--accent-foreground": "260 50% 10%",
+            "--muted": "220 20% 16%",
+            "--muted-foreground": "220 15% 65%",
+            "--accent": "175 95% 45%",        // Electric Teal
+            "--accent-foreground": "220 25% 7%",
             "--destructive": "0 100% 50%",
-            "--destructive-foreground": "260 50% 10%",
-            "--border": "280 50% 30%",
-            "--input": "260 50% 20%",
+            "--destructive-foreground": "220 25% 7%",
+            "--border": "220 20% 24%",
+            "--input": "220 20% 18%",
             "--ring": "60 100% 50%",
-            "--radius": "0px" // Sharp edges
+            "--radius": "0px"                  // Industrial sharp edges
         }
     },
     dracula: {
@@ -146,13 +146,13 @@ export const presets: Record<ThemeMode, ThemeDefinition> = {
         name: "Midnight",
         type: "dark",
         colors: {
-            "--background": "224 71% 4%",      // Deep Blue/Black
+            "--background": "224 71% 4%",      // Deep Navy
             "--foreground": "213 31% 91%",
-            "--card": "224 71% 4%",
+            "--card": "224 71% 6%",
             "--card-foreground": "213 31% 91%",
-            "--popover": "224 71% 4%",
+            "--popover": "224 71% 5%",
             "--popover-foreground": "213 31% 91%",
-            "--primary": "263 70% 50%",        // Violet
+            "--primary": "199 89% 48%",        // Ocean Cobalt Cyan
             "--primary-foreground": "210 40% 98%",
             "--secondary": "223 47% 11%",
             "--secondary-foreground": "210 40% 98%",
@@ -164,7 +164,7 @@ export const presets: Record<ThemeMode, ThemeDefinition> = {
             "--destructive-foreground": "210 40% 98%",
             "--border": "216 34% 17%",
             "--input": "216 34% 17%",
-            "--ring": "263 70% 50%",
+            "--ring": "199 89% 48%",
             "--radius": "0.75rem"
         }
     }
@@ -172,14 +172,12 @@ export const presets: Record<ThemeMode, ThemeDefinition> = {
 
 export const accentColors = [
     { name: 'Blue', value: '221.2 83.2% 53.3%', hex: '#3b82f6' },
-    { name: 'Purple', value: '262.1 83.3% 57.8%', hex: '#a855f7' },
-    { name: 'Pink', value: '316.6 73.4% 52.8%', hex: '#ec4899' },
+    { name: 'Emerald', value: '160 84% 39%', hex: '#10b981' },
+    { name: 'Cyan', value: '188.7 94.5% 42.7%', hex: '#06b6d4' },
+    { name: 'Teal', value: '175.3 77.1% 26.1%', hex: '#14b8a6' },
+    { name: 'Amber', value: '38 92% 50%', hex: '#f59e0b' },
     { name: 'Red', value: '0 84.2% 60.2%', hex: '#ef4444' },
     { name: 'Orange', value: '24.6 95% 53.1%', hex: '#f97316' },
-    { name: 'Green', value: '142.1 76.2% 36.3%', hex: '#22c55e' },
-    { name: 'Teal', value: '175.3 77.1% 26.1%', hex: '#14b8a6' },
-    { name: 'Cyan', value: '188.7 94.5% 42.7%', hex: '#06b6d4' },
-    { name: 'Yellow', value: '47.9 95.8% 53.1%', hex: '#eab308' },
 ];
 
 export const legacyThemes: Record<string, ThemeConfig> = {

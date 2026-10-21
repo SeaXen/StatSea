@@ -99,7 +99,7 @@ export const OnboardingTour: React.FC = () => {
 
                             <button
                                 onClick={handleNext}
-                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors group"
+                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-lg transition-colors group"
                             >
                                 {isLastStep ? 'Get Started' : 'Next'}
                                 {isLastStep ? <Check className="w-4 h-4" /> : <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />}
@@ -108,7 +108,7 @@ export const OnboardingTour: React.FC = () => {
                     </div>
 
                     {/* Decorative gradient overlay */}
-                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-blue-500/5 via-transparent to-purple-500/5" />
+                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-blue-500/5 via-transparent to-cyan-500/5" />
                 </motion.div>
             </div>
         </AnimatePresence>

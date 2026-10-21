@@ -193,7 +193,7 @@ def create_certificate(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    cert = models.MonitoredCertificate(**req.dict(), organization_id=organization_id)
+    cert = models.MonitoredCertificate(**req.model_dump(), organization_id=organization_id)
     db.add(cert)
     db.commit()
     db.refresh(cert)

@@ -81,8 +81,9 @@ export function TopDevicesWidget() {
                     </span>
                     <button
                         onClick={() => fetchTopDevices(true)}
-                        className="p-1 rounded-md hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground"
-                        title="Refresh"
+                        className="p-1 rounded-md hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+                        title="Refresh top devices"
+                        aria-label="Refresh top devices"
                     >
                         <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
                     </button>
@@ -121,8 +122,8 @@ export function TopDevicesWidget() {
                                     </div>
                                 </div>
                                 <div className="text-right shrink-0 ml-3">
-                                    <div className="text-sm font-mono text-foreground">{formatBytes(device.total)}</div>
-                                    <div className="text-[10px] text-muted-foreground font-mono">
+                                    <div className="text-sm font-mono text-foreground tabular-nums">{formatBytes(device.total)}</div>
+                                    <div className="text-[10px] text-muted-foreground font-mono tabular-nums">
                                         ↑{formatBytes(device.upload)} ↓{formatBytes(device.download)}
                                     </div>
                                 </div>

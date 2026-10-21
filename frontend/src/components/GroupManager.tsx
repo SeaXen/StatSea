@@ -27,7 +27,7 @@ export function GroupManager({ isOpen, onClose, groups: initialGroups }: GroupMa
 
     const colors = [
         '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981',
-        '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef',
+        '#06b6d4', '#3b82f6', '#0ea5e9', '#14b8a6', '#0284c7',
         '#f43f5e', '#64748b'
     ];
 
