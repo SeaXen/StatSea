@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 
 import { RefreshCw } from 'lucide-react';
 import { DeviceStatusLog } from '../types';
+import axiosInstance from '../config/axiosInstance';
 
 interface UptimeTimelineProps {
     deviceId: number;
@@ -31,12 +32,15 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
                 limit: '1000'
             });
 
-            const res = await fetch(`/api/devices/${deviceId}/uptime?${queryParams}`);
-            if (!res.ok) throw new Error('Failed to fetch uptime logs');
-            const data = await res.json();
-            setLogs(data);
+            const res = await axiosInstance.get(`/devices/${deviceId}/uptime?${queryParams}`);
+            if (Array.isArray(res.data)) {
+                setLogs(res.data);
+            } else {
+                setLogs([]);
+            }
         } catch (error) {
             console.error("Error fetching uptime logs:", error);
+            setLogs([]);
         } finally {
             setLoading(false);
         }
@@ -56,7 +60,8 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
         if (range === '30d') start.setDate(start.getDate() - 30);
 
         // Sort logs ascending for processing
-        const sortedLogs = [...logs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        const safeLogs = Array.isArray(logs) ? logs : [];
+        const sortedLogs = [...safeLogs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
         const timelineSegments: { start: number; end: number; status: 'online' | 'offline' }[] = [];
 

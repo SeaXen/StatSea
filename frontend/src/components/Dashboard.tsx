@@ -32,11 +32,11 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="p-4"
+            className="space-y-6"
         >
             <header className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Dashboard</h1>
+                    <h1 className="text-2xl font-bold text-foreground tracking-tight">Dashboard</h1>
                     <p className="text-muted-foreground text-sm mt-0.5">Real-time network overview</p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -54,7 +54,7 @@ const Dashboard = () => {
 
             {/* Live Traffic Widget */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                <div className="col-span-2 glass-card rounded-lg p-4 h-[350px] border border-white/5 bg-black/40 backdrop-blur-xl shadow-xl overflow-hidden relative">
+                <div className="col-span-2 glass-card rounded-2xl p-5 h-[350px] border border-border bg-card/85 backdrop-blur-xl shadow-sm overflow-hidden relative">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
                             <Activity className="w-3.5 h-3.5 text-blue-400" />

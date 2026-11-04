@@ -239,10 +239,6 @@ html {
   box-shadow: 0 0 20px rgba(21, 93, 252, 0.3);
 }
 
-.text-gradient-blue {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600;
-}
-
 .premium-border {
   position: relative;
 }

@@ -39,7 +39,11 @@ class Settings(BaseSettings):
     VAPID_PRIVATE_KEY: str | None = None
     VAPID_ADMIN_EMAIL: str = "admin@statsea.dev"
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_file=(".env", "backend/.env"),
+        case_sensitive=True,
+        extra="ignore"
+    )
 
 
 settings = Settings()

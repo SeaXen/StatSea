@@ -57,7 +57,7 @@ class SpeedtestService {
 
     async getHistory(): Promise<SpeedtestResult[]> {
         const response = await axiosInstance.get(API_CONFIG.ENDPOINTS.SPEEDTEST);
-        return response.data.map(this.mapToDomain);
+        return Array.isArray(response.data) ? response.data.map(dto => this.mapToDomain(dto)) : [];
     }
 
     async runSpeedtest(provider: 'ookla' | 'cloudflare'): Promise<SpeedtestResult> {

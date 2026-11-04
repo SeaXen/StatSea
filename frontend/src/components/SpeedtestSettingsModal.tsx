@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, MessageSquare, Bell, Clock, Hash } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_CONFIG } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SpeedtestSettingsModalProps {
@@ -24,12 +24,11 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
         if (isOpen) {
             const loadSettings = async () => {
                 try {
-                    const response = await fetch(`${API_CONFIG.BASE_URL}/api/settings`);
-                    if (response.ok) {
-                        const data = await response.json();
+                    const response = await axiosInstance.get('/settings');
+                    if (Array.isArray(response.data)) {
                         setSettings(prev => {
                             const newSettings = { ...prev };
-                            data.forEach((s: { key: string; value: string }) => {
+                            response.data.forEach((s: { key: string; value: string }) => {
                                 if (Object.prototype.hasOwnProperty.call(newSettings, s.key)) {
                                     (newSettings as Record<string, string>)[s.key] = s.value;
                                 }
@@ -50,15 +49,11 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
         try {
             // Save each setting
             const promises = Object.entries(settings).map(([key, value]) =>
-                fetch(`${API_CONFIG.BASE_URL}/api/settings`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        key,
-                        value: String(value),
-                        type: 'string', // Defaulting to string for simplicity
-                        description: 'Speedtest Setting'
-                    })
+                axiosInstance.post('/settings', {
+                    key,
+                    value: String(value),
+                    type: 'string', // Defaulting to string for simplicity
+                    description: 'Speedtest Setting'
                 })
             );
 

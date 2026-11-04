@@ -51,10 +51,12 @@ export function NetworkMap() {
                 const newData = response.data;
                 setData(newData);
 
+                const rawNodes = Array.isArray(newData?.nodes) ? newData.nodes : [];
+                const deviceNodes = rawNodes.filter((n: Node) => n.id !== 'router');
+
                 // Initialize positions if not already set
                 setNodePositions(prev => {
                     const next = { ...prev };
-                    const deviceNodes = newData.nodes.filter((n: Node) => n.id !== 'router');
 
                     deviceNodes.forEach((node: Node, index: number) => {
                         if (!next[node.id]) {
@@ -116,20 +118,20 @@ export function NetworkMap() {
         );
     }
 
-    const deviceNodes = data?.nodes.filter(n => n.id !== 'router') || [];
+    const safeNodes = Array.isArray(data?.nodes) ? data.nodes : [];
+    const deviceNodes = safeNodes.filter(n => n.id !== 'router');
 
     return (
         <div
             ref={containerRef}
-            className="relative w-full h-[calc(100vh-120px)] overflow-hidden bg-[#050505] rounded-[32px] border border-white/5 shadow-2xl"
+            className="relative w-full h-[calc(100vh-120px)] overflow-hidden bg-card/90 rounded-[28px] border border-border/80 shadow-2xl"
         >
             {/* Background Effects */}
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.1] pointer-events-none mix-blend-overlay" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.05)_0%,transparent_70%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.06)_0%,transparent_70%)] pointer-events-none" />
 
             {/* Decorative background orbits */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] h-[440px] border border-white/[0.03] rounded-full pointer-events-none shadow-[inset_0_0_20px_rgba(255,255,255,0.01)]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[760px] h-[760px] border border-white/[0.02] rounded-full pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] h-[440px] border border-border/40 rounded-full pointer-events-none shadow-[inset_0_0_20px_rgba(255,255,255,0.01)]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[760px] h-[760px] border border-border/30 rounded-full pointer-events-none" />
 
             {/* Topology Canvas */}
             <div className="relative w-full h-full flex items-center justify-center">
@@ -168,23 +170,28 @@ export function NetworkMap() {
                                     transition={{ duration: 1 }}
                                 />
                                 {/* Pulsing Data Flow Particle */}
-                                <motion.circle
-                                    r="2.5"
-                                    fill="#6366f1"
-                                    filter="url(#glow)"
+                                <motion.g
                                     animate={{
-                                        cx: ["50%", `calc(50% + ${pos.x}px)`],
-                                        cy: ["50%", `calc(50% + ${pos.y}px)`],
+                                        x: [0, pos.x],
+                                        y: [0, pos.y],
                                         opacity: [0, 1, 0],
-                                        scale: [1, 1.5, 1]
+                                        scale: [1, 1.4, 1]
                                     }}
                                     transition={{
-                                        duration: 2 + Math.random() * 2,
+                                        duration: 2.5 + ((node.id.charCodeAt(0) || 0) % 3) * 0.5,
                                         repeat: Infinity,
                                         ease: "easeInOut",
-                                        delay: Math.random() * 2
+                                        delay: ((node.id.charCodeAt(node.id.length - 1) || 0) % 5) * 0.4
                                     }}
-                                />
+                                >
+                                    <circle
+                                        cx="50%"
+                                        cy="50%"
+                                        r="2.5"
+                                        fill="#6366f1"
+                                        filter="url(#glow)"
+                                    />
+                                </motion.g>
                             </React.Fragment>
                         );
                     })}

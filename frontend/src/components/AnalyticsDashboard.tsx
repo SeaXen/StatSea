@@ -397,24 +397,26 @@ const AnalyticsDashboard = () => {
                 setAnalyticsData(analyticsRes.data);
                 setHeatmapData(heatmapRes.data);
 
-                const netData = netRes.data;
-                const formattedBandwidth = netData.bandwidth.map((i: BandwidthPoint) => ({
+                const netData = netRes.data || {};
+                const rawBandwidth = Array.isArray(netData.bandwidth) ? netData.bandwidth : [];
+                const formattedBandwidth = rawBandwidth.map((i: BandwidthPoint) => ({
                     ...i, timestamp: new Date(i.timestamp).toLocaleTimeString()
                 })).reverse();
 
                 setBandwidthData(formattedBandwidth);
-                setLatencyData(netData.latency.map((i: LatencyPoint) => ({
+                const rawLatency = Array.isArray(netData.latency) ? netData.latency : [];
+                setLatencyData(rawLatency.map((i: LatencyPoint) => ({
                     ...i, timestamp: new Date(i.timestamp).toLocaleTimeString()
                 })).reverse());
 
-                setSecurityEvents(secRes.data);
-                setExternalConnections(connRes.data);
+                setSecurityEvents(Array.isArray(secRes.data) ? secRes.data : []);
+                setExternalConnections(Array.isArray(connRes.data) ? connRes.data : []);
 
                 // Update cache
                 localStorage.setItem('statsea_cache_analytics', JSON.stringify(analyticsRes.data));
                 localStorage.setItem('statsea_cache_bandwidth', JSON.stringify(formattedBandwidth));
-                localStorage.setItem('statsea_cache_security', JSON.stringify(secRes.data));
-                localStorage.setItem('statsea_cache_external', JSON.stringify(connRes.data));
+                localStorage.setItem('statsea_cache_security', JSON.stringify(Array.isArray(secRes.data) ? secRes.data : []));
+                localStorage.setItem('statsea_cache_external', JSON.stringify(Array.isArray(connRes.data) ? connRes.data : []));
             } catch (error) {
                 console.error("Failed to fetch analytics data", error);
             } finally {
@@ -499,7 +501,7 @@ const AnalyticsDashboard = () => {
     const upPct = totalTraffic > 0 ? Math.round((analyticsData.upload_rate / totalTraffic) * 100) : 0;
 
     // Protocol data for pie chart
-    const protocolChartData = Object.entries(analyticsData.protocols).map(([name, value]) => ({
+    const protocolChartData = Object.entries(analyticsData.protocols || {}).map(([name, value]) => ({
         name, value, color: PROTO_COLORS[name] || '#6b7280'
     }));
 
@@ -545,7 +547,7 @@ const AnalyticsDashboard = () => {
             {/* ─── Header ─── */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+                    <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-3">
                         <Activity className="w-7 h-7 text-cyan-400" />
                         Traffic Analyzer
                     </h1>

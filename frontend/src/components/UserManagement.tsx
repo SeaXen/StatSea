@@ -133,7 +133,8 @@ export const UserManagement: React.FC = () => {
         }
     };
 
-    const filteredUsers = users.filter(user => {
+    const safeUsers = Array.isArray(users) ? users : [];
+    const filteredUsers = safeUsers.filter(user => {
         const matchesSearch = user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
             user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
             user.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -146,7 +147,7 @@ export const UserManagement: React.FC = () => {
     });
 
     return (
-        <div className="p-6 space-y-8 max-w-[1600px] mx-auto">
+        <div className="space-y-6">
             {/* ── Header ── */}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
@@ -158,7 +159,7 @@ export const UserManagement: React.FC = () => {
                         <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
                             <Users className="w-6 h-6 text-primary" />
                         </div>
-                        <h1 className="text-4xl font-black text-foreground tracking-tight">Access <span className="text-primary">Control</span></h1>
+                        <h1 className="text-3xl font-bold text-foreground tracking-tight">Access <span className="text-primary">Control</span></h1>
                     </motion.div>
                     <p className="text-muted-foreground font-medium text-sm ml-15">Manage system operators, permissions, and security profiles</p>
                 </div>

@@ -9,7 +9,7 @@ import {
     Activity,
     ArrowUpDown
 } from 'lucide-react';
-import { API_CONFIG } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
 
 interface ResourceProcess {
     id: string;
@@ -39,12 +39,17 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
         if (isOpen) {
             const fetchProcesses = async () => {
                 try {
-                    const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SYSTEM.PROCESSES}`);
-                    const data = await res.json();
-                    setProcesses(data);
+                    const res = await axiosInstance.get('/system/processes');
+                    if (Array.isArray(res.data)) {
+                        setProcesses(res.data);
+                    } else {
+                        setProcesses([]);
+                    }
                     setLoading(false);
                 } catch (error) {
                     console.error('Failed to fetch processes:', error);
+                    setProcesses([]);
+                    setLoading(false);
                 }
             };
             fetchProcesses();
@@ -54,7 +59,8 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
     }, [isOpen]);
 
     const filteredAndSorted = useMemo(() => {
-        return processes
+        const safeProcesses = Array.isArray(processes) ? processes : [];
+        return safeProcesses
             .filter(p => {
                 const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
                 const matchesType = filterType === 'all' || p.type === filterType;

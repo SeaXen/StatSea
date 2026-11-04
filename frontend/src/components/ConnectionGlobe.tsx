@@ -1,8 +1,7 @@
-
 import { useEffect, useState, useRef } from 'react';
 import Globe, { GlobeMethods } from 'react-globe.gl';
 import { Globe as GlobeIcon } from 'lucide-react';
-import { API_CONFIG } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
 
 interface Connection {
     ip: string;
@@ -60,11 +59,15 @@ export const ConnectionGlobe = () => {
     useEffect(() => {
         const fetchConnections = async () => {
             try {
-                const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.NETWORK.CONNECTIONS}`);
-                const data = await response.json();
-                setConnections(data);
+                const response = await axiosInstance.get('/network/connections');
+                if (Array.isArray(response.data)) {
+                    setConnections(response.data);
+                } else {
+                    setConnections([]);
+                }
             } catch (error) {
                 console.error("Failed to fetch connections:", error);
+                setConnections([]);
             }
         };
 
@@ -73,7 +76,7 @@ export const ConnectionGlobe = () => {
         return () => clearInterval(interval);
     }, []);
 
-    const displayConnections = connections;
+    const displayConnections = Array.isArray(connections) ? connections : [];
 
     const getCountryFlag = (countryCode: string) => {
         if (!countryCode) return '🌐';
@@ -117,7 +120,7 @@ export const ConnectionGlobe = () => {
     }, [] as { country: string, count: number, bytes: number }[]).sort((a, b) => b.bytes - a.bytes).slice(0, 5);
 
     return (
-        <div className="glass-card relative overflow-hidden bg-card/50 border border-white/5 backdrop-blur-xl h-[600px] rounded-xl flex text-foreground/80">
+        <div className="glass-card relative overflow-hidden bg-card border border-border backdrop-blur-xl h-[640px] rounded-2xl flex text-foreground/80 shadow-xl">
             {/* Left: Globe Area */}
             <div ref={containerRef} className="flex-1 relative h-full bg-background/20">
                 <div className="absolute top-4 left-4 z-10 flex items-center gap-2 pointer-events-none">
@@ -125,8 +128,8 @@ export const ConnectionGlobe = () => {
                         <GlobeIcon className="w-5 h-5 text-blue-400" />
                     </div>
                     <div>
-                        <h3 className="text-sm font-semibold text-foreground shadow-black drop-shadow-md">Global Connection Map</h3>
-                        <p className="text-xs text-muted-foreground shadow-black drop-shadow-md">Live external traffic visualization</p>
+                        <h3 className="text-sm font-semibold text-foreground">Global Connection Map</h3>
+                        <p className="text-xs text-muted-foreground">Live external traffic visualization</p>
                     </div>
                 </div>
 
@@ -144,7 +147,7 @@ export const ConnectionGlobe = () => {
                     backgroundColor="rgba(0,0,0,0)"
                     width={dimensions.width}
                     height={dimensions.height}
-                    globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
+                    globeImageUrl="https://unpkg.com/three-globe/example/img/earth-night.jpg"
                     pointsData={pointsData}
                     pointColor={(d: object) => (d as PointData) === homeLocation ? '#3b82f6' : (d as PointData) === selectedPoint ? '#ef4444' : '#10b981'}
                     pointAltitude={(d: object) => (d as PointData) === selectedPoint ? 0.3 : 0.05}
@@ -161,9 +164,8 @@ export const ConnectionGlobe = () => {
 
                         if (p.ip) {
                             try {
-                                const res = await fetch(`/api/network/ip/${p.ip}`);
-                                const data = await res.json();
-                                setIpInfo(data);
+                                const res = await axiosInstance.get(`/network/ip/${p.ip}`);
+                                setIpInfo(res.data);
                             } catch (err) {
                                 console.error("IP Lookup failed", err);
                             } finally {
@@ -193,7 +195,7 @@ export const ConnectionGlobe = () => {
 
                 {/* Connection Details Overlay */}
                 {selectedPoint && selectedPoint !== homeLocation && (
-                    <div className="absolute bottom-4 left-4 right-4 p-4 bg-card/90 border border-white/10 rounded-xl backdrop-blur-xl z-20 animate-in slide-in-from-bottom-5">
+                    <div className="absolute bottom-4 left-4 right-4 p-4 bg-card/95 border border-border rounded-xl backdrop-blur-xl z-20 animate-in slide-in-from-bottom-5 shadow-2xl">
                         <div className="flex justify-between items-start">
                             <div>
                                 <h4 className="font-semibold text-foreground flex items-center gap-2">
@@ -204,7 +206,7 @@ export const ConnectionGlobe = () => {
                                 {loadingIp ? (
                                     <div className="text-xs text-blue-400 animate-pulse">Running IP Intelligence Scan...</div>
                                 ) : ipInfo ? (
-                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-foreground/80 mt-2 border-t border-white/5 pt-2">
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-foreground/80 mt-2 border-t border-border pt-2">
                                         <div><span className="text-muted-foreground">ASN:</span> {ipInfo.asn}</div>
                                         <div><span className="text-muted-foreground">Org:</span> {ipInfo.org}</div>
                                         <div className="col-span-2"><span className="text-muted-foreground">Abuse:</span> {ipInfo.abuse_contact}</div>
@@ -219,7 +221,7 @@ export const ConnectionGlobe = () => {
                             </div>
                         </div>
                         <button
-                            className="absolute -top-2 -right-2 bg-secondary rounded-full p-1 border border-white/10 hover:bg-secondary/80 transition-colors"
+                            className="absolute -top-2 -right-2 bg-secondary rounded-full p-1 border border-border hover:bg-secondary/80 transition-colors"
                             onClick={(e) => { e.stopPropagation(); setSelectedPoint(null); setIpInfo(null); }}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
@@ -229,7 +231,7 @@ export const ConnectionGlobe = () => {
             </div>
 
             {/* Right: Top Countries Sidebar */}
-            <div className="w-64 border-l border-white/5 bg-black/20 backdrop-blur-xl p-4 flex flex-col gap-4 overflow-y-auto hidden md:flex">
+            <div className="w-64 border-l border-border bg-card/40 backdrop-blur-xl p-4 flex flex-col gap-4 overflow-y-auto hidden md:flex">
                 <div>
                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Top Locations</h4>
                     <div className="space-y-3">

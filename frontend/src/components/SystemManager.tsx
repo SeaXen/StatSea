@@ -32,6 +32,7 @@ import {
 } from 'recharts';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+import axiosInstance from '../config/axiosInstance';
 
 const formatDate = (date: string | Date, pattern: 'HH:mm' | 'HH:mm:ss' | 'MMM d, yyyy HH:mm') => {
     const d = new Date(date);
@@ -41,70 +42,55 @@ const formatDate = (date: string | Date, pattern: 'HH:mm' | 'HH:mm:ss' | 'MMM d,
     return d.toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
-// --- API Helpers ---
-const API_BASE = '/api/system';
-
-const fetchLiveMetrics = async (token: string) => {
-    const res = await fetch(`${API_BASE}/metrics/live`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Failed to fetch live metrics');
-    return res.json();
+// --- API Helpers (Authenticated via axiosInstance) ---
+const fetchLiveMetrics = async () => {
+    const res = await axiosInstance.get('/system/metrics/live');
+    return res.data;
 };
 
-const fetchHistory = async (token: string) => {
-    const res = await fetch(`${API_BASE}/metrics/history?limit=50`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Failed to fetch metrics history');
-    return res.json();
+const fetchHistory = async () => {
+    const res = await axiosInstance.get('/system/metrics/history?limit=50');
+    return Array.isArray(res.data) ? res.data : [];
 };
 
-const fetchForecast = async (token: string) => {
-    const res = await fetch(`${API_BASE}/forecast`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Failed to fetch forecast');
-    return res.json();
+const fetchForecast = async () => {
+    const res = await axiosInstance.get('/system/forecast');
+    return res.data;
 };
 
-const fetchBackups = async (token: string) => {
-    const res = await fetch(`${API_BASE}/backups`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    return res.json();
+const fetchBackups = async () => {
+    const res = await axiosInstance.get('/system/backups');
+    return Array.isArray(res.data) ? res.data : [];
 };
 
-const fetchHealthChecks = async (token: string) => {
-    const res = await fetch(`${API_BASE}/health`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    return res.json();
+const fetchHealthChecks = async () => {
+    const res = await axiosInstance.get('/system/health');
+    return Array.isArray(res.data) ? res.data : [];
 };
 
 // --- Components ---
 
-const MetricsTab = ({ token }: { token: string }) => {
+const MetricsTab = ({ token: _token }: { token: string }) => {
     const { data: live, isLoading: loadingLive } = useQuery({
         queryKey: ['system', 'live'],
-        queryFn: () => fetchLiveMetrics(token),
+        queryFn: fetchLiveMetrics,
         refetchInterval: 5000
     });
 
     const { data: history, isLoading: loadingHistory } = useQuery({
         queryKey: ['system', 'history'],
-        queryFn: () => fetchHistory(token),
+        queryFn: fetchHistory,
         refetchInterval: 60000
     });
 
     const { data: forecast } = useQuery({
         queryKey: ['system', 'forecast'],
-        queryFn: () => fetchForecast(token)
+        queryFn: fetchForecast
     });
 
     const chartData = useMemo(() => {
-        if (!history) return [];
-        return [...history].reverse().map((h: any) => ({
+        const safeHistory = Array.isArray(history) ? history : [];
+        return [...safeHistory].reverse().map((h: any) => ({
             time: formatDate(h.timestamp, 'HH:mm'),
             cpu: h.cpu_pct,
             ram: (h.ram_used_gb / h.ram_total_gb) * 100,
@@ -230,20 +216,17 @@ const MetricsTab = ({ token }: { token: string }) => {
     );
 };
 
-const BackupsTab = ({ token }: { token: string }) => {
+const BackupsTab = ({ token: _token }: { token: string }) => {
     const queryClient = useQueryClient();
     const { data: backups, isLoading } = useQuery({
         queryKey: ['system', 'backups'],
-        queryFn: () => fetchBackups(token)
+        queryFn: fetchBackups
     });
 
     const createMutation = useMutation({
         mutationFn: async () => {
-            const res = await fetch(`${API_BASE}/backups`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            return res.json();
+            const res = await axiosInstance.post('/system/backups');
+            return res.data;
         },
         onSuccess: () => {
             toast.success('Backup created successfully');
@@ -253,11 +236,8 @@ const BackupsTab = ({ token }: { token: string }) => {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: number) => {
-            const res = await fetch(`${API_BASE}/backups/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            return res.json();
+            const res = await axiosInstance.delete(`/system/backups/${id}`);
+            return res.data;
         },
         onSuccess: () => {
             toast.success('Backup deleted');
@@ -266,6 +246,8 @@ const BackupsTab = ({ token }: { token: string }) => {
     });
 
     if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-500" /></div>;
+
+    const safeBackups = Array.isArray(backups) ? backups : [];
 
     return (
         <div className="space-y-4">
@@ -285,8 +267,8 @@ const BackupsTab = ({ token }: { token: string }) => {
             </div>
 
             <div className="space-y-3">
-                {backups?.map((b: any) => (
-                    <div key={b.id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all group">
+                {safeBackups.map((b: any) => (
+                    <div key={b.id} className="flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all group shadow-sm">
                         <div className="flex items-center gap-4">
                             <div className="p-3 rounded-lg bg-blue-500/10 text-blue-400">
                                 <Database className="w-5 h-5" />
@@ -334,27 +316,20 @@ const BackupsTab = ({ token }: { token: string }) => {
     );
 };
 
-const HealthChecksTab = ({ token }: { token: string }) => {
+const HealthChecksTab = ({ token: _token }: { token: string }) => {
     const queryClient = useQueryClient();
     const [showAdd, setShowAdd] = useState(false);
     const [newCheck, setNewCheck] = useState({ name: '', url: '', method: 'GET', interval_seconds: 300 });
 
     const { data: checks, isLoading } = useQuery({
         queryKey: ['system', 'health'],
-        queryFn: () => fetchHealthChecks(token)
+        queryFn: fetchHealthChecks
     });
 
     const createMutation = useMutation({
         mutationFn: async (data: any) => {
-            const res = await fetch(`${API_BASE}/health`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            return res.json();
+            const res = await axiosInstance.post('/system/health', data);
+            return res.data;
         },
         onSuccess: () => {
             toast.success('Health check added');
@@ -365,11 +340,8 @@ const HealthChecksTab = ({ token }: { token: string }) => {
 
     const triggerMutation = useMutation({
         mutationFn: async (id: number) => {
-            const res = await fetch(`${API_BASE}/health/${id}/run`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            return res.json();
+            const res = await axiosInstance.post(`/system/health/${id}/run`);
+            return res.data;
         },
         onSuccess: () => {
             toast.success('Check triggered');
@@ -379,11 +351,8 @@ const HealthChecksTab = ({ token }: { token: string }) => {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: number) => {
-            const res = await fetch(`${API_BASE}/health/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            return res.json();
+            const res = await axiosInstance.delete(`/system/health/${id}`);
+            return res.data;
         },
         onSuccess: () => {
             toast.success('Check removed');
@@ -392,6 +361,8 @@ const HealthChecksTab = ({ token }: { token: string }) => {
     });
 
     if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-500" /></div>;
+
+    const safeChecks = Array.isArray(checks) ? checks : [];
 
     return (
         <div className="space-y-4">
@@ -421,7 +392,7 @@ const HealthChecksTab = ({ token }: { token: string }) => {
                             <input
                                 type="text"
                                 placeholder="Google DNS"
-                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm"
+                                className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                                 value={newCheck.name}
                                 onChange={e => setNewCheck({ ...newCheck, name: e.target.value })}
                             />
@@ -431,17 +402,17 @@ const HealthChecksTab = ({ token }: { token: string }) => {
                             <input
                                 type="text"
                                 placeholder="https://..."
-                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm"
+                                className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                                 value={newCheck.url}
                                 onChange={e => setNewCheck({ ...newCheck, url: e.target.value })}
                             />
                         </div>
                     </div>
                     <div className="flex justify-end gap-3">
-                        <button onClick={() => setShowAdd(false)} className="px-4 py-2 text-sm text-muted-foreground hover:text-white">Cancel</button>
+                        <button onClick={() => setShowAdd(false)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Cancel</button>
                         <button
                             onClick={() => createMutation.mutate(newCheck)}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium"
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium"
                         >
                             Save Monitor
                         </button>
@@ -450,16 +421,16 @@ const HealthChecksTab = ({ token }: { token: string }) => {
             )}
 
             <div className="grid grid-cols-1 gap-3">
-                {checks?.map((c: any) => (
-                    <div key={c.id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all group">
+                {safeChecks.map((c: any) => (
+                    <div key={c.id} className="flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all group shadow-sm">
                         <div className="flex items-center gap-4">
                             <div className={`p-3 rounded-lg ${c.last_status === 200 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
                                 <Globe className="w-5 h-5" />
                             </div>
                             <div>
-                                <div className="font-medium flex items-center gap-2">
+                                <div className="font-medium flex items-center gap-2 text-foreground">
                                     {c.name}
-                                    <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-white/10">{c.method}</span>
+                                    <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-secondary border border-border">{c.method}</span>
                                 </div>
                                 <div className="text-xs text-muted-foreground truncate max-w-[200px]">{c.url}</div>
                             </div>
@@ -468,7 +439,7 @@ const HealthChecksTab = ({ token }: { token: string }) => {
                         <div className="flex items-center gap-8">
                             <div className="hidden md:block">
                                 <div className="text-xs text-muted-foreground uppercase font-semibold mb-0.5">Response</div>
-                                <div className="text-sm font-medium flex items-center gap-1.5">
+                                <div className="text-sm font-medium flex items-center gap-1.5 text-foreground">
                                     {c.last_status === 200 ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
                                     {c.last_status || '--'}
                                 </div>
@@ -482,7 +453,7 @@ const HealthChecksTab = ({ token }: { token: string }) => {
                             <div className="flex items-center gap-2 translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all">
                                 <button
                                     onClick={() => triggerMutation.mutate(c.id)}
-                                    className="p-2 hover:bg-white/10 rounded-lg text-muted-foreground hover:text-white"
+                                    className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground"
                                     title="Check Now"
                                 >
                                     <Play className="w-4 h-4" />
@@ -517,10 +488,10 @@ export const SystemManager = () => {
     if (!token) return null;
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-6 pb-20 md:pb-6">
+        <div className="space-y-6">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
                         <Shield className="w-8 h-8 text-blue-500" />
                         System Management
                     </h1>
@@ -529,7 +500,7 @@ export const SystemManager = () => {
             </header>
 
             {/* Tabs */}
-            <div className="flex items-center gap-1 p-1 bg-white/5 rounded-xl border border-white/5 w-fit">
+            <div className="flex items-center gap-1 p-1 bg-secondary/50 rounded-xl border border-border w-fit">
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
@@ -537,8 +508,8 @@ export const SystemManager = () => {
                         className={`
                             flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
                             ${activeTab === tab.id
-                                ? 'bg-blue-600 text-white shadow-lg'
-                                : 'text-muted-foreground hover:text-white hover:bg-white/5'
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                             }
                         `}
                     >

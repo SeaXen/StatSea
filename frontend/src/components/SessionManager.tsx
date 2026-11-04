@@ -89,9 +89,9 @@ const SessionManager: React.FC = () => {
     );
 
     return (
-        <div className="p-6 max-w-4xl mx-auto space-y-8">
+        <div className="space-y-6">
             <header className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-white/40 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">
                     Active Sessions
                 </h1>
                 <p className="text-muted-foreground">
@@ -99,20 +99,20 @@ const SessionManager: React.FC = () => {
                 </p>
             </header>
 
-            <div className="glass-card p-6 rounded-2xl border border-white/10 bg-black/20 space-y-6">
+            <div className="glass-card p-6 rounded-2xl border border-border bg-card/60 space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
                             <Shield className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="font-semibold text-lg">Current Login</h3>
+                            <h3 className="font-semibold text-lg text-foreground">Current Login</h3>
                             <p className="text-sm text-muted-foreground">You are currently using this device.</p>
                         </div>
                     </div>
                     <button
                         onClick={() => revokeOthersMutation.mutate()}
-                        disabled={revokeOthersMutation.isPending || sessions?.length <= 1}
+                        disabled={revokeOthersMutation.isPending || (sessions?.length || 0) <= 1}
                         className="px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center gap-2"
                     >
                         {revokeOthersMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
@@ -131,7 +131,7 @@ const SessionManager: React.FC = () => {
                                 layout
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className={`flex items-center justify-between p-4 rounded-xl border ${isCurrent ? 'bg-blue-500/5 border-blue-500/20' : 'bg-white/5 border-white/5'
+                                className={`flex items-center justify-between p-4 rounded-xl border ${isCurrent ? 'bg-blue-500/5 border-blue-500/20' : 'bg-card border-border'
                                     }`}
                             >
                                 <div className="flex items-center gap-4">

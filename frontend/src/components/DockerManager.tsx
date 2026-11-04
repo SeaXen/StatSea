@@ -110,11 +110,12 @@ interface ContainerListProps {
 }
 
 const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, setSearchQuery, onSelect, onPrune, loading }) => {
+    const safeContainers = Array.isArray(containers) ? containers : [];
     const filteredContainers = useMemo(() =>
-        containers.filter(c =>
+        safeContainers.filter(c =>
             c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             c.image.toLowerCase().includes(searchQuery.toLowerCase())
-        ), [containers, searchQuery]
+        ), [safeContainers, searchQuery]
     );
 
     return (
@@ -126,7 +127,7 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
         >
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                    <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
                         <Box className="w-6 h-6 text-blue-500" />
                         Docker Manager
                     </h1>
@@ -168,7 +169,7 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-0.5">
-                                    <h3 className="text-base font-bold text-white truncate group-hover:text-blue-400 transition-colors uppercase tracking-tight">
+                                    <h3 className="text-base font-bold text-foreground truncate group-hover:text-blue-400 transition-colors uppercase tracking-tight">
                                         {container.name}
                                     </h3>
                                     {container.update_available && (

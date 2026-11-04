@@ -33,8 +33,12 @@ const LoginPage: React.FC = () => {
             await login(access_token, refresh_token);
             navigate('/');
         } catch (err: unknown) {
-            const axiosErr = err as { response?: { data?: { detail?: string } } };
-            setError(axiosErr.response?.data?.detail || 'Invalid username or password');
+            const axiosErr = err as { response?: { data?: { detail?: string } }; code?: string; message?: string };
+            if (!axiosErr.response) {
+                setError('Cannot connect to backend server. Please ensure the backend is running on port 8001.');
+            } else {
+                setError(axiosErr.response?.data?.detail || 'Invalid username or password');
+            }
         } finally {
             setIsLoading(false);
         }

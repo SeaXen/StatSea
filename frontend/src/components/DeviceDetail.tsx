@@ -7,6 +7,7 @@ import { QuotaManager } from './QuotaManager';
 import { UptimeTimeline } from './UptimeTimeline';
 import { formatBytes, cn } from '../lib/utils';
 import { useWakeDevice } from '../hooks/useDevices';
+import axiosInstance from '../config/axiosInstance';
 
 interface DailyUsage {
     date: string;
@@ -51,25 +52,17 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
         if (!device) return;
         setSaving(true);
         try {
-            const response = await fetch(`/api/devices/${device.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    nickname: editNickname || null,
-                    notes: editNotes || null,
-                    tags: editTags,
-                    group_id: selectedGroupId
-                })
+            const response = await axiosInstance.put(`/devices/${device.id}`, {
+                nickname: editNickname || null,
+                notes: editNotes || null,
+                tags: editTags,
+                group_id: selectedGroupId
             });
 
-            if (!response.ok) throw new Error("Failed to update device");
-
-            const updated = await response.json();
-            if (onUpdate) onUpdate(updated);
+            if (onUpdate) onUpdate(response.data);
             setIsEditing(false);
         } catch (err) {
             console.error("Error updating device:", err);
-            // Could add toast error here
         } finally {
             setSaving(false);
         }
@@ -95,10 +88,9 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
 
     useEffect(() => {
         if (device && isOpen) {
-            fetch(`/api/devices/${device.id}/history?days=30`)
-                .then(res => res.json())
-                .then(statsData => {
-                    setStats(statsData);
+            axiosInstance.get(`/devices/${device.id}/history?days=30`)
+                .then(res => {
+                    setStats(res.data);
                 })
                 .catch(err => {
                     console.error("Error fetching device details:", err);

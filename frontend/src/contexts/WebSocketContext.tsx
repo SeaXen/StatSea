@@ -158,9 +158,25 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
 
         return () => {
             isMounted = false;
-            if (ws) ws.close();
-            if (eventWs) eventWs.close();
             clearTimeout(reconnectTimeout);
+            if (ws) {
+                ws.onopen = null;
+                ws.onclose = null;
+                ws.onerror = null;
+                ws.onmessage = null;
+                if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+                    ws.close();
+                }
+            }
+            if (eventWs) {
+                eventWs.onopen = null;
+                eventWs.onclose = null;
+                eventWs.onerror = null;
+                eventWs.onmessage = null;
+                if (eventWs.readyState === WebSocket.OPEN || eventWs.readyState === WebSocket.CONNECTING) {
+                    eventWs.close();
+                }
+            }
         };
     }, [token]);
 

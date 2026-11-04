@@ -114,11 +114,11 @@ function AppContent() {
                 <OnboardingTour />
 
                 {/* Main Content */}
-                <main className="flex-1 w-full max-w-[1920px] mx-auto bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-background to-background relative overflow-x-hidden mb-16 md:mb-0">
-                    <div className="relative h-full">
+                <main className="flex-1 w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-background to-background relative overflow-x-hidden mb-16 md:mb-0">
+                    <div className="p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full min-h-[calc(100vh-80px)]">
                         <Suspense fallback={
-                            <div className="flex items-center justify-center h-[200px]">
-                                <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                            <div className="flex items-center justify-center h-[300px]">
+                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
                             </div>
                         }>
                             <div key={activeTab} className="page-enter">

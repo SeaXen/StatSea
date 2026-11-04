@@ -230,7 +230,7 @@ export default function BandwidthPage() {
     }, [summaryData]);
 
     return (
-        <div className="p-6 space-y-8 max-w-[1600px] mx-auto">
+        <div className="space-y-6">
             {/* ── Header ── */}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
@@ -242,7 +242,7 @@ export default function BandwidthPage() {
                         <div className="w-12 h-12 rounded-2xl bg-emerald-600/20 flex items-center justify-center border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
                             <Activity className="w-6 h-6 text-emerald-500" />
                         </div>
-                        <h1 className="text-4xl font-black text-foreground tracking-tight">Traffic <span className="text-emerald-500">Flux</span></h1>
+                        <h1 className="text-3xl font-bold text-foreground tracking-tight">Traffic <span className="text-emerald-500">Flux</span></h1>
                     </motion.div>
                     <p className="text-muted-foreground font-medium text-sm ml-15">Real-time throughput analysis and network data distribution</p>
                 </div>

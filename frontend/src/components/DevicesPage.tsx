@@ -174,7 +174,7 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
     }
 
     return (
-        <div className="p-6 space-y-8 max-w-[1600px] mx-auto">
+        <div className="space-y-6">
             {/* Header */}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-4">
                 <div className="space-y-1">
@@ -183,11 +183,11 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                         animate={{ opacity: 1, x: 0 }}
                         className="flex items-center gap-4"
                     >
-                        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
-                            <Activity className="w-7 h-7 text-primary" />
+                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
+                            <Activity className="w-6 h-6 text-primary" />
                         </div>
                         <div>
-                            <h1 className="text-5xl font-black text-foreground tracking-tighter flex items-center gap-3">
+                            <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
                                 Device <span className="text-primary">Fleet</span>
                             </h1>
                             <div className="flex items-center gap-3 mt-1">
@@ -338,21 +338,21 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
             {/* Device List */}
             {viewMode === 'list' ? (
                 <PremiumCard
-                    className="p-0 border-none bg-[#111114]/30 backdrop-blur-2xl shadow-2xl overflow-hidden"
+                    className="p-0 border border-border bg-card/85 backdrop-blur-2xl shadow-sm overflow-hidden rounded-2xl"
                     hover={false}
                 >
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm whitespace-nowrap border-separate border-spacing-0">
                             <thead>
-                                <tr className="bg-white/[0.03] text-white/30 uppercase tracking-[0.2em] text-[9px] font-black border-b border-white/5">
-                                    <th className="px-8 py-5 font-black border-b border-white/5">DEVICE IDENTITY</th>
-                                    <th className="px-8 py-5 font-black border-b border-white/5">NETWORK INTERFACE</th>
-                                    <th className="px-8 py-5 font-black border-b border-white/5 text-center">STATUS</th>
-                                    <th className="px-8 py-5 font-black border-b border-white/5 text-center">BANDWIDTH USAGE</th>
-                                    <th className="px-8 py-5 font-black border-b border-white/5 text-right">CONTROLS</th>
+                                <tr className="bg-muted/50 text-muted-foreground uppercase tracking-[0.15em] text-[10px] font-bold border-b border-border">
+                                    <th className="px-8 py-4 font-bold border-b border-border">DEVICE IDENTITY</th>
+                                    <th className="px-8 py-4 font-bold border-b border-border">NETWORK INTERFACE</th>
+                                    <th className="px-8 py-4 font-bold border-b border-border text-center">STATUS</th>
+                                    <th className="px-8 py-4 font-bold border-b border-border text-center">BANDWIDTH USAGE</th>
+                                    <th className="px-8 py-4 font-bold border-b border-border text-right">CONTROLS</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/[0.03]">
+                            <tbody className="divide-y divide-border/50">
                                 <AnimatePresence mode='popLayout'>
                                     {filteredDevices.map((device: Device, index: number) => {
                                         const Icon = getIcon(device.type, device.icon_type);
@@ -369,7 +369,7 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                                                     ease: [0.23, 1, 0.32, 1]
                                                 }}
                                                 onClick={() => openDetail(device)}
-                                                className="group hover:bg-white/[0.04] cursor-pointer transition-all relative border-b border-white/[0.02] last:border-none"
+                                                className="group hover:bg-muted/40 cursor-pointer transition-all relative border-b border-border/30 last:border-none"
                                             >
                                                 <td className="px-8 py-6">
                                                     <div className="flex items-center gap-5">

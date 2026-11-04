@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Command } from 'cmdk';
 import { Search, LayoutDashboard, Server, Shield, Settings, Activity, Network } from 'lucide-react';
-import { API_CONFIG } from '../config/apiConfig';
+import axiosInstance from '../config/axiosInstance';
 
 
 export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, setOpen: (open: boolean | ((prev: boolean) => boolean)) => void, changeTab: (tab: string) => void }) {
@@ -81,7 +81,7 @@ export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, se
                         onSelect={async () => {
                             setOpen(false);
                             try {
-                                await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SPEEDTEST}`, { method: 'POST' });
+                                await axiosInstance.post('/speedtest');
                                 window.dispatchEvent(new Event('speedtest-update'));
                             } catch (e) {
                                 console.error('Speedtest failed', e);

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>StatSea: overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 9c3-4 6-4 10 0s7 4 10 0"/><path d="M2 16c3-4 6-4 10 0s7 4 10 0" opacity=".5"/></svg>
+      StatSea
+    </div>
+    <button class="select" type="button" aria-label="Choose network">Home lab <span aria-hidden="true">&#9662;</span></button>
+    <div class="spacer">
+      <label class="search"><span aria-hidden="true">&#8981;</span><input type="search" placeholder="Search devices, IPs, domains" aria-label="Search"></label>
+      <div class="range" id="range" role="group" aria-label="Time range">
+        <button type="button" aria-pressed="false">15m</button>
+        <button type="button" aria-pressed="true">1h</button>
+        <button type="button" aria-pressed="false">6h</button>
+        <button type="button" aria-pressed="false">24h</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Sections">
+    <a href="#" aria-current="page">Overview</a>
+    <a href="#">Devices</a>
+    <a href="#">Connections</a>
+    <a href="#">Containers</a>
+    <a href="#">DNS and security</a>
+  </nav>
+
+  <main class="page">
+
+    <section class="panel strip" aria-label="Key numbers">
+      <div class="cell"><span class="label">Throughput</span><span class="value num"><span id="now">184.6</span> <small class="muted" style="font-size:13px;font-weight:400">Mbps</small></span><span class="note ok">Steady</span></div>
+      <div class="cell"><span class="label">Devices online</span><span class="value num">23</span><span class="note">2 new today</span></div>
+      <div class="cell"><span class="label">Packets per second</span><span class="value num">5,214</span><span class="note ok">Up 8.2%</span></div>
+      <div class="cell"><span class="label">Latency</span><span class="value num">12 ms</span><span class="note">Loss 0.1%</span></div>
+      <div class="cell"><span class="label">Open alerts</span><span class="value warn num">3</span><span class="note">1 critical</span></div>
+    </section>
+
+    <div class="grid-main">
+      <section class="panel" aria-labelledby="bw">
+        <div class="panel-head">
+          <h2 id="bw">Bandwidth</h2>
+          <div class="legend"><span><i class="dl"></i>Download</span><span><i class="ul"></i>Upload</span><span><i class="lim"></i>Limit 300 Mbps</span></div>
+        </div>
+        <div class="chart">
+          <svg viewBox="0 0 600 160" preserveAspectRatio="none" role="img" aria-label="Download and upload bandwidth over the last hour, with a 300 Mbps limit line">
+            <line x1="0" x2="600" y1="30" y2="30" stroke="#f5a524" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
+            <line x1="0" x2="600" y1="70" y2="70" stroke="#1e232c"/>
+            <line x1="0" x2="600" y1="110" y2="110" stroke="#1e232c"/>
+            <line x1="0" x2="600" y1="150" y2="150" stroke="#1e232c"/>
+            <path d="M0 112 L30 104 L60 108 L90 88 L120 94 L150 76 L180 98 L210 84 L240 60 L270 72 L300 58 L330 80 L360 96 L390 70 L420 54 L450 66 L480 48 L510 62 L540 52 L570 58 L600 50 L600 160 L0 160 Z" fill="#7c8cff" fill-opacity="0.10"/>
+            <path d="M0 112 L30 104 L60 108 L90 88 L120 94 L150 76 L180 98 L210 84 L240 60 L270 72 L300 58 L330 80 L360 96 L390 70 L420 54 L450 66 L480 48 L510 62 L540 52 L570 58 L600 50" fill="none" stroke="#7c8cff" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+            <path d="M0 140 L30 138 L60 136 L90 130 L120 134 L150 128 L180 136 L210 126 L240 122 L270 128 L300 120 L330 130 L360 134 L390 124 L420 118 L450 124 L480 114 L510 120 L540 116 L570 118 L600 114" fill="none" stroke="#4fd1e8" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <div class="axis"><span>20:05</span><span>20:20</span><span>20:35</span><span>20:50</span><span>21:05</span></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="ev">
+        <div class="panel-head"><h2 id="ev">Live events</h2><span class="status live">Streaming</span></div>
+        <ul class="events" id="events">
+          <li class="event" style="--c:var(--danger)"><span class="mono">21:04</span><span class="dot"></span><span>Blocked telemetry.cam-vendor.cn</span></li>
+          <li class="event" style="--c:var(--warn)"><span class="mono">21:03</span><span class="dot"></span><span>jellyfin CPU above 80%</span></li>
+          <li class="event"><span class="mono">20:58</span><span class="dot"></span><span>New device at 192.168.1.88</span></li>
+          <li class="event" style="--c:var(--ok)"><span class="mono">20:51</span><span class="dot"></span><span>Gateway link restored</span></li>
+          <li class="event"><span class="mono">20:44</span><span class="dot"></span><span>Port scan ended on eth0</span></li>
+        </ul>
+      </section>
+    </div>
+
+    <section class="panel" aria-labelledby="dv">
+      <div class="panel-head"><h2 id="dv">Devices</h2><span class="meta">Sorted by traffic</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Device</th><th>Address</th><th>MAC vendor</th><th>Protocol</th><th class="right">Traffic</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Living room TV</td><td class="mono">192.168.1.24</td><td class="muted">Samsung</td><td class="muted">HTTPS</td><td class="right num">78.2 Mbps</td><td><span class="status">Active</span></td></tr>
+            <tr><td>Studio desktop</td><td class="mono">192.168.1.12</td><td class="muted">ASUS</td><td class="muted">QUIC</td><td class="right num">51.9 Mbps</td><td><span class="status">Active</span></td></tr>
+            <tr><td>Hallway camera</td><td class="mono">192.168.1.57</td><td class="muted">Hikvision</td><td class="muted">RTSP</td><td class="right num">9.4 Mbps</td><td><span class="status alert">Unusual traffic</span></td></tr>
+            <tr><td>Amina's phone</td><td class="mono">192.168.1.31</td><td class="muted">Apple</td><td class="muted">DNS</td><td class="right num">0.2 Mbps</td><td><span class="status idle">Idle</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="ct">
+      <div class="panel-head"><h2 id="ct">Containers</h2><span class="meta">9 running</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>CPU</th><th class="right">Memory</th><th class="right">Network</th><th>State</th></tr></thead>
+          <tbody>
+            <tr><td>jellyfin</td><td><div class="meter hot"><div class="track"><i style="--v:87%"></i></div><span class="num">87%</span></div></td><td class="right num">1.8 GB</td><td class="right num">62 Mbps</td><td><span class="status" style="--c:var(--warn)">High CPU</span></td></tr>
+            <tr><td>pihole</td><td><div class="meter"><div class="track"><i style="--v:34%"></i></div><span class="num">34%</span></div></td><td class="right num">212 MB</td><td class="right num">3 Mbps</td><td><span class="status">Running</span></td></tr>
+            <tr><td>nextcloud</td><td><div class="meter"><div class="track"><i style="--v:21%"></i></div><span class="num">21%</span></div></td><td class="right num">640 MB</td><td class="right num">8 Mbps</td><td><span class="status">Running</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="statusbar">
+    <span class="status">Capturing on eth0</span>
+    <span class="num">1.84M packets</span>
+    <span>WebSocket connected</span>
+    <span class="end">StatSea v1.0</span>
+  </footer>
+
+  <script>
+    // Time range chips
+    const chips = document.querySelectorAll("#range button");
+    chips.forEach(c => c.addEventListener("click", () => {
+      chips.forEach(x => x.setAttribute("aria-pressed", "false"));
+      c.setAttribute("aria-pressed", "true");
+    }));
+
+    // Demo only: replace with your WebSocket feed
+    const now = document.getElementById("now");
+    let v = 184.6;
+    setInterval(() => {
+      v = Math.max(60, v + (Math.random() - 0.5) * 10);
+      now.textContent = v.toFixed(1);
+    }, 1500);
+  </script>
+</body>
+</html>
