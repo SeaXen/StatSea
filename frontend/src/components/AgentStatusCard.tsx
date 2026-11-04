@@ -9,7 +9,7 @@ import {
     Clock
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { AgentResponse } from '../types';
+import { AgentResponse, AgentMetrics } from '../types';
 
 interface AgentStatusCardProps {
     agent: AgentResponse;
@@ -19,9 +19,9 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({ agent }) => {
     const isOnline = agent.status === 'online';
 
     // Parse the latest metrics from system_info if available
-    const metrics = useMemo(() => {
+    const metrics: AgentMetrics = useMemo(() => {
         if (agent.system_info && agent.system_info.latest_metrics) {
-            return agent.system_info.latest_metrics;
+            return agent.system_info.latest_metrics as AgentMetrics;
         }
         return {
             cpu_pct: 0,
@@ -118,7 +118,7 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({ agent }) => {
                         <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-1 z-10">
                             <Cpu className="w-3.5 h-3.5" /> CPU
                         </div>
-                        <div className="z-10">{renderDonut(metrics.cpu_pct, '#60a5fa')}</div>
+                        <div className="z-10">{renderDonut(metrics.cpu_pct || 0, '#60a5fa')}</div>
                     </div>
 
                     {/* RAM */}
@@ -126,7 +126,7 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({ agent }) => {
                         <div className="flex items-center gap-2 text-xs font-semibold text-cyan-500 dark:text-cyan-400 mb-1 z-10">
                             <Activity className="w-3.5 h-3.5" /> RAM
                         </div>
-                        <div className="z-10">{renderDonut(metrics.mem_usage, '#38bdf8')}</div>
+                        <div className="z-10">{renderDonut(metrics.mem_usage || 0, '#38bdf8')}</div>
                     </div>
 
                     {/* Disk */}
@@ -134,7 +134,7 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({ agent }) => {
                         <div className="flex items-center gap-2 text-xs font-semibold text-emerald-500 dark:text-emerald-400 mb-1 z-10">
                             <HardDrive className="w-3.5 h-3.5" /> DISK
                         </div>
-                        <div className="z-10">{renderDonut(metrics.disk_usage, '#34d399')}</div>
+                        <div className="z-10">{renderDonut(metrics.disk_usage || 0, '#34d399')}</div>
                     </div>
                 </div>
 
@@ -142,9 +142,9 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({ agent }) => {
                 <div className="mt-6 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
                     <div className="flex items-center gap-2">
                         <Network className="w-3.5 h-3.5" />
-                        <span>{formatBytes(metrics.net_rx)} ↓</span>
+                        <span>{formatBytes(metrics.net_rx || 0)} ↓</span>
                         <span className="w-px h-3 bg-border" />
-                        <span>{formatBytes(metrics.net_tx)} ↑</span>
+                        <span>{formatBytes(metrics.net_tx || 0)} ↑</span>
                     </div>
                     <div className="text-[10px] uppercase font-semibold text-muted-foreground/50">
                         {agent.id.split('-')[0]}

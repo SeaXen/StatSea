@@ -105,8 +105,10 @@ interface ContainerListProps {
     loading: boolean;
 }
 
+const EMPTY_CONTAINERS: DockerContainer[] = [];
+
 const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, setSearchQuery, onSelect, onPrune, loading }) => {
-    const safeContainers = Array.isArray(containers) ? containers : [];
+    const safeContainers = Array.isArray(containers) ? containers : EMPTY_CONTAINERS;
 
     const filteredContainers = useMemo(() => {
         return safeContainers.filter(c =>
@@ -451,7 +453,7 @@ const DockerManager: React.FC = () => {
 
     // TanStack Query hooks
     const { data: containersRaw = [], isLoading: loading } = useContainers();
-    const containers: DockerContainer[] = Array.isArray(containersRaw) ? containersRaw : [];
+    const containers: DockerContainer[] = Array.isArray(containersRaw) ? containersRaw : EMPTY_CONTAINERS;
 
     const { data: logs = [], isLoading: logsLoading } = useContainerLogs(selectedId);
 

@@ -14,8 +14,24 @@ interface DeviceBandwidthPageProps {
     onBack: () => void;
 }
 
+interface DeviceHistoryPoint {
+    time?: string;
+    date?: string;
+    month?: string;
+    download: number;
+    upload: number;
+}
+
+interface DeviceHistoryPayload {
+    hourly: DeviceHistoryPoint[];
+    daily: DeviceHistoryPoint[];
+    monthly?: DeviceHistoryPoint[];
+    five_minute?: DeviceHistoryPoint[];
+    [key: string]: unknown;
+}
+
 export default function DeviceBandwidthPage({ macAddress, onBack }: DeviceBandwidthPageProps) {
-    const [historyData, setHistoryData] = useState<any>(null);
+    const [historyData, setHistoryData] = useState<DeviceHistoryPayload | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -162,7 +178,7 @@ export default function DeviceBandwidthPage({ macAddress, onBack }: DeviceBandwi
                             </div>
                             <div className="h-[250px] mt-3">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={historyData.monthly} layout="vertical">
+                                    <BarChart data={historyData.monthly || []} layout="vertical">
                                         <CartesianGrid strokeDasharray="3 3" stroke="#242933" opacity={0.6} horizontal={false} />
                                         <XAxis type="number" stroke="#525d73" fontSize={11} tickFormatter={(v) => formatBytes(v)} fontFamily="monospace" />
                                         <YAxis dataKey="month" type="category" stroke="#525d73" fontSize={11} width={70} fontFamily="monospace" />
@@ -189,7 +205,7 @@ export default function DeviceBandwidthPage({ macAddress, onBack }: DeviceBandwi
                             </div>
                             <div className="h-[250px] mt-3">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={historyData.five_minute.slice(-24)}>
+                                    <AreaChart data={(historyData.five_minute || []).slice(-24)}>
                                         <defs>
                                             <linearGradient id="colorBurst" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor="#4fd1e8" stopOpacity={0.25} />

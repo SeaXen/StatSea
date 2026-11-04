@@ -1,6 +1,7 @@
 from app.db.database import SessionLocal
 from app.models import models
 
+
 def seed_org():
     db = SessionLocal()
     try:

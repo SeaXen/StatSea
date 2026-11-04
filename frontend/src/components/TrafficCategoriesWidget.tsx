@@ -32,6 +32,21 @@ const CATEGORY_COLORS: Record<string, string> = {
     'FTP': '#f43f5e'
 };
 
+export interface TrafficCategory {
+    category: string;
+    download_bytes: number;
+    upload_bytes: number;
+    [key: string]: unknown;
+}
+
+interface TrafficCategoryChartPoint {
+    name: string;
+    total: number;
+    download: number;
+    upload: number;
+    color: string;
+}
+
 const TrafficCategoriesWidget: React.FC<{ deviceId?: number }> = ({ deviceId }) => {
     const { data: categories, isLoading, isError } = useTrafficCategories(deviceId);
 
@@ -52,13 +67,13 @@ const TrafficCategoriesWidget: React.FC<{ deviceId?: number }> = ({ deviceId }) 
         );
     }
 
-    const chartData = categories.map((c: any) => ({
+    const chartData: TrafficCategoryChartPoint[] = (Array.isArray(categories) ? (categories as TrafficCategory[]) : []).map((c: TrafficCategory) => ({
         name: c.category,
-        total: c.download_bytes + c.upload_bytes,
-        download: c.download_bytes,
-        upload: c.upload_bytes,
+        total: (c.download_bytes || 0) + (c.upload_bytes || 0),
+        download: c.download_bytes || 0,
+        upload: c.upload_bytes || 0,
         color: CATEGORY_COLORS[c.category] || '#6b7280'
-    })).sort((a: any, b: any) => b.total - a.total);
+    })).sort((a: TrafficCategoryChartPoint, b: TrafficCategoryChartPoint) => b.total - a.total);
 
     if (chartData.length === 0) {
         return (
@@ -89,7 +104,7 @@ const TrafficCategoriesWidget: React.FC<{ deviceId?: number }> = ({ deviceId }) 
                             formatter={(value: number, name: string) => [formatBytes(value), name === 'total' ? 'Total Traffic' : name.charAt(0).toUpperCase() + name.slice(1)]}
                         />
                         <Bar dataKey="total" radius={[0, 4, 4, 0]}>
-                            {chartData.map((entry: any, index: number) => (
+                            {chartData.map((entry, index: number) => (
                                 <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                         </Bar>

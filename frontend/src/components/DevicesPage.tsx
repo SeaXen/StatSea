@@ -183,7 +183,7 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                         <div className="flex items-center gap-2">
                             <h1 className="text-base font-semibold text-text tracking-tight">Device Fleet</h1>
                             <span className="status ok text-[10px] uppercase font-mono px-2 py-0.5">
-                                {filteredDevices.filter((d: any) => d.is_online || d.status === 'online').length} ONLINE
+                                {filteredDevices.filter((d: Device) => d.is_online).length} ONLINE
                             </span>
                         </div>
                         <p className="text-xs text-text-soft font-mono mt-0.5">
@@ -254,7 +254,7 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                             { value: 'offline', label: 'Offline' }
                         ]}
                         value={filterStatus}
-                        onChange={(val) => setFilterStatus(val as any)}
+                        onChange={(val) => setFilterStatus(val as 'all' | 'online' | 'offline')}
                     />
 
                     <CustomSelect

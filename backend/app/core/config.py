@@ -1,3 +1,6 @@
+import secrets
+
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,7 +11,7 @@ class Settings(BaseSettings):
     PASSWORD_MIN_LENGTH: int = 8
 
     # Security
-    JWT_SECRET_KEY: str = "statsea-jwt-secret-key-change-me-at-least-thirty-two-chars"  # noqa: S105
+    JWT_SECRET_KEY: str = Field(default_factory=lambda: secrets.token_hex(32))
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

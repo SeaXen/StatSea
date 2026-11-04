@@ -47,6 +47,9 @@ export default defineConfig({
             output: {
                 manualChunks(id) {
                     if (id.includes('node_modules')) {
+                        if (id.includes('three') || id.includes('react-globe.gl') || id.includes('three-globe')) {
+                            return 'vendor-three';
+                        }
                         if (id.includes('framer-motion')) {
                             return 'vendor-motion';
                         }
@@ -60,7 +63,7 @@ export default defineConfig({
                 },
             },
         },
-        chunkSizeWarningLimit: 1200,
+        chunkSizeWarningLimit: 2000,
     },
     server: {
         host: true,

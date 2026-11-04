@@ -18,6 +18,7 @@ import TrafficCategoriesWidget from './TrafficCategoriesWidget';
 import { NetworkTopology } from './NetworkTopology';
 import { RulesModal } from './analytics/RulesModal';
 import { cn } from '../lib/utils';
+import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 
 
 // ─── Protocol Color Map ───
@@ -121,15 +122,16 @@ interface DashboardConfig {
 }
 
 // ─── Helper ───
-function formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 B';
+function formatBytes(bytes?: number): string {
+    if (!bytes || bytes <= 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
 
-function formatNumber(num: number): string {
+function formatNumber(num?: number): string {
+    if (num === undefined || num === null || isNaN(num)) return '0';
     if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
     if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
     return num.toLocaleString();
@@ -205,9 +207,6 @@ const ProtocolBadge = ({ proto, active, onClick }: { proto: string; active: bool
         {proto}
     </button>
 );
-
-
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 
 export interface HeatmapPoint {
     day: string;
@@ -348,12 +347,16 @@ const AnalyticsDashboard = () => {
         }
     };
 
-    const exportToCSV = (data: any[], filename: string) => {
+    const exportToCSV = <T extends object>(data: T[], filename: string) => {
         if (!data || !data.length) return;
-        const keys = Object.keys(data[0]).filter(k => typeof data[0][k] !== 'object');
+        const first = data[0] as Record<string, unknown>;
+        const keys = Object.keys(first).filter(k => typeof first[k] !== 'object');
         const csvContent = [
             keys.join(','),
-            ...data.map(row => keys.map(k => `"${String(row[k] || '').replace(/"/g, '""')}"`).join(','))
+            ...data.map(row => {
+                const r = row as Record<string, unknown>;
+                return keys.map(k => `"${String(r[k] ?? '').replace(/"/g, '""')}"`).join(',');
+            })
         ].join('\n');
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

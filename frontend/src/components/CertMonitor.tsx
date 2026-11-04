@@ -3,6 +3,8 @@ import { Shield, Plus, Trash2, AlertTriangle, CheckCircle, XCircle } from 'lucid
 import { useCertificates, useCreateCertificate, useDeleteCertificate } from '../hooks/useCertificates';
 import { toast } from 'sonner';
 
+import { MonitoredCertificate } from '../types';
+
 export const CertMonitor: React.FC = () => {
     const [newDomain, setNewDomain] = useState('');
     const [newPort, setNewPort] = useState('443');
@@ -24,7 +26,7 @@ export const CertMonitor: React.FC = () => {
             setNewDomain('');
             setNewPort('443');
             toast.success('Certificate monitor added successfully');
-        } catch (error) {
+        } catch {
             toast.error('Failed to add certificate monitor');
         }
     };
@@ -33,12 +35,12 @@ export const CertMonitor: React.FC = () => {
         try {
             await deleteCert.mutateAsync(id);
             toast.success('Certificate monitor removed');
-        } catch (error) {
+        } catch {
             toast.error('Failed to remove certificate monitor');
         }
     };
 
-    const getStatusIcon = (cert: any) => {
+    const getStatusIcon = (cert: MonitoredCertificate) => {
         if (cert.error_message) return <XCircle className="w-5 h-5 text-red-500" />;
         if (cert.days_until_expiration === undefined || cert.days_until_expiration === null) return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
         if (cert.days_until_expiration <= 0) return <XCircle className="w-5 h-5 text-red-500" />;

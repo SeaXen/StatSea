@@ -32,7 +32,9 @@ const SessionManager: React.FC = () => {
     const { data: sessions, isLoading } = useQuery({
         queryKey: ['auth', 'sessions'],
         queryFn: async () => {
-            const res = await axiosInstance.get(`/auth/sessions?current_token=${refreshToken}`);
+            const res = await axiosInstance.get('/auth/sessions', {
+                headers: { 'X-Session-Token': refreshToken }
+            });
             return res.data;
         },
         enabled: !!refreshToken

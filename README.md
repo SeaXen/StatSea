@@ -70,10 +70,10 @@ source venv/bin/activate  # On Windows use: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the backend server (FastAPI)
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+# Run the backend server (FastAPI) on port 8001
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 ```
-> **Note:** On Linux, you may need to run the backend with `sudo` to allow `scapy` to promiscuously monitor network interfaces.
+> **Note:** The Vite frontend proxy is configured for port `8001`. On Linux, you may need to run the backend with `sudo` to allow `scapy` to promiscuously monitor network interfaces.
 
 ### 2. Frontend Setup
 

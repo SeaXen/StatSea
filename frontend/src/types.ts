@@ -58,7 +58,7 @@ export interface NotificationChannel {
     id: number;
     name: string;
     type: NotificationChannelType;
-    config: Record<string, any>;
+    config: Record<string, unknown>;
     events: string[];
     is_enabled: boolean;
     created_at?: string;
@@ -89,7 +89,13 @@ export interface AgentResponse {
     ip_address?: string;
     status: string;
     last_seen?: string;
-    system_info?: any;
+    system_info?: Record<string, unknown>;
     organization_id?: number;
     created_at: string;
+}export interface AgentMetrics {
+    cpu_pct?: number;
+    mem_usage?: number;
+    disk_usage?: number;
+    net_rx?: number;
+    net_tx?: number;
 }

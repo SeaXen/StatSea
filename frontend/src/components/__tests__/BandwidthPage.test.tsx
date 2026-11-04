@@ -4,21 +4,21 @@ import BandwidthPage from '../BandwidthPage';
 
 // Mock recharts ResponsiveContainer to avoid resize observer issues in test environment
 vi.mock('recharts', async () => {
-    const actual = await vi.importActual('recharts') as any;
+    const actual = await vi.importActual<Record<string, unknown>>('recharts');
     return {
         ...actual,
-        ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
+        ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div data-testid="responsive-container">{children}</div>,
     };
 });
 
 // Mock framer-motion to avoid animation timer stalls in jsdom
 vi.mock('framer-motion', () => ({
     motion: {
-        div: ({ children, className, onClick, ...props }: any) => (
+        div: ({ children, className, onClick, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
             <div className={className} onClick={onClick} {...props}>{children}</div>
         ),
     },
-    AnimatePresence: ({ children }: any) => <>{children}</>,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock('../../hooks/useBandwidth', () => ({
@@ -47,12 +47,12 @@ describe('BandwidthPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        (useInterfaces as any).mockReturnValue({
+        vi.mocked(useInterfaces).mockReturnValue({
             data: ['eth0', 'wlan0'],
             isLoading: false,
-        });
+        } as never);
 
-        (useBandwidthSummary as any).mockReturnValue({
+        vi.mocked(useBandwidthSummary).mockReturnValue({
             data: {
                 eth0: {
                     today: { rx: 1048576, tx: 2097152, total: 3145728 },
@@ -63,14 +63,14 @@ describe('BandwidthPage', () => {
                 },
             },
             isLoading: false,
-        });
+        } as never);
 
-        (useBandwidthFiveMinute as any).mockReturnValue({ data: [], isLoading: false });
-        (useBandwidthHourly as any).mockReturnValue({ data: [], isLoading: false });
-        (useBandwidthDaily as any).mockReturnValue({ data: [], isLoading: false });
-        (useBandwidthMonthly as any).mockReturnValue({ data: [], isLoading: false });
-        (useBandwidthYearly as any).mockReturnValue({ data: [], isLoading: false });
-        (useBandwidthTop as any).mockReturnValue({ data: [], isLoading: false });
+        vi.mocked(useBandwidthFiveMinute).mockReturnValue({ data: [], isLoading: false } as never);
+        vi.mocked(useBandwidthHourly).mockReturnValue({ data: [], isLoading: false } as never);
+        vi.mocked(useBandwidthDaily).mockReturnValue({ data: [], isLoading: false } as never);
+        vi.mocked(useBandwidthMonthly).mockReturnValue({ data: [], isLoading: false } as never);
+        vi.mocked(useBandwidthYearly).mockReturnValue({ data: [], isLoading: false } as never);
+        vi.mocked(useBandwidthTop).mockReturnValue({ data: [], isLoading: false } as never);
     });
 
     it('renders header, title, and action buttons', () => {

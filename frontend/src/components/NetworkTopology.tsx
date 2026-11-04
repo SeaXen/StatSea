@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
+import ForceGraph2D from 'react-force-graph-2d';
 import { Share2, RefreshCw } from 'lucide-react';
 import axiosInstance from '../config/axiosInstance';
 
@@ -11,7 +11,15 @@ interface Node {
     group: string;
     x?: number;
     y?: number;
+    fx?: number;
+    fy?: number;
     val?: number;
+}
+
+interface RawTopologyEdge {
+    from: string;
+    to: string;
+    value?: number;
 }
 
 interface Link {
@@ -31,7 +39,7 @@ export function NetworkTopology() {
     const [error, setError] = useState<string | null>(null);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
-    const fgRef = useRef<ForceGraphMethods>();
+    const fgRef = useRef<any>();
     const [hoverNode, setHoverNode] = useState<Node | null>(null);
 
     const fetchTopology = useCallback(async () => {
@@ -40,14 +48,14 @@ export function NetworkTopology() {
             const { data } = await axiosInstance.get('/network/topology');
 
             // Map 'from' and 'to' in edges to 'source' and 'target' for react-force-graph
-            const mappedLinks = (data.edges || []).map((e: any) => ({
+            const mappedLinks = (data.edges || []).map((e: RawTopologyEdge) => ({
                 source: e.from,
                 target: e.to,
                 value: e.value || 1
             }));
 
             // Make router larger
-            const mappedNodes = (data.nodes || []).map((n: any) => ({
+            const mappedNodes = (data.nodes || []).map((n: Node) => ({
                 ...n,
                 val: n.group === 'core' ? 20 : 5 // Increased base size
             }));
@@ -57,7 +65,7 @@ export function NetworkTopology() {
                 links: mappedLinks
             });
             setError(null);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Failed to load topology:", err);
             setError("Failed to load network topology");
         } finally {
@@ -148,19 +156,19 @@ export function NetworkTopology() {
                                 width={dimensions.width}
                                 height={dimensions.height}
                                 graphData={graphData}
-                                nodeLabel={(node: any) => `${node.label} (${node.ip || 'Unknown IP'})`}
-                                nodeColor={(node: any) => node === hoverNode ? '#fff' : getNodeColor(node)}
+                                nodeLabel={(node: Node) => `${node.label} (${node.ip || 'Unknown IP'})`}
+                                nodeColor={(node: Node) => node === hoverNode ? '#fff' : getNodeColor(node)}
                                 nodeRelSize={7}
                                 linkWidth={2}
                                 linkColor={() => 'rgba(255,255,255,0.1)'}
                                 backgroundColor="transparent"
-                                onNodeHover={(node: any) => setHoverNode(node)}
-                                onNodeDragEnd={(node: any) => {
+                                onNodeHover={(node: Node | null) => setHoverNode(node)}
+                                onNodeDragEnd={(node: Node) => {
                                     node.fx = node.x;
                                     node.fy = node.y;
                                 }}
                                 nodeCanvasObjectMode={() => 'after'}
-                                nodeCanvasObject={(node: any, ctx, globalScale) => {
+                                nodeCanvasObject={(node: Node, ctx: CanvasRenderingContext2D, globalScale: number) => {
                                     const label = node.label;
                                     const fontSize = 12 / globalScale;
                                     ctx.font = `${fontSize}px Sans-Serif`;
@@ -170,7 +178,7 @@ export function NetworkTopology() {
 
                                     // Make router label bigger and always visible
                                     if (node.group === 'core' || globalScale > 1.5 || node === hoverNode) {
-                                        ctx.fillText(label, node.x, node.y + (node.val * 2) + fontSize);
+                                        ctx.fillText(label, node.x ?? 0, (node.y ?? 0) + ((node.val ?? 1) * 2) + fontSize);
                                     }
                                 }}
                             />

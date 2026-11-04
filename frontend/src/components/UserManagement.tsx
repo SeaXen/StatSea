@@ -196,7 +196,7 @@ export const UserManagement: React.FC = () => {
                         { value: 'inactive', label: 'Disabled Only' }
                     ]}
                     value={filterStatus}
-                    onChange={(val) => setFilterStatus(val as any)}
+                    onChange={(val) => setFilterStatus(val as 'all' | 'active' | 'inactive')}
                 />
             </div>
 

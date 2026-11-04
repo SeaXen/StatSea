@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNotificationChannels, useCreateNotificationChannel, useUpdateNotificationChannel, useDeleteNotificationChannel, useTestNotificationChannel } from '../hooks/useNotifications';
-import { NotificationChannel, NotificationChannelType } from '../types';
+import { NotificationChannel, NotificationChannelType, NotificationChannelCreate } from '../types';
 import { Bell, Plus, Trash2, Play, Settings2, Loader2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { pushNotifications } from '../utils/pushNotifications';
@@ -45,18 +46,26 @@ export default function NotificationSettings() {
         }
     };
 
+    const getErrorMessage = (err: unknown): string => {
+        if (axios.isAxiosError(err)) {
+            const data = err.response?.data as { detail?: string } | undefined;
+            return data?.detail || err.message;
+        }
+        return err instanceof Error ? err.message : String(err);
+    };
+
     const handleDelete = async (id: number) => {
         if (!confirm("Are you sure you want to delete this channel?")) return;
         deleteChannelMutation.mutate(id, {
             onSuccess: () => toast.success("Channel deleted successfully"),
-            onError: (err) => toast.error(`Failed to delete channel: ${(err as any).response?.data?.detail || err.message}`)
+            onError: (err) => toast.error(`Failed to delete channel: ${getErrorMessage(err)}`)
         });
     };
 
     const handleToggleEnable = async (channel: NotificationChannel) => {
         updateChannelMutation.mutate({ id: channel.id, data: { is_enabled: !channel.is_enabled } }, {
             onSuccess: () => toast.success(`Channel ${channel.is_enabled ? 'disabled' : 'enabled'}`),
-            onError: (err) => toast.error(`Failed to update channel: ${(err as any).response?.data?.detail || err.message}`)
+            onError: (err) => toast.error(`Failed to update channel: ${getErrorMessage(err)}`)
         });
     };
 
@@ -64,7 +73,7 @@ export default function NotificationSettings() {
         toast.promise(testChannelMutation.mutateAsync(id), {
             loading: 'Sending test notification...',
             success: 'Test notification sent!',
-            error: (err) => `Test failed: ${(err as any).response?.data?.detail || err.message}`
+            error: (err) => `Test failed: ${getErrorMessage(err)}`
         });
     };
 
@@ -218,7 +227,7 @@ const DEFAULT_CONFIG_TEMPLATES: Record<NotificationChannelType, string> = {
     push: '{}',
 };
 
-function ChannelModal({ isOpen, onClose, existingChannel, onSave }: { isOpen: boolean, onClose: () => void, existingChannel: NotificationChannel | null, onSave: (data: any) => void }) {
+function ChannelModal({ isOpen, onClose, existingChannel, onSave }: { isOpen: boolean, onClose: () => void, existingChannel: NotificationChannel | null, onSave: (data: NotificationChannelCreate) => void }) {
     const initialType: NotificationChannelType = existingChannel ? existingChannel.type : 'telegram';
     const [name, setName] = useState(existingChannel?.name || '');
     const [type, setType] = useState<NotificationChannelType>(initialType);

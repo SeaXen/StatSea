@@ -1,22 +1,22 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
-interface Option {
-    value: string | number;
+interface Option<T extends string | number = string | number> {
+    value: T;
     label: string;
 }
 
-interface CustomSelectProps {
-    options: Option[];
-    value: string | number;
-    onChange: (value: any) => void;
+interface CustomSelectProps<T extends string | number = string | number> {
+    options: Option<T>[];
+    value: T;
+    onChange: (value: T) => void;
     label?: string;
     className?: string;
 }
 
-export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onChange, label, className }) => {
+export const CustomSelect = <T extends string | number = string | number>({ options, value, onChange, label, className }: CustomSelectProps<T>) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 

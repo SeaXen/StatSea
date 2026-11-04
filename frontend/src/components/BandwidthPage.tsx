@@ -21,7 +21,7 @@ const COLORS = ['#84cc16', '#3f3f46', '#10b981', '#0ea5e9', '#ef4444', '#f59e0b'
 const CHART_TOOLTIP_STYLE = { backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '12px' };
 
 // ─── Helpers ───
-const formatRate = (rateBps: number) => {
+const formatRate = (rateBps?: number) => {
     if (!rateBps || rateBps <= 0) return '0 bit/s';
     if (rateBps >= 1e9) return `${(rateBps / 1e9).toFixed(2)} Gbit/s`;
     if (rateBps >= 1e6) return `${(rateBps / 1e6).toFixed(2)} Mbit/s`;
@@ -29,19 +29,64 @@ const formatRate = (rateBps: number) => {
     return `${rateBps.toFixed(0)} bit/s`;
 };
 
-const parseShortDate = (d: string) => {
+const parseShortDate = (d?: string) => {
     if (!d) return '';
     return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
-const parseMonth = (m: string) => {
+const parseMonth = (m?: string) => {
     if (!m) return '';
     const [y, mo] = m.split('-');
     return new Date(parseInt(y), parseInt(mo) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
 };
 
+interface BandwidthMetric {
+    rx?: number;
+    tx?: number;
+    total?: number;
+    [key: string]: unknown;
+}
+
+interface InterfaceSummary {
+    today?: BandwidthMetric;
+    yesterday?: BandwidthMetric;
+    month?: BandwidthMetric;
+    all_time?: BandwidthMetric;
+    estimated?: { total: number };
+    [key: string]: unknown;
+}
+
+interface BandwidthRow {
+    date?: string;
+    month?: string;
+    year?: number | string;
+    rx?: number;
+    tx?: number;
+    total?: number;
+    avg_rate_bps?: number;
+    estimated_rx?: number;
+    estimated_tx?: number;
+    estimated_total?: number;
+}
+
+interface SummaryCardProps {
+    title: string;
+    data?: BandwidthMetric;
+    icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+    color: string;
+    delay?: number;
+}
+
+interface SectionCardProps {
+    title: string;
+    icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+    iconColor?: string;
+    children: React.ReactNode;
+    className?: string;
+}
+
 // ─── Summary Card (Console style) ───
-const SummaryCard = ({ title, data, icon: Icon, color }: any) => (
+const SummaryCard = ({ title, data, icon: Icon, color }: SummaryCardProps) => (
     <div className="panel p-3 rounded-[7px] border border-line bg-panel flex flex-col justify-between hover:border-line-strong transition-colors">
         <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono uppercase tracking-wider text-faint">{title}</span>
@@ -65,7 +110,7 @@ const SummaryCard = ({ title, data, icon: Icon, color }: any) => (
 );
 
 // ─── Rate Bar (Console progress bar style) ───
-const RateBar = ({ bps, maxBps }: { bps: number; maxBps: number }) => {
+const RateBar = ({ bps = 0, maxBps = 1 }: { bps?: number; maxBps?: number }) => {
     const pct = maxBps > 0 ? Math.min((bps / maxBps) * 100, 100) : 0;
     return (
         <div className="meter w-16 inline-block">
@@ -96,7 +141,7 @@ const LoadingRow = ({ cols }: { cols: number }) => (
 );
 
 // ─── Section Card (Console style) ───
-const SectionCard = ({ title, icon: Icon, iconColor, children, className }: any) => (
+const SectionCard = ({ title, icon: Icon, iconColor, children, className }: SectionCardProps) => (
     <div className={cn("panel p-0 overflow-hidden", className)}>
         <div className="panel-head border-b border-line px-4 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -118,7 +163,7 @@ const SectionCard = ({ title, icon: Icon, iconColor, children, className }: any)
 );
 
 // ─── Per-Interface Summary Panel (for "All Interfaces" view) ───
-const InterfaceSummaryPanel = ({ iface, data }: { iface: string; data: any }) => (
+const InterfaceSummaryPanel = ({ iface, data }: { iface: string; data?: InterfaceSummary }) => (
     <div className="panel p-3">
         <div className="flex items-center justify-between mb-3 pb-2 border-b border-line">
             <div className="flex items-center gap-2">
@@ -143,7 +188,7 @@ const InterfaceSummaryPanel = ({ iface, data }: { iface: string; data: any }) =>
     </div>
 );
 
-const MiniStat = ({ label, data }: { label: string; data: any }) => (
+const MiniStat = ({ label, data }: { label: string; data?: BandwidthMetric }) => (
     <div className="p-2.5 rounded-[5px] bg-raised border border-line font-mono flex flex-col justify-between">
         <span className="text-[10px] text-faint uppercase">{label}</span>
         <div className="text-sm font-semibold text-text num my-1">
@@ -170,7 +215,8 @@ export default function BandwidthPage() {
     const todayStr = new Date().toISOString().split('T')[0];
 
     const { data: summaryData } = useBandwidthSummary();
-    const summary = summaryData ? summaryData[activeInterface] : null;
+    const summaryDataTyped = summaryData as Record<string, InterfaceSummary> | undefined;
+    const summary: InterfaceSummary | null = (summaryDataTyped && activeInterface ? summaryDataTyped[activeInterface] : null) as InterfaceSummary | null;
 
     const { data: fiveMin = [], isLoading: loadingFiveMin } = useBandwidthFiveMinute(activeInterface, 24);
     const { data: hourly = [], isLoading: loadingHourly } = useBandwidthHourly(activeInterface, todayStr);
@@ -180,22 +226,23 @@ export default function BandwidthPage() {
     const { data: top = [], isLoading: loadingTop } = useBandwidthTop(activeInterface, 10);
 
     // Max rate for progress bars
-    const maxDailyRate = useMemo(() => Math.max(...daily.map((d: any) => d.avg_rate_bps || 0), 1), [daily]);
-    const maxTopRate = useMemo(() => Math.max(...top.map((d: any) => d.avg_rate_bps || 0), 1), [top]);
+    const maxDailyRate = useMemo(() => Math.max(...(daily as BandwidthRow[]).map(d => d.avg_rate_bps || 0), 1), [daily]);
+    const maxTopRate = useMemo(() => Math.max(...(top as BandwidthRow[]).map(d => d.avg_rate_bps || 0), 1), [top]);
 
     // Pie data for rx/tx of current interface
     const rxTxPie = useMemo(() => {
-        if (!summary?.month) return [];
+        const currentSummary = summary as InterfaceSummary | null;
+        if (!currentSummary?.month) return [];
         return [
-            { name: 'rx', value: summary.month.rx || 0 },
-            { name: 'tx', value: summary.month.tx || 0 },
+            { name: 'rx', value: currentSummary.month.rx || 0 },
+            { name: 'tx', value: currentSummary.month.tx || 0 },
         ].filter(d => d.value > 0);
     }, [summary]);
 
     // Interface breakdown pie for "All" view
     const ifacePie = useMemo(() => {
         if (!summaryData) return [];
-        return Object.entries(summaryData).map(([name, d]: [string, any]) => ({
+        return Object.entries(summaryData as Record<string, InterfaceSummary>).map(([name, d]) => ({
             name,
             value: d?.month?.total || 0
         })).filter(d => d.value > 0);
@@ -240,10 +287,10 @@ export default function BandwidthPage() {
             </div>
 
             {/* ── All Interfaces View ── */}
-            {isAllView && summaryData && (
+            {isAllView && summaryDataTyped && (
                 <div className="space-y-3">
-                    {Object.entries(summaryData).map(([iface, data]) => (
-                        <InterfaceSummaryPanel key={iface} iface={iface} data={data} />
+                    {Object.entries(summaryDataTyped).map(([iface, data]) => (
+                        <InterfaceSummaryPanel key={iface} iface={iface} data={data as InterfaceSummary} />
                     ))}
                 </div>
             )}
@@ -257,7 +304,7 @@ export default function BandwidthPage() {
                         <SummaryCard title="Prior Day" data={summary?.yesterday} icon={Clock} color="#06b6d4" delay={0.2} />
                         <SummaryCard title="Monthly Usage" data={summary?.month} icon={Activity} color="#f59e0b" delay={0.3} />
                         <SummaryCard title="Historical Total" data={summary?.all_time} icon={Database} color="#10b981" delay={0.4} />
-                        <SummaryCard title="Projected" data={summary?.estimated} icon={TrendingUp} color="#ef4444" delay={0.5} />
+                        <SummaryCard title="Projected" data={summary?.estimated as BandwidthMetric | undefined} icon={TrendingUp} color="#ef4444" delay={0.5} />
                     </div>
 
                     {/* ── Charts Row ── */}
@@ -363,14 +410,14 @@ export default function BandwidthPage() {
                                     <TableHeader columns={['Day', 'RX', 'TX', 'Total', 'Avg. Rate', '']} />
                                     <tbody>
                                         {loadingDaily ? <LoadingRow cols={6} /> :
-                                            daily.length > 0 ? daily.map((d: any, i: number) => (
+                                            daily.length > 0 ? (daily as BandwidthRow[]).map((d, i: number) => (
                                                 <tr key={i} className="border-b border-border/40 hover:bg-muted/30 transition-colors group">
                                                     <td className="px-4 py-3.5 text-foreground font-semibold tracking-tight">{parseShortDate(d.date)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(d.rx)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(d.tx)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(d.total)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(d.rx || 0)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(d.tx || 0)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(d.total || 0)}</td>
                                                     <td className="px-4 py-3.5 text-right text-muted-foreground/70 font-bold font-mono text-[10px] tabular-nums">{formatRate(d.avg_rate_bps)}</td>
-                                                    <td className="px-4 py-3.5"><RateBar bps={d.avg_rate_bps} maxBps={maxDailyRate} /></td>
+                                                    <td className="px-4 py-3.5"><RateBar bps={d.avg_rate_bps || 0} maxBps={maxDailyRate} /></td>
                                                 </tr>
                                             )) : <EmptyRow cols={6} msg="No daily data" />}
                                     </tbody>
@@ -385,15 +432,15 @@ export default function BandwidthPage() {
                                     <TableHeader columns={['#', 'Day', 'RX', 'TX', 'Total', 'Avg. Rate', '']} />
                                     <tbody>
                                         {loadingTop ? <LoadingRow cols={7} /> :
-                                            top.length > 0 ? top.map((d: any, i: number) => (
+                                            top.length > 0 ? (top as BandwidthRow[]).map((d, i: number) => (
                                                 <tr key={i} className="border-b border-border/40 hover:bg-muted/30 transition-colors group">
                                                     <td className="px-4 py-3.5 text-muted-foreground/50 font-black font-mono text-center text-[10px]">{i + 1}</td>
                                                     <td className="px-4 py-3.5 text-foreground font-semibold tracking-tight">{parseShortDate(d.date)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(d.rx)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(d.tx)}</td>
-                                                    <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(d.total)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(d.rx || 0)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(d.tx || 0)}</td>
+                                                    <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(d.total || 0)}</td>
                                                     <td className="px-4 py-3.5 text-right text-muted-foreground/70 font-bold font-mono text-[10px] tabular-nums">{formatRate(d.avg_rate_bps)}</td>
-                                                    <td className="px-4 py-3.5"><RateBar bps={d.avg_rate_bps} maxBps={maxTopRate} /></td>
+                                                    <td className="px-4 py-3.5"><RateBar bps={d.avg_rate_bps || 0} maxBps={maxTopRate} /></td>
                                                 </tr>
                                             )) : <EmptyRow cols={7} msg="No top days" />}
                                     </tbody>
@@ -410,22 +457,22 @@ export default function BandwidthPage() {
                                         {loadingMonthly ? <LoadingRow cols={5} /> :
                                             monthly.length > 0 ? (
                                                 <>
-                                                    {monthly.map((m: any, i: number) => (
+                                                    {(monthly as BandwidthRow[]).map((m, i: number) => (
                                                         <tr key={i} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
                                                             <td className="px-4 py-3.5 text-foreground font-semibold tracking-tight">{parseMonth(m.month)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(m.rx)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(m.tx)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(m.total)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(m.rx || 0)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(m.tx || 0)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(m.total || 0)}</td>
                                                             <td className="px-4 py-3.5 text-right text-muted-foreground/70 font-bold font-mono text-[10px] tabular-nums">{formatRate(m.avg_rate_bps)}</td>
                                                         </tr>
                                                     ))}
                                                     {/* Estimated row for current month */}
-                                                    {monthly[0]?.estimated_total && (
+                                                    {Boolean((monthly as BandwidthRow[])[0]?.estimated_total) && (
                                                         <tr className="border-b border-border/40 bg-muted/20">
                                                             <td className="px-4 py-3 text-muted-foreground/60 italic font-bold text-[10px] uppercase tracking-widest pl-10">estimated</td>
-                                                            <td className="px-4 py-3 text-right text-emerald-500/70 font-bold font-mono tabular-nums">{formatBytes(monthly[0].estimated_rx)}</td>
-                                                            <td className="px-4 py-3 text-right text-blue-500/70 font-bold font-mono tabular-nums">{formatBytes(monthly[0].estimated_tx)}</td>
-                                                            <td className="px-4 py-3 text-right text-foreground/80 font-black font-mono tabular-nums">{formatBytes(monthly[0].estimated_total)}</td>
+                                                            <td className="px-4 py-3 text-right text-emerald-500/70 font-bold font-mono tabular-nums">{formatBytes((monthly as BandwidthRow[])[0]?.estimated_rx || 0)}</td>
+                                                            <td className="px-4 py-3 text-right text-blue-500/70 font-bold font-mono tabular-nums">{formatBytes((monthly as BandwidthRow[])[0]?.estimated_tx || 0)}</td>
+                                                            <td className="px-4 py-3 text-right text-foreground/80 font-black font-mono tabular-nums">{formatBytes((monthly as BandwidthRow[])[0]?.estimated_total || 0)}</td>
                                                             <td className="px-4 py-3"></td>
                                                         </tr>
                                                     )}
@@ -445,12 +492,12 @@ export default function BandwidthPage() {
                                         {loadingYearly ? <LoadingRow cols={5} /> :
                                             yearly.length > 0 ? (
                                                 <>
-                                                    {yearly.map((y: any, i: number) => (
+                                                    {(yearly as BandwidthRow[]).map((y, i: number) => (
                                                         <tr key={i} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
                                                             <td className="px-4 py-3.5 text-foreground font-semibold tracking-tight">{y.year}</td>
-                                                            <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(y.rx)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(y.tx)}</td>
-                                                            <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(y.total)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-emerald-500 font-bold font-mono tabular-nums">{formatBytes(y.rx || 0)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-blue-500 font-bold font-mono tabular-nums">{formatBytes(y.tx || 0)}</td>
+                                                            <td className="px-4 py-3.5 text-right text-foreground font-black font-mono tabular-nums">{formatBytes(y.total || 0)}</td>
                                                             <td className="px-4 py-3.5 text-right text-muted-foreground/70 font-bold font-mono text-[10px] tabular-nums">{formatRate(y.avg_rate_bps)}</td>
                                                         </tr>
                                                     ))}
@@ -458,9 +505,9 @@ export default function BandwidthPage() {
                                                     {yearly[0]?.estimated_total && (
                                                         <tr className="border-b border-border/40 bg-muted/20">
                                                             <td className="px-4 py-3 text-muted-foreground/60 italic font-bold text-[10px] uppercase tracking-widest pl-10">estimated</td>
-                                                            <td className="px-4 py-3 text-right text-emerald-500/70 font-bold font-mono tabular-nums">{formatBytes(yearly[0].estimated_rx)}</td>
-                                                            <td className="px-4 py-3 text-right text-blue-500/70 font-bold font-mono tabular-nums">{formatBytes(yearly[0].estimated_tx)}</td>
-                                                            <td className="px-4 py-3 text-right text-foreground/80 font-black font-mono tabular-nums">{formatBytes(yearly[0].estimated_total)}</td>
+                                                            <td className="px-4 py-3 text-right text-emerald-500/70 font-bold font-mono tabular-nums">{formatBytes(Number(yearly[0].estimated_rx) || 0)}</td>
+                                                            <td className="px-4 py-3 text-right text-blue-500/70 font-bold font-mono tabular-nums">{formatBytes(Number(yearly[0].estimated_tx) || 0)}</td>
+                                                            <td className="px-4 py-3 text-right text-foreground/80 font-black font-mono tabular-nums">{formatBytes(Number(yearly[0].estimated_total) || 0)}</td>
                                                             <td className="px-4 py-3"></td>
                                                         </tr>
                                                     )}

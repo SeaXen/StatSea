@@ -106,7 +106,7 @@ export default function ReportSettings() {
                                     {report.formats.map((format) => (
                                         <button
                                             key={format}
-                                            onClick={() => handleDownload(report.id, format as any)}
+                                            onClick={() => handleDownload(report.id, format as 'pdf' | 'csv' | 'json')}
                                             disabled={isGenerating !== null}
                                             className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-white/70 hover:text-white transition-all border border-white/5 flex items-center gap-2"
                                         >

@@ -38,9 +38,9 @@ describe('TopDevicesWidget', () => {
             },
         ];
 
-        (axiosInstance.get as any).mockResolvedValueOnce({
+        vi.mocked(axiosInstance.get).mockResolvedValueOnce({
             data: { top_devices: mockDevices },
-        });
+        } as never);
 
         render(<TopDevicesWidget />);
 
@@ -57,9 +57,9 @@ describe('TopDevicesWidget', () => {
     });
 
     it('renders empty state message when no devices are present', async () => {
-        (axiosInstance.get as any).mockResolvedValueOnce({
+        vi.mocked(axiosInstance.get).mockResolvedValueOnce({
             data: { top_devices: [] },
-        });
+        } as never);
 
         render(<TopDevicesWidget />);
 
@@ -69,9 +69,9 @@ describe('TopDevicesWidget', () => {
     });
 
     it('triggers manual refresh on refresh button click', async () => {
-        (axiosInstance.get as any).mockResolvedValue({
+        vi.mocked(axiosInstance.get).mockResolvedValue({
             data: { top_devices: [] },
-        });
+        } as never);
 
         render(<TopDevicesWidget />);
 

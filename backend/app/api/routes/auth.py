@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Form, Header, HTTPException, Query, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -43,14 +43,12 @@ def login(
 @limiter.limit("10/minute")
 def refresh_token(
     request: Request,
-    payload: schemas.RefreshTokenRequest | None = None,
-    refresh_token: str | None = Query(None),
+    payload: schemas.RefreshTokenRequest,
     db: Session = Depends(get_db),
 ):
-    token = payload.refresh_token if (payload and payload.refresh_token) else refresh_token
-    if not token:
-        raise HTTPException(status_code=400, detail="refresh_token is required")
-    return AuthService.refresh_session(db, token)
+    if not payload or not payload.refresh_token:
+        raise HTTPException(status_code=400, detail="refresh_token is required in request body")
+    return AuthService.refresh_session(db, payload.refresh_token)
 
 
 @router.post(
@@ -76,6 +74,7 @@ def read_users_me(current_user: models.User = Depends(get_current_user)):
 
 @router.get("/sessions", response_model=list[schemas.SessionResponse])
 def list_my_sessions(
+    x_session_token: str | None = Header(None, alias="X-Session-Token"),
     current_token: str | None = Query(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
@@ -83,13 +82,14 @@ def list_my_sessions(
     """
     List all active sessions for the current user.
     """
+    active_token = x_session_token or current_token
     sessions = AuthService.get_active_sessions(db, current_user.id)
     
     # Map to schemas and set is_current flag
     response = []
     for s in sessions:
         session_dict = schemas.SessionResponse.model_validate(s).model_dump()
-        session_dict["is_current"] = (s.token == current_token)
+        session_dict["is_current"] = (s.token == active_token)
         response.append(session_dict)
         
     return response

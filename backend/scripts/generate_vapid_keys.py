@@ -1,5 +1,7 @@
-from pywebpush import vapid_codes
 import json
+
+from pywebpush import vapid_codes
+
 
 def generate_keys():
     """Generate VAPID keys for push notifications."""

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, Loader2, ChevronLeft, ChevronRight, Calendar, Activity, Edit3, Trash2, LogIn, Plus } from 'lucide-react';
 import axiosInstance from '../config/axiosInstance';
 import { API_CONFIG } from '../config/apiConfig';
@@ -39,7 +39,7 @@ export default function AuditLogTab() {
 
     const perPage = 20;
 
-    const fetchLogs = async () => {
+    const fetchLogs = useCallback(async () => {
         setIsLoading(true);
         try {
             const params = new URLSearchParams({
@@ -65,11 +65,11 @@ export default function AuditLogTab() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [page, perPage, actionFilter, startDate, endDate]);
 
     useEffect(() => {
-        fetchLogs();
-    }, [page, actionFilter, startDate, endDate]);
+        void fetchLogs();
+    }, [fetchLogs]);
 
     const getActionColor = (action: string) => {
         switch (action) {

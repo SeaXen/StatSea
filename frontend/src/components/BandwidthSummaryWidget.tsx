@@ -23,7 +23,7 @@ interface BandwidthData {
 
 export function BandwidthSummaryWidget() {
     const [data, setData] = useState<BandwidthData | null>(null);
-    const [sparkline, setSparkline] = useState<any[]>([]);
+    const [sparkline, setSparkline] = useState<Array<{ time?: string; value?: number; [key: string]: unknown }>>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [interfaceName, setInterfaceName] = useState<string>('');

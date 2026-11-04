@@ -2,47 +2,60 @@ import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '../config/axiosInstance';
 import { API_CONFIG } from '../config/apiConfig';
 
+export interface BandwidthDataPoint {
+    id?: number | string;
+    timestamp?: string | number;
+    time?: string;
+    date?: string;
+    rx?: number;
+    tx?: number;
+    total?: number;
+    download_bytes?: number;
+    upload_bytes?: number;
+    [key: string]: unknown;
+}
+
 const fetchers = {
     getInterfaces: async () => {
         const { data } = await axiosInstance.get<string[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.INTERFACES}`);
         return data;
     },
     getSummary: async () => {
-        const { data } = await axiosInstance.get<Record<string, any>>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.SUMMARY}`);
+        const { data } = await axiosInstance.get<Record<string, unknown>>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.SUMMARY}`);
         return data;
     },
     getFiveMinute: async (iface: string, hours: number = 24) => {
-        const { data } = await axiosInstance.get<any[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.FIVEMINUTE}`, {
+        const { data } = await axiosInstance.get<BandwidthDataPoint[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.FIVEMINUTE}`, {
             params: { interface: iface, hours }
         });
         return data;
     },
     getHourly: async (iface: string, date: string) => {
-        const { data } = await axiosInstance.get<any[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.HOURLY}`, {
+        const { data } = await axiosInstance.get<BandwidthDataPoint[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.HOURLY}`, {
             params: { interface: iface, date }
         });
         return data;
     },
     getDaily: async (iface: string, days: number = 30) => {
-        const { data } = await axiosInstance.get<any[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.DAILY}`, {
+        const { data } = await axiosInstance.get<BandwidthDataPoint[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.DAILY}`, {
             params: { interface: iface, days }
         });
         return data;
     },
     getMonthly: async (iface: string) => {
-        const { data } = await axiosInstance.get<any[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.MONTHLY}`, {
+        const { data } = await axiosInstance.get<BandwidthDataPoint[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.MONTHLY}`, {
             params: { interface: iface }
         });
         return data;
     },
     getYearly: async (iface: string) => {
-        const { data } = await axiosInstance.get<any[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.YEARLY}`, {
+        const { data } = await axiosInstance.get<BandwidthDataPoint[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.YEARLY}`, {
             params: { interface: iface }
         });
         return data;
     },
     getTop: async (iface: string, limit: number = 10) => {
-        const { data } = await axiosInstance.get<any[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.TOP}`, {
+        const { data } = await axiosInstance.get<BandwidthDataPoint[]>(`${API_CONFIG.ENDPOINTS.BANDWIDTH.TOP}`, {
             params: { interface: iface, limit }
         });
         return data;

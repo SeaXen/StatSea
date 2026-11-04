@@ -1,13 +1,20 @@
 import os
 import sys
 
-# Ensure backend directory is in python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Ensure backend directory and script directory are in python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
+
+from seed_db import seed
+from seed_org import seed_org
 
 from app.db.database import Base, engine
 from app.models import models
-from seed_org import seed_org
-from seed_db import seed
+
 
 def reset_db():
     db_path = "./data/statsea_saas.db"

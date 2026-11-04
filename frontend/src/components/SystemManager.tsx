@@ -43,6 +43,57 @@ const formatDate = (date: string | Date, pattern: 'HH:mm' | 'HH:mm:ss' | 'MMM d,
     return d.toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
+interface SystemHistoryEntry {
+    timestamp: string;
+    cpu_pct: number;
+    ram_used_gb: number;
+    ram_total_gb: number;
+    disk_used_gb: number;
+    disk_total_gb: number;
+}
+
+interface ProcessInfo {
+    pid: number;
+    name: string;
+    cpu_percent: number;
+    memory_info: { rss: number };
+}
+
+interface BackupItem {
+    id: number;
+    filename: string;
+    is_manual?: boolean;
+    size_bytes?: number;
+    created_at?: string;
+}
+
+interface HealthCheckItem {
+    id: number;
+    name: string;
+    url: string;
+    method: string;
+    interval_seconds: number;
+    last_status?: number;
+    last_checked?: string;
+}
+
+interface MetricCardProps {
+    title: string;
+    value: string | number;
+    total?: string;
+    percent?: number;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    subtext?: string;
+}
+
+interface ForecastCardProps {
+    title: string;
+    days?: number | null;
+    trend?: 'worsening' | 'improving' | 'stable';
+    color?: string;
+}
+
 // --- API Helpers (Authenticated via axiosInstance) ---
 const fetchLiveMetrics = async () => {
     const res = await axiosInstance.get('/system/metrics/live');
@@ -91,7 +142,7 @@ const MetricsTab = ({ token: _token }: { token: string }) => {
 
     const chartData = useMemo(() => {
         const safeHistory = Array.isArray(history) ? history : [];
-        return [...safeHistory].reverse().map((h: any) => ({
+        return [...safeHistory].reverse().map((h: SystemHistoryEntry) => ({
             time: formatDate(h.timestamp, 'HH:mm'),
             cpu: h.cpu_pct,
             ram: (h.ram_used_gb / h.ram_total_gb) * 100,
@@ -194,7 +245,7 @@ const MetricsTab = ({ token: _token }: { token: string }) => {
                     Top Processes
                 </h3>
                 <div className="space-y-3">
-                    {live?.top_processes?.map((p: any) => (
+                    {live?.top_processes?.map((p: ProcessInfo) => (
                         <div key={p.pid} className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded bg-blue-500/10 text-blue-400">
@@ -268,7 +319,7 @@ const BackupsTab = ({ token: _token }: { token: string }) => {
             </div>
 
             <div className="space-y-3">
-                {safeBackups.map((b: any) => (
+                {safeBackups.map((b: BackupItem) => (
                     <div key={b.id} className="flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all group shadow-sm">
                         <div className="flex items-center gap-4">
                             <div className="p-3 rounded-lg bg-blue-500/10 text-blue-400">
@@ -282,8 +333,8 @@ const BackupsTab = ({ token: _token }: { token: string }) => {
                                     )}
                                 </div>
                                 <div className="text-xs text-muted-foreground flex items-center gap-3">
-                                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDate(b.created_at, 'MMM d, yyyy HH:mm')}</span>
-                                    <span>{(b.size_bytes / (1024 * 1024)).toFixed(2)} MB</span>
+                                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDate(b.created_at || '', 'MMM d, yyyy HH:mm')}</span>
+                                    <span>{b.size_bytes ? (b.size_bytes / (1024 * 1024)).toFixed(2) : '0.00'} MB</span>
                                 </div>
                             </div>
                         </div>
@@ -328,7 +379,7 @@ const HealthChecksTab = ({ token: _token }: { token: string }) => {
     });
 
     const createMutation = useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: Omit<HealthCheckItem, 'id'>) => {
             const res = await axiosInstance.post('/system/health', data);
             return res.data;
         },
@@ -422,7 +473,7 @@ const HealthChecksTab = ({ token: _token }: { token: string }) => {
             )}
 
             <div className="grid grid-cols-1 gap-3">
-                {safeChecks.map((c: any) => (
+                {safeChecks.map((c: HealthCheckItem) => (
                     <div key={c.id} className="flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all group shadow-sm">
                         <div className="flex items-center gap-4">
                             <div className={`p-3 rounded-lg ${c.last_status === 200 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
@@ -512,7 +563,7 @@ export const SystemManager = () => {
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
+                            onClick={() => setActiveTab(tab.id as 'metrics' | 'backups' | 'health')}
                             className={cn(
                                 "flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] transition-colors",
                                 activeTab === tab.id
@@ -537,7 +588,7 @@ export const SystemManager = () => {
 };
 
 // --- Helpers ---
-const MetricCard = ({ title, value, total, percent, icon: Icon, color, subtext }: any) => (
+const MetricCard: React.FC<MetricCardProps> = ({ title, value, total, percent = 0, icon: Icon, color, subtext }) => (
     <div className="panel p-3 rounded-[7px] border border-line bg-panel flex flex-col justify-between hover:border-line-strong transition-colors">
         <div className="flex justify-between items-start mb-2">
             <div>
@@ -568,7 +619,7 @@ const MetricCard = ({ title, value, total, percent, icon: Icon, color, subtext }
     </div>
 );
 
-const ForecastCard = ({ title, days, trend }: any) => (
+const ForecastCard: React.FC<ForecastCardProps> = ({ title, days, trend }) => (
     <div className="panel p-3 flex items-center justify-between font-mono text-xs">
         <div className="flex items-center gap-3">
             <div className={`p-1.5 rounded-[4px] bg-raised border border-line ${trend === 'worsening' ? 'text-danger' : 'text-ok'}`}>
