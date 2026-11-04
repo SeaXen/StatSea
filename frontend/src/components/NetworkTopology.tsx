@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
+import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
 import { Share2, RefreshCw } from 'lucide-react';
 import axiosInstance from '../config/axiosInstance';
 
@@ -39,7 +39,7 @@ export function NetworkTopology() {
     const [error, setError] = useState<string | null>(null);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
-    const fgRef = useRef<any>();
+    const fgRef = useRef<ForceGraphMethods<Node, Link>>();
     const [hoverNode, setHoverNode] = useState<Node | null>(null);
 
     const fetchTopology = useCallback(async () => {
