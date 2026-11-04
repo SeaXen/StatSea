@@ -115,33 +115,33 @@ export function NetworkTopology() {
     };
 
     return (
-        <div className="glass-card rounded-3xl p-6 border border-border relative h-[500px] flex flex-col overflow-hidden">
+        <div className="panel rounded-[var(--r-panel)] p-5 md:p-6 border border-line bg-panel relative h-[500px] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between mb-4 relative z-10">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                        <Share2 className="w-5 h-5 text-primary" />
+                    <div className="w-9 h-9 rounded-[7px] bg-accent/10 flex items-center justify-center border border-accent/20">
+                        <Share2 className="w-4 h-4 text-accent" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-foreground tracking-tight">Network Map</h2>
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">LIVE TOPOLOGY</p>
+                        <h2 className="text-base font-bold text-text tracking-tight">Network Map</h2>
+                        <p className="text-[10px] font-bold text-faint uppercase tracking-wider">LIVE TOPOLOGY</p>
                     </div>
                 </div>
                 <button
                     onClick={fetchTopology}
                     disabled={loading}
                     aria-label="Refresh network topology"
-                    className="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-all border border-border disabled:opacity-50"
+                    className="p-2 rounded-[7px] bg-raised hover:bg-panel text-faint hover:text-text transition-all border border-line disabled:opacity-50"
                 >
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                 </button>
             </div>
 
-            <div className="flex-1 relative w-full rounded-2xl overflow-hidden bg-black/20" ref={containerRef}>
+            <div className="flex-1 relative w-full rounded-[7px] overflow-hidden bg-raised border border-line" ref={containerRef}>
                 {loading && graphData.nodes.length === 0 ? (
-                    <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40 backdrop-blur-sm">
+                    <div className="absolute inset-0 flex items-center justify-center z-20 bg-panel/85 backdrop-blur-sm">
                         <div className="flex flex-col items-center gap-3">
-                            <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                            <div className="text-xs font-black text-primary uppercase tracking-widest">Scanning Network...</div>
+                            <div className="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+                            <div className="text-xs font-bold text-accent uppercase tracking-wider">Scanning Network...</div>
                         </div>
                     </div>
                 ) : error ? (

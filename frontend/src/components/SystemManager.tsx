@@ -209,9 +209,9 @@ const MetricsTab = ({ token: _token }: { token: string }) => {
             </div>
 
             {/* History Chart */}
-            <div className="p-6 rounded-xl border border-border bg-card shadow-sm">
-                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                    <History className="w-5 h-5 text-blue-400" />
+            <div className="panel p-4 md:p-5 rounded-[var(--r-panel)] border border-line bg-panel">
+                <h3 className="text-xs font-semibold mb-5 flex items-center gap-2 font-mono text-text">
+                    <History className="w-4 h-4 text-accent" />
                     Resource History
                 </h3>
                 <div className="h-80">
@@ -223,12 +223,12 @@ const MetricsTab = ({ token: _token }: { token: string }) => {
                                     <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border" vertical={false} />
-                            <XAxis dataKey="time" stroke="currentColor" className="text-muted-foreground" fontSize={11} />
-                            <YAxis stroke="currentColor" className="text-muted-foreground" fontSize={11} domain={[0, 100]} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
+                            <XAxis dataKey="time" stroke="var(--faint)" fontSize={10} fontStyle="monospace" />
+                            <YAxis stroke="var(--faint)" fontSize={10} domain={[0, 100]} fontStyle="monospace" />
                             <Tooltip
-                                contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }}
-                                itemStyle={{ fontSize: '12px' }}
+                                contentStyle={{ backgroundColor: 'var(--panel)', border: '1px solid var(--line)', borderRadius: '8px', color: 'var(--text)' }}
+                                itemStyle={{ fontSize: '11px', fontFamily: 'monospace' }}
                             />
                             <Area type="monotone" dataKey="cpu" stroke="#60a5fa" fillOpacity={1} fill="url(#colorCpu)" name="CPU %" />
                             <Area type="monotone" dataKey="ram" stroke="#06b6d4" fillOpacity={0} name="RAM %" />
@@ -239,26 +239,26 @@ const MetricsTab = ({ token: _token }: { token: string }) => {
             </div>
 
             {/* Top Processes */}
-            <div className="p-6 rounded-xl border border-border bg-card shadow-sm">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-amber-400" />
+            <div className="panel p-4 md:p-5 rounded-[var(--r-panel)] border border-line bg-panel">
+                <h3 className="text-xs font-semibold mb-4 flex items-center gap-2 font-mono text-text">
+                    <TrendingUp className="w-4 h-4 text-warn" />
                     Top Processes
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                     {live?.top_processes?.map((p: ProcessInfo) => (
-                        <div key={p.pid} className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded bg-blue-500/10 text-blue-400">
-                                    <Activity className="w-4 h-4" />
+                        <div key={p.pid} className="flex items-center justify-between p-2.5 rounded-[7px] bg-raised border border-line hover:border-line-strong transition-colors font-mono">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-1.5 rounded-[4px] bg-accent-soft text-accent">
+                                    <Activity className="w-3.5 h-3.5" />
                                 </div>
                                 <div>
-                                    <div className="text-sm font-medium">{p.name}</div>
-                                    <div className="text-xs text-muted-foreground">PID: {p.pid}</div>
+                                    <div className="text-xs font-medium text-text">{p.name}</div>
+                                    <div className="text-[10px] text-faint">PID: {p.pid}</div>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <div className="text-sm font-semibold">{p.cpu_percent}% CPU</div>
-                                <div className="text-xs text-muted-foreground">{(p.memory_info.rss / (1024 * 1024)).toFixed(1)} MB</div>
+                                <div className="text-xs font-semibold text-text num">{p.cpu_percent}% CPU</div>
+                                <div className="text-[10px] text-faint num">{(p.memory_info.rss / (1024 * 1024)).toFixed(1)} MB</div>
                             </div>
                         </div>
                     ))}
@@ -303,64 +303,64 @@ const BackupsTab = ({ token: _token }: { token: string }) => {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-4">
                 <div>
-                    <h3 className="text-lg font-semibold">Database Backups</h3>
-                    <p className="text-sm text-muted-foreground">Automated daily and manual Snapshots of statsea.db</p>
+                    <h3 className="text-sm font-semibold text-text font-mono">Database Backups</h3>
+                    <p className="text-xs text-faint font-mono">Automated daily and manual Snapshots of statsea.db</p>
                 </div>
                 <button
                     onClick={() => createMutation.mutate()}
                     disabled={createMutation.isPending}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium text-sm disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-[7px] hover:opacity-90 transition-opacity font-mono text-xs font-medium disabled:opacity-50"
                 >
-                    {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    {createMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                     Create Manual Backup
                 </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
                 {safeBackups.map((b: BackupItem) => (
-                    <div key={b.id} className="flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all group shadow-sm">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-lg bg-blue-500/10 text-blue-400">
-                                <Database className="w-5 h-5" />
+                    <div key={b.id} className="panel flex items-center justify-between p-3.5 rounded-[var(--r-panel)] bg-panel border border-line hover:border-line-strong transition-colors group">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-accent-soft text-accent">
+                                <Database className="w-4 h-4" />
                             </div>
                             <div>
-                                <div className="font-medium flex items-center gap-2">
+                                <div className="text-xs font-medium font-mono text-text flex items-center gap-2">
                                     {b.filename}
                                     {b.is_manual && (
-                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 uppercase">Manual</span>
+                                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-accent-soft text-accent border border-accent/20 uppercase font-mono">Manual</span>
                                     )}
                                 </div>
-                                <div className="text-xs text-muted-foreground flex items-center gap-3">
+                                <div className="text-[10px] text-faint font-mono flex items-center gap-3 mt-0.5">
                                     <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDate(b.created_at || '', 'MMM d, yyyy HH:mm')}</span>
-                                    <span>{b.size_bytes ? (b.size_bytes / (1024 * 1024)).toFixed(2) : '0.00'} MB</span>
+                                    <span className="num">{b.size_bytes ? (b.size_bytes / (1024 * 1024)).toFixed(2) : '0.00'} MB</span>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:translate-x-0 group-focus-within:opacity-100 transition-all">
+                        <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                             <button
-                                className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+                                className="p-1.5 hover:bg-raised rounded-[7px] text-faint hover:text-text border border-transparent hover:border-line transition-colors"
                                 aria-label="Download backup"
                                 title="Download backup"
                             >
-                                <Download className="w-4 h-4" />
+                                <Download className="w-3.5 h-3.5" />
                             </button>
                             <button
                                 onClick={() => deleteMutation.mutate(b.id)}
-                                className="p-2 hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive transition-colors focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:outline-none"
+                                className="p-1.5 hover:bg-danger/10 rounded-[7px] text-faint hover:text-danger border border-transparent hover:border-danger/20 transition-colors"
                                 aria-label="Delete backup"
                                 title="Delete backup"
                             >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                             </button>
                         </div>
                     </div>
                 ))}
                 {backups?.length === 0 && (
-                    <div className="text-center p-12 border border-dashed border-border rounded-xl">
-                        <Database className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
-                        <p className="text-muted-foreground">No backups found.</p>
+                    <div className="panel text-center p-8 border border-line rounded-[var(--r-panel)] bg-panel">
+                        <Database className="w-6 h-6 text-faint mx-auto mb-2 opacity-50" />
+                        <p className="text-xs font-mono text-faint">No backups found.</p>
                     </div>
                 )}
             </div>
@@ -412,22 +412,22 @@ const HealthChecksTab = ({ token: _token }: { token: string }) => {
         }
     });
 
-    if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-500" /></div>;
+    if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-accent" /></div>;
 
     const safeChecks = Array.isArray(checks) ? checks : [];
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-4">
                 <div>
-                    <h3 className="text-lg font-semibold">Service Monitoring</h3>
-                    <p className="text-sm text-muted-foreground">Monitor uptime and response times for arbitrary URLs</p>
+                    <h3 className="text-sm font-semibold text-text font-mono">Service Monitoring</h3>
+                    <p className="text-xs text-faint font-mono">Monitor uptime and response times for arbitrary URLs</p>
                 </div>
                 <button
                     onClick={() => setShowAdd(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium text-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-[7px] hover:opacity-90 transition-opacity font-mono text-xs font-medium"
                 >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-3.5 h-3.5" />
                     Add Monitor
                 </button>
             </div>
@@ -436,35 +436,35 @@ const HealthChecksTab = ({ token: _token }: { token: string }) => {
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="glass-card p-6 rounded-xl border border-blue-500/30 bg-blue-500/5 mb-6"
+                    className="panel p-4 rounded-[var(--r-panel)] border border-line bg-panel mb-4"
                 >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                         <div>
-                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1.5 block">Name</label>
+                            <label className="text-[10px] font-semibold text-faint uppercase font-mono mb-1 block">Name</label>
                             <input
                                 type="text"
                                 placeholder="Google DNS"
-                                className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full bg-raised border border-line text-text rounded-[7px] px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-accent"
                                 value={newCheck.name}
                                 onChange={e => setNewCheck({ ...newCheck, name: e.target.value })}
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-semibold text-muted-foreground uppercase mb-1.5 block">URL</label>
+                            <label className="text-[10px] font-semibold text-faint uppercase font-mono mb-1 block">URL</label>
                             <input
                                 type="text"
                                 placeholder="https://..."
-                                className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full bg-raised border border-line text-text rounded-[7px] px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-accent"
                                 value={newCheck.url}
                                 onChange={e => setNewCheck({ ...newCheck, url: e.target.value })}
                             />
                         </div>
                     </div>
-                    <div className="flex justify-end gap-3">
-                        <button onClick={() => setShowAdd(false)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Cancel</button>
+                    <div className="flex justify-end gap-2">
+                        <button onClick={() => setShowAdd(false)} className="px-3 py-1.5 text-xs font-mono text-faint hover:text-text">Cancel</button>
                         <button
                             onClick={() => createMutation.mutate(newCheck)}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium"
+                            className="px-3 py-1.5 bg-accent text-accent-foreground rounded-[7px] hover:opacity-90 text-xs font-mono font-medium"
                         >
                             Save Monitor
                         </button>
@@ -472,49 +472,49 @@ const HealthChecksTab = ({ token: _token }: { token: string }) => {
                 </motion.div>
             )}
 
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-2.5">
                 {safeChecks.map((c: HealthCheckItem) => (
-                    <div key={c.id} className="flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all group shadow-sm">
-                        <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-lg ${c.last_status === 200 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                                <Globe className="w-5 h-5" />
+                    <div key={c.id} className="panel flex items-center justify-between p-3.5 rounded-[var(--r-panel)] bg-panel border border-line hover:border-line-strong transition-colors group">
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg ${c.last_status === 200 ? 'bg-ok/10 text-ok' : 'bg-danger/10 text-danger'}`}>
+                                <Globe className="w-4 h-4" />
                             </div>
                             <div>
-                                <div className="font-medium flex items-center gap-2 text-foreground">
+                                <div className="font-medium flex items-center gap-2 text-text text-xs font-mono">
                                     {c.name}
-                                    <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-secondary border border-border">{c.method}</span>
+                                    <span className="text-[9px] text-faint px-1.5 py-0.2 rounded bg-raised border border-line">{c.method}</span>
                                 </div>
-                                <div className="text-xs text-muted-foreground truncate max-w-[200px]">{c.url}</div>
+                                <div className="text-[10px] text-faint truncate max-w-[200px] font-mono mt-0.5">{c.url}</div>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-8">
+                        <div className="flex items-center gap-6">
                             <div className="hidden md:block">
-                                <div className="text-xs text-muted-foreground uppercase font-semibold mb-0.5">Response</div>
-                                <div className="text-sm font-medium flex items-center gap-1.5 text-foreground">
-                                    {c.last_status === 200 ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
+                                <div className="text-[10px] text-faint uppercase font-semibold font-mono mb-0.5">Response</div>
+                                <div className="text-xs font-medium flex items-center gap-1 text-text font-mono num">
+                                    {c.last_status === 200 ? <CheckCircle2 className="w-3.5 h-3.5 text-ok" /> : <AlertCircle className="w-3.5 h-3.5 text-danger" />}
                                     {c.last_status || '--'}
                                 </div>
                             </div>
                             <div className="hidden md:block">
-                                <div className="text-xs text-muted-foreground uppercase font-semibold mb-0.5">Last Checked</div>
-                                <div className="text-sm font-medium text-muted-foreground">
+                                <div className="text-[10px] text-faint uppercase font-semibold font-mono mb-0.5">Last Checked</div>
+                                <div className="text-xs font-medium text-faint font-mono">
                                     {c.last_checked ? formatDate(c.last_checked, 'HH:mm:ss') : 'Never'}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all">
+                            <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => triggerMutation.mutate(c.id)}
-                                    className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground"
+                                    className="p-1.5 hover:bg-raised rounded-[7px] text-faint hover:text-text border border-transparent hover:border-line transition-colors"
                                     title="Check Now"
                                 >
-                                    <Play className="w-4 h-4" />
+                                    <Play className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                     onClick={() => deleteMutation.mutate(c.id)}
-                                    className="p-2 hover:bg-red-500/10 rounded-lg text-muted-foreground hover:text-red-400"
+                                    className="p-1.5 hover:bg-danger/10 rounded-[7px] text-faint hover:text-danger border border-transparent hover:border-danger/20 transition-colors"
                                 >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                             </div>
                         </div>

@@ -95,12 +95,12 @@ export default function ReportSettings() {
                 {reportTypes.map((report) => (
                     <PremiumCard key={report.id} className="p-6">
                         <div className="flex items-start gap-4">
-                            <div className={`w-12 h-12 rounded-xl ${report.bgColor} flex items-center justify-center border border-white/5`}>
-                                <report.icon className={`w-6 h-6 ${report.color}`} />
+                            <div className={`w-10 h-10 rounded-[7px] ${report.bgColor} flex items-center justify-center border border-line`}>
+                                <report.icon className={`w-5 h-5 ${report.color}`} />
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-lg font-bold text-white mb-1">{report.title}</h3>
-                                <p className="text-sm text-muted-foreground mb-6">{report.description}</p>
+                                <h3 className="text-base font-bold text-text mb-1">{report.title}</h3>
+                                <p className="text-xs text-faint mb-5">{report.description}</p>
 
                                 <div className="flex flex-wrap gap-2">
                                     {report.formats.map((format) => (
@@ -108,12 +108,12 @@ export default function ReportSettings() {
                                             key={format}
                                             onClick={() => handleDownload(report.id, format as 'pdf' | 'csv' | 'json')}
                                             disabled={isGenerating !== null}
-                                            className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-white/70 hover:text-white transition-all border border-white/5 flex items-center gap-2"
+                                            className="px-3 py-1.5 bg-raised hover:bg-panel rounded-[5px] text-xs font-bold text-faint hover:text-text transition-all border border-line flex items-center gap-1.5 uppercase tracking-wider disabled:opacity-50"
                                         >
                                             {isGenerating === report.id ? (
-                                                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                <div className="w-3 h-3 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
                                             ) : (
-                                                <Download className="w-3 h-3" />
+                                                <Download className="w-3 h-3 text-accent" />
                                             )}
                                             {format.toUpperCase()}
                                         </button>
@@ -125,27 +125,27 @@ export default function ReportSettings() {
                 ))}
             </div>
 
-            <PremiumCard className="p-8 border-primary/20 bg-primary/5">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                            <Mail className="w-8 h-8 text-primary" />
+            <PremiumCard className="p-6 border-line bg-raised">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-[7px] bg-accent/10 flex items-center justify-center border border-accent/20">
+                            <Mail className="w-6 h-6 text-accent" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-foreground mb-1">Scheduled Email Reports</h3>
-                            <p className="text-sm text-muted-foreground">Receive automated security and network summaries directly in your inbox.</p>
+                            <h3 className="text-base font-bold text-text mb-1">Scheduled Email Reports</h3>
+                            <p className="text-xs text-faint">Receive automated security and network summaries directly in your inbox.</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex bg-secondary/50 p-1 rounded-xl border border-border">
+                        <div className="flex bg-panel p-1 rounded-[7px] border border-line">
                             {(['daily', 'weekly', 'monthly'] as const).map((freq) => (
                                 <button
                                     key={freq}
                                     onClick={() => setReportFrequency(freq)}
-                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${reportFrequency === freq
-                                        ? 'bg-primary text-primary-foreground shadow-sm'
-                                        : 'text-muted-foreground hover:text-foreground'
+                                    className={`px-3 py-1.5 rounded-[5px] text-xs font-bold transition-all uppercase tracking-wider ${reportFrequency === freq
+                                        ? 'bg-accent text-black shadow-sm'
+                                        : 'text-faint hover:text-text'
                                         }`}
                                 >
                                     {freq.toUpperCase()}
@@ -161,10 +161,10 @@ export default function ReportSettings() {
                                 });
                             }}
                             aria-label="Toggle scheduled email reports"
-                            className={`w-14 h-8 rounded-full relative transition-all duration-300 ${emailReports ? 'bg-primary' : 'bg-secondary border border-border'
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${emailReports ? 'bg-accent' : 'bg-raised border border-line'
                                 }`}
                         >
-                            <div className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all duration-300 ${emailReports ? 'left-7 shadow-lg' : 'left-1'
+                            <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-300 ${emailReports ? 'left-6 shadow-md' : 'left-0.5'
                                 }`} />
                         </button>
                     </div>

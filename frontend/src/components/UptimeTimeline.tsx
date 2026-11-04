@@ -144,20 +144,20 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-foreground/90">Uptime Timeline</h3>
-                    <div className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-xs font-mono">
+                    <h3 className="text-sm font-semibold text-text">Uptime Timeline</h3>
+                    <div className="px-2 py-0.5 rounded-[5px] bg-accent/10 text-accent text-xs font-mono font-bold">
                         {stats.uptimePercent.toFixed(2)}%
                     </div>
                 </div>
 
-                <div className="flex bg-white/5 rounded-lg p-0.5">
+                <div className="flex bg-raised rounded-[7px] p-0.5 border border-line">
                     {(['24h', '7d', '30d'] as TimeRange[]).map((r) => (
                         <button
                             key={r}
                             onClick={() => setRange(r)}
-                            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${range === r
-                                ? 'bg-blue-500/20 text-blue-400 shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground/80'
+                            className={`px-2.5 py-1 text-xs font-bold rounded-[5px] transition-all uppercase tracking-wider ${range === r
+                                ? 'bg-panel text-accent shadow-sm'
+                                : 'text-faint hover:text-text'
                                 }`}
                         >
                             {r}
@@ -165,7 +165,7 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
                     ))}
                     <button
                         onClick={() => fetchLogs()}
-                        className="ml-1 px-2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="ml-1 px-2 text-faint hover:text-text transition-colors"
                         disabled={loading}
                     >
                         <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
@@ -174,7 +174,7 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
             </div>
 
             {/* Timeline Visualization */}
-            <div className="relative h-8 bg-white/5 rounded-lg overflow-hidden flex w-full">
+            <div className="relative h-7 bg-raised rounded-[5px] overflow-hidden flex w-full border border-line">
                 {segments.map((seg, i) => {
                     const totalDuration = segments.reduce((acc, s) => acc + (s.end - s.start), 0);
                     const widthPercent = ((seg.end - seg.start) / totalDuration) * 100;
@@ -185,13 +185,13 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
                     return (
                         <div
                             key={i}
-                            className={`h-full border-r border-black/10 last:border-0 hover:brightness-110 transition-all cursor-help relative group ${seg.status === 'online' ? 'bg-emerald-500/80' : 'bg-red-500/80'
+                            className={`h-full border-r border-line/40 last:border-0 hover:brightness-110 transition-all cursor-help relative group ${seg.status === 'online' ? 'bg-emerald-500/80' : 'bg-red-500/80'
                                 }`}
                             style={{ width: `${widthPercent}%` }}
                         >
                             {/* Tooltip */}
                             <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-20 min-w-[150px]">
-                                <div className="bg-card border border-white/10 rounded-lg p-2 shadow-xl text-xs">
+                                <div className="bg-panel border border-line rounded-[7px] p-2.5 shadow-xl text-xs text-text font-mono">
                                     <div className={`font-bold mb-1 ${seg.status === 'online' ? 'text-green-400' : 'text-red-400'}`}>
                                         {seg.status === 'online' ? 'Online' : 'Offline'}
                                     </div>

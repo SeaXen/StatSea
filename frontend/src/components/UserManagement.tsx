@@ -13,7 +13,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from '../hooks/useUsers';
-import { PremiumCard } from './ui/PremiumCard';
 import { CustomSelect } from './ui/CustomSelect';
 import { cn } from '../lib/utils';
 
@@ -322,19 +321,17 @@ export const UserManagement: React.FC = () => {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="relative w-full max-w-lg"
                         >
-                            <PremiumCard className="p-0 border-border bg-card shadow-2xl overflow-hidden">
-                                <div className="p-8 border-b border-border flex justify-between items-center relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[60px] rounded-full -mr-16 -mt-16" />
-
-                                    <div className="flex items-center gap-4 relative z-10">
-                                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                            {modalMode === 'add' ? <UserPlus className="w-6 h-6 text-primary" /> : <Edit2 className="w-6 h-6 text-primary" />}
+                            <div className="panel p-0 border border-line bg-panel shadow-2xl overflow-hidden rounded-[var(--r-panel)]">
+                                <div className="p-5 border-b border-line bg-raised flex justify-between items-center relative overflow-hidden">
+                                    <div className="flex items-center gap-3 relative z-10">
+                                        <div className="w-9 h-9 rounded-[7px] bg-accent/10 flex items-center justify-center border border-accent/20">
+                                            {modalMode === 'add' ? <UserPlus className="w-4 h-4 text-accent" /> : <Edit2 className="w-4 h-4 text-accent" />}
                                         </div>
                                         <div>
-                                            <h2 className="text-xl font-black text-foreground tracking-tight uppercase">
+                                            <h2 className="text-base font-bold text-text tracking-tight uppercase">
                                                 {modalMode === 'add' ? 'Provision Identity' : 'Update Credentials'}
                                             </h2>
-                                            <p className="text-muted-foreground text-[10px] font-black uppercase tracking-widest mt-0.5">
+                                            <p className="text-faint text-[10px] font-mono uppercase tracking-wider mt-0.5">
                                                 {modalMode === 'add' ? 'System Operator Enrollment' : `Modifying Token: ${selectedUser?.username}`}
                                             </p>
                                         </div>
@@ -342,33 +339,33 @@ export const UserManagement: React.FC = () => {
                                     <button
                                         onClick={() => setIsModalOpen(false)}
                                         aria-label="Close dialog"
-                                        className="relative z-10 p-2 rounded-xl bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-all"
+                                        className="relative z-10 p-1.5 rounded-[5px] hover:bg-panel text-faint hover:text-text transition-all border border-transparent hover:border-line"
                                     >
-                                        <XCircle className="w-5 h-5" />
+                                        <XCircle className="w-4 h-4" />
                                     </button>
                                 </div>
 
-                                <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Username</label>
+                                <form onSubmit={handleSubmit} className="p-5 space-y-4">
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-bold text-faint uppercase tracking-wider">Username</label>
                                                 <input
                                                     type="text"
                                                     disabled={modalMode === 'edit'}
                                                     required
-                                                    className="w-full bg-secondary/40 border border-border rounded-2xl px-5 py-3.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-bold tracking-tight disabled:opacity-30 placeholder:text-muted-foreground/40"
+                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-line-strong transition-all font-mono disabled:opacity-40 placeholder:text-faint"
                                                     value={formData.username}
                                                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                                     placeholder="Operator handle..."
                                                 />
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Full Name</label>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-bold text-faint uppercase tracking-wider">Full Name</label>
                                                 <input
                                                     type="text"
                                                     required
-                                                    className="w-full bg-secondary/40 border border-border rounded-2xl px-5 py-3.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-bold tracking-tight placeholder:text-muted-foreground/40"
+                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-line-strong transition-all font-mono placeholder:text-faint"
                                                     value={formData.full_name}
                                                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                                                     placeholder="Real-world name..."
@@ -376,94 +373,94 @@ export const UserManagement: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Email Identifier</label>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-faint uppercase tracking-wider">Email Identifier</label>
                                             <input
                                                 type="email"
                                                 required
-                                                className="w-full bg-secondary/40 border border-border rounded-2xl px-5 py-3.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-bold tracking-tight placeholder:text-muted-foreground/40"
+                                                className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-line-strong transition-all font-mono placeholder:text-faint"
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                 placeholder="address@domain.com"
                                             />
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-faint uppercase tracking-wider">
                                                 {modalMode === 'add' ? 'Access Cipher' : 'New Cipher (leave blank to retain)'}
                                             </label>
                                             <input
                                                 type="password"
                                                 required={modalMode === 'add'}
-                                                className="w-full bg-secondary/40 border border-border rounded-2xl px-5 py-3.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all font-mono placeholder:text-muted-foreground/40"
+                                                className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-line-strong transition-all font-mono placeholder:text-faint"
                                                 value={formData.password}
                                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                                 placeholder="••••••••••••"
                                             />
                                         </div>
 
-                                        <div className="flex flex-col gap-3 py-2">
-                                            <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/30 border border-border">
-                                                <div className="flex items-center gap-3">
-                                                    <Shield className={cn("w-5 h-5", formData.is_admin ? "text-amber-500" : "text-muted-foreground/40")} />
-                                                    <span className="text-xs font-black uppercase tracking-widest text-foreground/80">Privileged Access</span>
+                                        <div className="flex flex-col gap-2 pt-1">
+                                            <div className="flex items-center justify-between p-3 rounded-[7px] bg-raised border border-line">
+                                                <div className="flex items-center gap-2.5">
+                                                    <Shield className={cn("w-4 h-4", formData.is_admin ? "text-amber-400" : "text-faint")} />
+                                                    <span className="text-xs font-bold uppercase tracking-wider text-text">Privileged Access</span>
                                                 </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => setFormData({ ...formData, is_admin: !formData.is_admin })}
                                                     aria-label="Toggle privileged admin access"
                                                     className={cn(
-                                                        "w-10 h-5 rounded-full relative transition-all border border-border",
-                                                        formData.is_admin ? "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.2)]" : "bg-secondary"
+                                                        "w-10 h-5 rounded-full relative transition-all border border-line",
+                                                        formData.is_admin ? "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.2)]" : "bg-panel"
                                                     )}
                                                 >
                                                     <motion.div
                                                         animate={{ x: formData.is_admin ? 22 : 2 }}
-                                                        className="absolute top-1 w-3 h-3 rounded-full bg-white shadow-lg"
+                                                        className="absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-sm"
                                                     />
                                                 </button>
                                             </div>
 
-                                            <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/30 border border-border">
-                                                <div className="flex items-center gap-3">
-                                                    <CheckCircle2 className={cn("w-5 h-5", formData.is_active ? "text-emerald-500" : "text-muted-foreground/40")} />
-                                                    <span className="text-xs font-black uppercase tracking-widest text-foreground/80">Authorized Status</span>
+                                            <div className="flex items-center justify-between p-3 rounded-[7px] bg-raised border border-line">
+                                                <div className="flex items-center gap-2.5">
+                                                    <CheckCircle2 className={cn("w-4 h-4", formData.is_active ? "text-emerald-400" : "text-faint")} />
+                                                    <span className="text-xs font-bold uppercase tracking-wider text-text">Authorized Status</span>
                                                 </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
                                                     aria-label="Toggle user active status"
                                                     className={cn(
-                                                        "w-10 h-5 rounded-full relative transition-all border border-border",
+                                                        "w-10 h-5 rounded-full relative transition-all border border-line",
                                                         formData.is_active ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]" : "bg-rose-500 shadow-[0_0_10px_rgba(225,29,72,0.2)]"
                                                     )}
                                                 >
                                                     <motion.div
                                                         animate={{ x: formData.is_active ? 22 : 2 }}
-                                                        className="absolute top-1 w-3 h-3 rounded-full bg-white shadow-lg"
+                                                        className="absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-sm"
                                                     />
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex gap-4 pt-4">
+                                    <div className="flex gap-3 pt-3">
                                         <button
                                             type="button"
                                             onClick={() => setIsModalOpen(false)}
-                                            className="flex-1 px-6 py-4 bg-secondary hover:bg-secondary/80 text-foreground text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all"
+                                            className="flex-1 px-4 py-2 bg-raised hover:bg-panel text-faint hover:text-text text-xs font-bold uppercase tracking-wider rounded-[5px] border border-line transition-all"
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             type="submit"
-                                            className="flex-2 px-10 py-4 bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-md active:scale-[0.98]"
+                                            className="flex-1 px-4 py-2 bg-accent hover:opacity-90 text-black text-xs font-bold uppercase tracking-wider rounded-[5px] transition-all shadow-md"
                                         >
                                             {modalMode === 'add' ? 'Confirm Enrollment' : 'Sync Records'}
                                         </button>
                                     </div>
                                 </form>
-                            </PremiumCard>
+                            </div>
                         </motion.div>
                     </div>
                 )}

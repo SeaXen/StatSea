@@ -369,21 +369,24 @@ export default function Settings() {
                                         <h3 className="text-xs font-mono uppercase tracking-wider text-text font-semibold mb-3 px-1">Accent Color</h3>
                                         <div className="panel p-4 rounded-[7px]">
                                             <div className="flex flex-wrap gap-3">
-                                                {accentColors.map((color) => (
-                                                    <button
-                                                        key={color.name}
-                                                        onClick={() => updateTheme({ accent: color.value })}
-                                                        className={`w-9 h-9 rounded-full relative transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 ring-offset-background ${themeConfig.accent === color.value ? 'ring-2 ring-text scale-105' : ''}`}
-                                                        style={{ backgroundColor: color.hex }}
-                                                        title={color.name}
-                                                    >
-                                                        {themeConfig.accent === color.value && (
-                                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                                <Check className="w-4 h-4 text-white drop-shadow-md" />
-                                                            </div>
-                                                        )}
-                                                    </button>
-                                                ))}
+                                                {accentColors.map((color) => {
+                                                    const isSelected = themeConfig.accent === color.value || themeConfig.accent === color.hex;
+                                                    return (
+                                                        <button
+                                                            key={color.name}
+                                                            onClick={() => updateTheme({ accent: color.hex })}
+                                                            className={`w-9 h-9 rounded-full relative transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 ring-offset-background ${isSelected ? 'ring-2 ring-text scale-105' : ''}`}
+                                                            style={{ backgroundColor: color.hex }}
+                                                            title={color.name}
+                                                        >
+                                                            {isSelected && (
+                                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                                    <Check className="w-4 h-4 text-white drop-shadow-md" />
+                                                                </div>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                             <div className="mt-4 pt-3 border-t border-line flex items-center gap-3">
                                                 <div className="w-full h-1.5 rounded-full bg-raised overflow-hidden">
@@ -476,39 +479,39 @@ export default function Settings() {
 
                             {/* Backup Section */}
                             {activeSection === 'backup' && (
-                                <div className="p-8 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400">
-                                            <Download className="w-8 h-8" />
+                                <div className="panel p-5 md:p-6 rounded-[var(--r-panel)] border border-line bg-panel">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-2.5 rounded-lg bg-ok/10 text-ok">
+                                            <Download className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h2 className="text-2xl font-semibold">Data Management</h2>
-                                            <p className="text-muted-foreground">Export your system data for backup or analysis</p>
+                                            <h2 className="text-base font-semibold text-text font-mono">Data Management</h2>
+                                            <p className="text-xs text-faint font-mono">Export your system data for backup or analysis</p>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-6">
-                                        <div className="p-6 rounded-2xl bg-card/20 border border-border/20">
+                                    <div className="space-y-4">
+                                        <div className="p-4 rounded-[var(--r-panel)] bg-raised border border-line">
                                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                                 <div>
-                                                    <h3 className="text-lg font-medium mb-1">Export Database</h3>
-                                                    <p className="text-sm text-muted-foreground max-w-md">
+                                                    <h3 className="text-xs font-semibold text-text font-mono mb-1">Export Database</h3>
+                                                    <p className="text-xs text-faint font-mono max-w-md">
                                                         Download a complete JSON backup of all devices, traffic logs, speedtest results, and system configuration.
                                                     </p>
                                                 </div>
                                                 <button
                                                     onClick={handleExport}
                                                     disabled={isExporting}
-                                                    className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:pointer-events-none"
+                                                    className="flex items-center gap-1.5 bg-accent text-accent-foreground px-4 py-2 rounded-[7px] hover:opacity-90 transition-opacity font-mono text-xs font-medium shadow-sm disabled:opacity-50 disabled:pointer-events-none"
                                                 >
                                                     {isExporting ? (
                                                         <>
-                                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
                                                             Exporting...
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <Download className="w-5 h-5" />
+                                                            <Download className="w-4 h-4" />
                                                             Export Data
                                                         </>
                                                     )}
@@ -516,9 +519,9 @@ export default function Settings() {
                                             </div>
                                         </div>
 
-                                        <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex gap-3">
-                                            <Database className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                                            <p className="text-sm text-yellow-200/80">
+                                        <div className="p-3 rounded-[7px] bg-warn/10 border border-warn/20 flex gap-2.5 font-mono text-xs text-warn">
+                                            <Database className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                            <p className="text-[11px]">
                                                 Note: Importing data is not yet supported in this version. Keep your backups safe.
                                             </p>
                                         </div>
@@ -534,79 +537,77 @@ export default function Settings() {
                             {/* Developer Section */}
                             {activeSection === 'developer' && (
                                 <div className="space-y-6">
-                                    <div className="p-8 rounded-3xl border border-red-500/20 bg-red-900/5 backdrop-blur-xl relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-32 bg-red-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-
-                                        <div className="flex items-center gap-4 mb-8">
-                                            <div className="p-3 rounded-2xl bg-red-500/10 text-red-400">
-                                                <Terminal className="w-8 h-8" />
+                                    <div className="panel p-5 md:p-6 rounded-[var(--r-panel)] border border-line bg-panel relative overflow-hidden">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="p-2.5 rounded-lg bg-danger/10 text-danger">
+                                                <Terminal className="w-6 h-6" />
                                             </div>
                                             <div>
-                                                <h2 className="text-2xl font-semibold">System Internals</h2>
-                                                <p className="text-muted-foreground">Advanced controls for debugging and development</p>
+                                                <h2 className="text-base font-semibold text-text font-mono">System Internals</h2>
+                                                <p className="text-xs text-faint font-mono">Advanced controls for debugging and development</p>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="p-4 rounded-[var(--r-panel)] bg-raised border border-line space-y-3 font-mono">
                                                 <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <Database className="w-5 h-5 text-yellow-400" />
-                                                        <span className="font-medium">Local Storage</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <Database className="w-4 h-4 text-warn" />
+                                                        <span className="font-medium text-xs text-text">Local Storage</span>
                                                     </div>
                                                     <button
                                                         onClick={clearLocalStorage}
-                                                        className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                        className="p-1.5 text-danger hover:bg-danger/10 rounded-[6px] transition-colors"
                                                     >
-                                                        <Trash2 className="w-5 h-5" />
+                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
-                                                <div className="mb-2">
-                                                    <p className="text-xs text-muted-foreground mb-1">
+                                                <div>
+                                                    <p className="text-[10px] text-faint mb-1">
                                                         Current Theme Config:
                                                     </p>
-                                                    <pre className="text-[10px] bg-black/50 p-2 rounded border border-white/5 overflow-x-auto text-green-400/80">
+                                                    <pre className="text-[10px] bg-panel p-2 rounded border border-line overflow-x-auto text-ok">
                                                         {JSON.stringify(themeConfig, null, 2)}
                                                     </pre>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-[10px] text-faint">
                                                     Clear all client-side persistence including themes, auth tokens, and cached states.
                                                 </p>
                                             </div>
 
-                                            <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-4">
+                                            <div className="p-4 rounded-[var(--r-panel)] bg-raised border border-line space-y-3 font-mono">
                                                 <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <ShieldCheck className="w-5 h-5 text-green-400" />
-                                                        <span className="font-medium">Environment</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <ShieldCheck className="w-4 h-4 text-ok" />
+                                                        <span className="font-medium text-xs text-text">Environment</span>
                                                     </div>
-                                                    <span className="text-xs font-mono bg-white/10 px-2 py-1 rounded">PROD</span>
+                                                    <span className="text-[10px] font-mono bg-accent-soft text-accent px-2 py-0.5 rounded-[5px]">PROD</span>
                                                 </div>
-                                                <div className="space-y-2 text-xs font-mono text-muted-foreground">
+                                                <div className="space-y-1.5 text-xs text-faint">
                                                     <div className="flex justify-between">
                                                         <span>API Base:</span>
-                                                        <span className="text-foreground">{API_CONFIG.BASE_URL}</span>
+                                                        <span className="text-text">{API_CONFIG.BASE_URL}</span>
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span>WS Endpoint:</span>
-                                                        <span className="text-foreground">{API_CONFIG.WS_URL}</span>
+                                                        <span className="text-text">{API_CONFIG.WS_URL}</span>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="p-6 rounded-2xl bg-black/40 border border-white/10 col-span-1 md:col-span-2">
-                                                <div className="flex items-center gap-3 mb-4">
-                                                    <Cpu className="w-5 h-5 text-blue-400" />
-                                                    <span className="font-medium">Client Info</span>
+                                            <div className="p-4 rounded-[var(--r-panel)] bg-raised border border-line col-span-1 md:col-span-2 font-mono">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <Cpu className="w-4 h-4 text-accent" />
+                                                    <span className="font-medium text-xs text-text">Client Info</span>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-                                                    <div className="p-3 rounded-lg bg-white/5">
-                                                        <span className="text-muted-foreground block mb-1">User Agent</span>
-                                                        <span className="text-foreground break-all">{navigator.userAgent}</span>
+                                                <div className="grid grid-cols-2 gap-3 text-xs">
+                                                    <div className="p-2.5 rounded-[6px] bg-panel border border-line">
+                                                        <span className="text-faint text-[10px] block mb-0.5">User Agent</span>
+                                                        <span className="text-text text-[11px] break-all">{navigator.userAgent}</span>
                                                     </div>
-                                                    <div className="p-3 rounded-lg bg-white/5">
-                                                        <span className="text-muted-foreground block mb-1">Resolution</span>
-                                                        <span className="text-foreground">{window.innerWidth}x{window.innerHeight}</span>
+                                                    <div className="p-2.5 rounded-[6px] bg-panel border border-line">
+                                                        <span className="text-faint text-[10px] block mb-0.5">Resolution</span>
+                                                        <span className="text-text text-[11px]">{window.innerWidth}x{window.innerHeight}</span>
                                                     </div>
                                                 </div>
                                             </div>

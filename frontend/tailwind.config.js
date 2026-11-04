@@ -41,8 +41,8 @@ export default {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground, #000)",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -58,6 +58,10 @@ export default {
         line: "var(--line)",
         lineSoft: "var(--line-soft)",
         lineStrong: "var(--line-strong)",
+        text: {
+          DEFAULT: "var(--text)",
+          soft: "var(--text-soft)",
+        },
         textSoft: "var(--text-soft)",
         faint: "var(--faint)",
         ok: "var(--ok)",

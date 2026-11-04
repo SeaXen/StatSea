@@ -32,34 +32,44 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             root.classList.add('dark');
         }
 
-        // Step 1: Apply ALL base theme variables (including --accent and --accent-foreground)
+        // Step 1: Apply ALL base theme variables (including --accent, --bg, --panel, etc.)
         Object.entries(base.colors).forEach(([key, value]) => {
             root.style.setProperty(key, value);
         });
 
-        // Step 2: Apply accent color overrides on top of the base
-        root.style.setProperty('--primary', config.accent);
-        root.style.setProperty('--ring', config.accent);
-        root.style.setProperty('--accent', config.accent);
+        // Step 2: Apply custom accent color overrides only if user explicitly picked a custom accent
+        if (config.accent && config.accent !== base.colors['--accent'] && config.accent !== base.colors['--primary']) {
+            const customAccent = accentColors.find(a => a.value === config.accent || a.hex === config.accent);
+            if (customAccent) {
+                root.style.setProperty('--primary', customAccent.value);
+                root.style.setProperty('--ring', customAccent.value);
+                root.style.setProperty('--accent', customAccent.hex);
+                root.style.setProperty('--accent-soft', `${customAccent.hex}1f`);
+            } else if (config.accent.startsWith('#')) {
+                root.style.setProperty('--accent', config.accent);
+                root.style.setProperty('--accent-soft', `${config.accent}1f`);
+            } else if (config.accent.includes('%')) {
+                root.style.setProperty('--primary', config.accent);
+                root.style.setProperty('--ring', config.accent);
+                root.style.setProperty('--accent', `hsl(${config.accent})`);
+            }
+        }
 
         // Ensure foreground colors contrast properly with the accent
-        // For dark themes, accent foregrounds should be light; for light themes, dark
         const contrastForeground = base.type === 'light'
             ? base.colors['--primary-foreground'] || '210 40% 98%'
             : base.colors['--primary-foreground'] || '222.2 47.4% 11.2%';
         root.style.setProperty('--primary-foreground', contrastForeground);
         root.style.setProperty('--accent-foreground', base.colors['--accent-foreground'] || contrastForeground);
 
-        // Special handling for radius if Cyberpunk
-        if (config.mode === 'cyberpunk') {
-            root.style.setProperty('--radius', '0px');
-        } else {
-            root.style.setProperty('--radius', '0.75rem');
+        // Radius handling
+        if (base.colors['--radius']) {
+            root.style.setProperty('--radius', base.colors['--radius']);
         }
     };
 
     const setDefaultTheme = () => {
-        const def = { mode: 'dark' as ThemeMode, accent: accentColors[0].value };
+        const def = { mode: 'dark' as ThemeMode, accent: presets.dark.colors['--accent'] };
         setThemeConfig(def);
         applyTheme(def);
         localStorage.setItem('themeConfig', JSON.stringify(def));
@@ -83,7 +93,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             if (presets[legacyTheme as ThemeMode]) {
                 const newConfig: ThemeConfig = {
                     mode: legacyTheme as ThemeMode,
-                    accent: presets[legacyTheme as ThemeMode].colors['--primary']
+                    accent: presets[legacyTheme as ThemeMode].colors['--accent']
                 };
                 setThemeConfig(newConfig);
                 applyTheme(newConfig);
@@ -102,9 +112,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
         if (updates.mode) {
             const preset = presets[updates.mode];
-            // Optional: Auto-switch accent to the preset's primary color for better default look
             if (preset) {
-                newConfig.accent = preset.colors['--primary'];
+                newConfig.accent = preset.colors['--accent'] || preset.colors['--primary'];
             }
         }
 

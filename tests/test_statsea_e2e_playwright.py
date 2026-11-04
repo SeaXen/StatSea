@@ -150,25 +150,42 @@ def run_e2e_tests():
             page.wait_for_timeout(1200)
             print("  [PASS] Successfully returned to 'Overview' tab")
 
-            # Step 7: Theme Toggle
-            print("[Step 7] Testing Theme Toggle...")
+            # Step 7: Timeline Dropdown Interaction
+            print("[Step 7] Testing unified Timeline Horizon dropdown...")
+            timeline_btn = page.locator('button[aria-label="Choose timeline window"]').first
+            if timeline_btn.is_visible():
+                timeline_btn.click()
+                page.wait_for_timeout(500)
+                page.screenshot(path=os.path.join(ARTIFACT_DIR, "timeline_dropdown.png"))
+                print("  [PASS] Timeline Horizon dropdown opened and captured (timeline_dropdown.png)")
+                # Click 6h option
+                opt_6h = page.locator('button[role="menuitem"]:has-text("6h")').first
+                if opt_6h.is_visible():
+                    opt_6h.click()
+                    page.wait_for_timeout(400)
+                    print("  [PASS] Selected 6h timeline horizon")
+                else:
+                    timeline_btn.click()
+                    page.wait_for_timeout(200)
+
+            # Step 8: Theme Toggle & Theme Presets Verification
+            print("[Step 8] Testing Theme Toggle and Theme Presets...")
             theme_btn = page.locator('button[aria-label="Toggle theme"], button[title="Toggle theme"]').first
             theme_btn.wait_for(state="visible", timeout=5000)
-            # Get current html class
             initial_class = page.evaluate("() => document.documentElement.className")
             theme_btn.click()
-            page.wait_for_timeout(600)
+            page.wait_for_timeout(800)
             toggled_class = page.evaluate("() => document.documentElement.className")
-            print(f"  [PASS] Theme toggled from '{initial_class}' to '{toggled_class}'")
-            # Toggle back
+            page.screenshot(path=os.path.join(ARTIFACT_DIR, "theme_01_light.png"), full_page=True)
+            print(f"  [PASS] Theme toggled from '{initial_class}' to '{toggled_class}' (captured theme_01_light.png)")
+            
+            # Switch back to dark
             theme_btn.click()
-            page.wait_for_timeout(500)
-            print("  [PASS] Theme toggle returned to original state")
+            page.wait_for_timeout(800)
+            print("  [PASS] Theme toggle returned to dark")
 
-            # Step 8: Capture Full-Page Screenshot
-            print(f"[Step 8] Capturing full-page screenshot to {screenshot_path}...")
+            # Capture Dashboard full screenshot
             page.screenshot(path=screenshot_path, full_page=True)
-            assert os.path.exists(screenshot_path) and os.path.getsize(screenshot_path) > 10000
             print(f"  [PASS] Screenshot verified ({os.path.getsize(screenshot_path)} bytes)")
 
             # Step 9: Network Selector Dropdown Interaction

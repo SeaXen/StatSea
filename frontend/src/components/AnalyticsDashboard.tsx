@@ -697,32 +697,32 @@ const AnalyticsDashboard = () => {
             <div className={`grid grid-cols-1 ${dashboardConfig.showLiveBandwidth && dashboardConfig.showGauges && dashboardConfig.showProtocolFilters ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-4`}>
                 {/* Live Bandwidth Timeline */}
                 {dashboardConfig.showLiveBandwidth && (
-                    <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
-                        <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                            <TrendingUp className="w-3.5 h-3.5 text-cyan-400" /> Live Bandwidth
+                    <div className="panel p-4 rounded-[var(--r-panel)]">
+                        <h3 className="text-xs font-mono uppercase tracking-wider text-text mb-2 flex items-center gap-2">
+                            <TrendingUp className="w-3.5 h-3.5 text-accent" /> Live Bandwidth
                         </h3>
                         <div className="h-[100px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={analyticsData.bandwidth_history || []}>
                                     <defs>
                                         <linearGradient id="liveDown" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
+                                            <stop offset="5%" stopColor="var(--upload)" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="var(--upload)" stopOpacity={0} />
                                         </linearGradient>
                                         <linearGradient id="liveUp" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
+                                            <stop offset="5%" stopColor="var(--ok)" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="var(--ok)" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <XAxis dataKey="time" stroke="#374151" fontSize={9} tickCount={4} />
-                                    <YAxis stroke="#374151" fontSize={9} tickFormatter={(v: number) => formatBytes(v)} width={50} />
+                                    <XAxis dataKey="time" stroke="var(--faint)" fontSize={9} tickCount={4} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="var(--faint)" fontSize={9} tickFormatter={(v: number) => formatBytes(v)} width={50} tickLine={false} axisLine={false} />
                                     <Tooltip
-                                        contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px', fontSize: '11px' }}
-                                        itemStyle={{ color: '#e5e7eb' }}
+                                        contentStyle={{ backgroundColor: 'var(--panel)', borderColor: 'var(--line-strong)', borderRadius: '7px', fontSize: '11px', color: 'var(--text)' }}
+                                        itemStyle={{ color: 'var(--text)' }}
                                         formatter={(value: number) => formatBytes(value)}
                                     />
-                                    <Area type="monotone" dataKey="down" stroke="#22d3ee" strokeWidth={1.5} fill="url(#liveDown)" dot={false} name="Download" />
-                                    <Area type="monotone" dataKey="up" stroke="#34d399" strokeWidth={1.5} fill="url(#liveUp)" dot={false} name="Upload" />
+                                    <Area type="monotone" dataKey="down" stroke="var(--upload)" strokeWidth={1.5} fill="url(#liveDown)" dot={false} name="Download" />
+                                    <Area type="monotone" dataKey="up" stroke="var(--ok)" strokeWidth={1.5} fill="url(#liveUp)" dot={false} name="Upload" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
@@ -731,30 +731,30 @@ const AnalyticsDashboard = () => {
 
                 {/* Gauges */}
                 {dashboardConfig.showGauges && (
-                    <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4 flex items-center justify-center gap-6">
-                        <CircularGauge percentage={downPct} rate={formatBytes(analyticsData.download_rate) + '/s'} label="Download" color="#22d3ee" dotColor="#22d3ee" />
-                        <CircularGauge percentage={upPct} rate={formatBytes(analyticsData.upload_rate) + '/s'} label="Upload" color="#34d399" dotColor="#34d399" />
+                    <div className="panel p-4 rounded-[var(--r-panel)] flex items-center justify-center gap-6">
+                        <CircularGauge percentage={downPct} rate={formatBytes(analyticsData.download_rate) + '/s'} label="Download" color="var(--upload)" dotColor="var(--upload)" />
+                        <CircularGauge percentage={upPct} rate={formatBytes(analyticsData.upload_rate) + '/s'} label="Upload" color="var(--ok)" dotColor="var(--ok)" />
                     </div>
                 )}
 
                 {/* Protocol Filters */}
                 {dashboardConfig.showProtocolFilters && (
-                    <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
-                        <h3 className="text-xs font-medium text-muted-foreground mb-2">Protocol Filters</h3>
+                    <div className="panel p-4 rounded-[var(--r-panel)]">
+                        <h3 className="text-xs font-mono uppercase tracking-wider text-text mb-2">Protocol Filters</h3>
                         <div className="flex flex-wrap gap-2">
                             {allProtocols.map(p => (
                                 <ProtocolBadge key={p} proto={p} active={activeProtocols.has(p)} onClick={() => toggleProtocol(p)} />
                             ))}
                         </div>
                         {/* Connection Types mini */}
-                        <div className="mt-4 pt-3 border-t border-border">
-                            <h4 className="text-xs text-muted-foreground mb-2">Connection Types</h4>
+                        <div className="mt-4 pt-3 border-t border-line">
+                            <h4 className="text-xs font-mono uppercase tracking-wider text-faint mb-2">Connection Types</h4>
                             <div className="flex items-center gap-3">
                                 {connTypeData.map(ct => (
                                     <div key={ct.name} className="flex items-center gap-1.5">
                                         <div className="w-2 h-2 rounded-full" style={{ background: ct.color }} />
-                                        <span className="text-xs text-muted-foreground">{ct.name}</span>
-                                        <span className="text-xs font-mono text-muted-foreground">{formatNumber(ct.value)}</span>
+                                        <span className="text-xs text-text-soft">{ct.name}</span>
+                                        <span className="text-xs font-mono text-faint">{formatNumber(ct.value)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -766,12 +766,12 @@ const AnalyticsDashboard = () => {
             </div>
 
             {/* ─── Tab Navigation ─── */}
-            <div className="flex gap-1 border-b border-border">
+            <div className="flex gap-1 border-b border-line">
                 {(['interfaces', 'live', 'statistics', 'topology', 'connections', 'security', 'history', 'dns', 'comparison'] as const).map(tab => (
                     <button key={tab} onClick={() => setActiveView(tab)}
-                        className={`px-4 py-2 text-xs font-medium capitalize transition-all rounded-t-lg ${activeView === tab
-                            ? 'text-cyan-400 bg-card/60 border border-border border-b-transparent -mb-px'
-                            : 'text-muted-foreground hover:text-foreground/80'
+                        className={`px-4 py-2 text-xs font-mono font-medium capitalize transition-all rounded-t-[7px] ${activeView === tab
+                            ? 'text-accent bg-panel border border-line border-b-transparent -mb-px'
+                            : 'text-text-soft hover:text-text'
                             }`}>
                         {tab === 'live' ? 'Live Stream' : tab}
                     </button>
@@ -790,8 +790,8 @@ const AnalyticsDashboard = () => {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                            <Activity className="w-5 h-5 text-cyan-400" />
-                            <h2 className="text-lg font-semibold text-white">Network Interfaces</h2>
+                            <Activity className="w-4 h-4 text-accent" />
+                            <h2 className="text-sm font-semibold font-mono uppercase tracking-wider text-text">Network Interfaces</h2>
                         </div>
                         <button
                             onClick={() => {
@@ -803,9 +803,9 @@ const AnalyticsDashboard = () => {
                                 ];
                                 exportToCSV(interfaces, 'interfaces');
                             }}
-                            className="px-3 py-1.5 bg-card/60 border border-border rounded-lg hover:border-border/80 hover:bg-secondary flex items-center gap-2 text-xs text-foreground/80 transition-colors"
+                            className="px-2.5 py-1 bg-raised hover:bg-line-strong text-text-soft hover:text-text border border-line rounded-[7px] flex items-center gap-1.5 text-xs font-mono transition-colors"
                         >
-                            <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Export CSV
+                            <FileSpreadsheet className="w-3.5 h-3.5 text-ok" /> Export CSV
                         </button>
                     </div>
 
@@ -816,40 +816,40 @@ const AnalyticsDashboard = () => {
                             { name: 'docker0', status: 'up', type: 'Virtual', ip: '172.17.0.1', tx: 56000000, rx: 89000000, history: [1, 5, 2, 8, 4, 15, 8, 20, 10, 3] },
                             { name: 'tun0', status: 'down', type: 'VPN', ip: '-', tx: 0, rx: 0, history: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
                         ].map((iface) => (
-                            <div key={iface.name} className="bg-card/60 border border-border rounded-xl p-4 flex flex-col relative overflow-hidden group hover:border-cyan-500/30 transition-colors cursor-pointer">
+                            <div key={iface.name} className="panel p-4 rounded-[var(--r-panel)] border border-line bg-panel flex flex-col relative overflow-hidden group hover:border-line-strong transition-colors cursor-pointer">
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${iface.status === 'up' ? 'bg-green-500' : 'bg-red-500'} ${iface.status === 'up' ? 'animate-pulse' : ''}`} />
-                                        <h3 className="text-sm font-semibold text-foreground/90">{iface.name}</h3>
+                                        <div className={`w-2 h-2 rounded-full ${iface.status === 'up' ? 'bg-ok' : 'bg-danger'} ${iface.status === 'up' ? 'animate-pulse' : ''}`} />
+                                        <h3 className="text-xs font-semibold font-mono text-text">{iface.name}</h3>
                                     </div>
-                                    <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{iface.type}</span>
+                                    <span className="text-[10px] uppercase font-mono tracking-wider text-faint bg-raised px-2 py-0.5 rounded-[4px] border border-line">{iface.type}</span>
                                 </div>
 
-                                <div className="space-y-2 mb-4">
+                                <div className="space-y-2 mb-4 font-mono">
                                     <div className="flex justify-between text-xs">
-                                        <span className="text-muted-foreground">IP Address</span>
-                                        <span className="text-foreground/80 font-mono">{iface.ip}</span>
+                                        <span className="text-faint">IP Address</span>
+                                        <span className="text-text">{iface.ip}</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
-                                        <span className="text-muted-foreground">Total RX</span>
-                                        <span className="text-cyan-400 font-mono">{formatBytes(iface.rx)}</span>
+                                        <span className="text-faint">Total RX</span>
+                                        <span className="text-upload num">{formatBytes(iface.rx)}</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
-                                        <span className="text-muted-foreground">Total TX</span>
-                                        <span className="text-emerald-400 font-mono">{formatBytes(iface.tx)}</span>
+                                        <span className="text-faint">Total TX</span>
+                                        <span className="text-ok num">{formatBytes(iface.tx)}</span>
                                     </div>
                                 </div>
 
-                                <div className="mt-auto h-12 w-full pt-2 border-t border-border/50">
+                                <div className="mt-auto h-12 w-full pt-2 border-t border-line">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={iface.history.map((val, i) => ({ time: i, value: val }))}>
                                             <defs>
                                                 <linearGradient id={`grad-${iface.name}`} x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor={iface.status === 'up' ? "#22d3ee" : "#6b7280"} stopOpacity={0.3} />
-                                                    <stop offset="95%" stopColor={iface.status === 'up' ? "#22d3ee" : "#6b7280"} stopOpacity={0} />
+                                                    <stop offset="5%" stopColor={iface.status === 'up' ? "var(--upload)" : "var(--faint)"} stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor={iface.status === 'up' ? "var(--upload)" : "var(--faint)"} stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
-                                            <Area type="monotone" dataKey="value" stroke={iface.status === 'up' ? "#22d3ee" : "#6b7280"} strokeWidth={1.5} fill={`url(#grad-${iface.name})`} dot={false} />
+                                            <Area type="monotone" dataKey="value" stroke={iface.status === 'up' ? "var(--upload)" : "var(--faint)"} strokeWidth={1.5} fill={`url(#grad-${iface.name})`} dot={false} />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -865,74 +865,74 @@ const AnalyticsDashboard = () => {
                     {/* Search and Filters */}
                     <div className="flex gap-2">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-faint" />
                             <input
                                 type="text"
                                 placeholder="Search by IP, port, or protocol..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
-                                className="w-full bg-card/60 border border-border rounded-lg pl-9 pr-4 py-2 text-xs text-foreground/80 placeholder-muted-foreground/60 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                                className="w-full bg-raised border border-line rounded-[7px] pl-9 pr-4 py-1.5 text-xs font-mono text-text placeholder-faint focus:outline-none focus:border-accent transition-colors"
                             />
                         </div>
                         <div className="relative w-48">
-                            <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                            <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-faint" />
                             <input
                                 type="text"
                                 placeholder="Filter Flags (e.g. syn)"
                                 value={flagFilter}
                                 onChange={e => setFlagFilter(e.target.value)}
-                                className="w-full bg-card/60 border border-border rounded-lg pl-9 pr-4 py-2 text-xs text-foreground/80 placeholder-muted-foreground/60 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                                className="w-full bg-raised border border-line rounded-[7px] pl-9 pr-4 py-1.5 text-xs font-mono text-text placeholder-faint focus:outline-none focus:border-accent transition-colors"
                             />
                         </div>
                         <button
                             onClick={() => exportToCSV(filteredLog, 'live_traffic')}
-                            className="px-4 bg-card/60 border border-border rounded-lg hover:border-border/80 hover:bg-secondary flex items-center gap-2 text-xs text-foreground/80 transition-colors"
+                            className="px-3 py-1.5 bg-raised border border-line rounded-[7px] hover:bg-line-strong flex items-center gap-1.5 text-xs font-mono text-text-soft hover:text-text transition-colors"
                         >
-                            <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Export CSV
+                            <FileSpreadsheet className="w-3.5 h-3.5 text-ok" /> Export CSV
                         </button>
                     </div>
 
                     {/* Live Packet Table */}
-                    <div className="bg-card/60 border border-border rounded-xl overflow-hidden">
+                    <div className="panel p-0 rounded-[var(--r-panel)] border border-line bg-panel overflow-hidden">
                         <div ref={logRef} className="h-[400px] overflow-y-auto custom-scrollbar">
                             <table className="w-full text-sm">
-                                <thead className="sticky top-0 bg-card/95 border-b border-border z-10">
+                                <thead className="sticky top-0 bg-raised/90 backdrop-blur-xs border-b border-line z-10">
                                     <tr>
-                                        <th className="text-left text-muted-foreground font-medium px-3 py-2 text-[10px]">TIME</th>
-                                        <th className="text-left text-muted-foreground font-medium px-3 py-2 text-[10px]">PROTO</th>
-                                        <th className="text-left text-muted-foreground font-medium px-3 py-2 text-[10px]">FLAGS</th>
-                                        <th className="text-left text-muted-foreground font-medium px-3 py-2 text-[10px]">SOURCE</th>
-                                        <th className="text-center text-muted-foreground font-medium px-1 py-2 text-[10px]"></th>
-                                        <th className="text-left text-muted-foreground font-medium px-3 py-2 text-[10px]">DESTINATION</th>
-                                        <th className="text-right text-muted-foreground font-medium px-3 py-2 text-[10px]">SIZE</th>
+                                        <th className="text-left text-faint font-mono font-medium px-3 py-2 text-[10px] uppercase">TIME</th>
+                                        <th className="text-left text-faint font-mono font-medium px-3 py-2 text-[10px] uppercase">PROTO</th>
+                                        <th className="text-left text-faint font-mono font-medium px-3 py-2 text-[10px] uppercase">FLAGS</th>
+                                        <th className="text-left text-faint font-mono font-medium px-3 py-2 text-[10px] uppercase">SOURCE</th>
+                                        <th className="text-center text-faint font-mono font-medium px-1 py-2 text-[10px]"></th>
+                                        <th className="text-left text-faint font-mono font-medium px-3 py-2 text-[10px] uppercase">DESTINATION</th>
+                                        <th className="text-right text-faint font-mono font-medium px-3 py-2 text-[10px] uppercase">SIZE</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredLog.length === 0 ? (
-                                        <tr><td colSpan={7} className="text-center text-muted-foreground/60 py-12">No packets matching filters</td></tr>
+                                        <tr><td colSpan={7} className="text-center text-text-soft font-mono py-12 text-xs">No packets matching filters</td></tr>
                                     ) : (
                                         filteredLog.map((pkt, i) => (
-                                            <tr key={i} className={`border-b border-border/30 hover:bg-secondary/30 transition-colors ${pkt.suspicious ? 'bg-red-500/5' : ''}`}>
-                                                <td className="px-3 py-1.5 font-mono text-muted-foreground text-[10px]">{pkt.time}</td>
+                                            <tr key={i} className={`border-b border-line hover:bg-raised/60 transition-colors ${pkt.suspicious ? 'bg-danger/10' : ''}`}>
+                                                <td className="px-3 py-1.5 font-mono text-faint text-[10px]">{pkt.time}</td>
                                                 <td className="px-3 py-1.5">
-                                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{
+                                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono" style={{
                                                         color: PROTO_COLORS[pkt.proto] || '#9ca3af',
                                                         background: `${PROTO_COLORS[pkt.proto] || '#6b7280'}20`
                                                     }}>
                                                         {pkt.proto}
                                                     </span>
                                                 </td>
-                                                <td className="px-3 py-1.5 font-mono text-muted-foreground text-[10px]">
+                                                <td className="px-3 py-1.5 font-mono text-faint text-[10px]">
                                                     {pkt.flags && pkt.flags !== 'None' ? (
-                                                        <span className="text-xs text-cyan-600">{pkt.flags}</span>
+                                                        <span className="text-xs text-upload font-mono">{pkt.flags}</span>
                                                     ) : (
-                                                        <span className="text-muted-foreground/30">-</span>
+                                                        <span className="text-faint/40">-</span>
                                                     )}
                                                 </td>
-                                                <td className="px-3 py-1.5 font-mono text-foreground/80 text-[10px]">{pkt.src}</td>
-                                                <td className="px-1 py-1.5 text-muted-foreground/60 text-center text-[10px]">→</td>
-                                                <td className="px-3 py-1.5 font-mono text-foreground/80 text-[10px]">{pkt.dst}</td>
-                                                <td className="px-3 py-1.5 font-mono text-muted-foreground text-[10px] text-right">{pkt.size} B</td>
+                                                <td className="px-3 py-1.5 font-mono text-text text-[10px]">{pkt.src}</td>
+                                                <td className="px-1 py-1.5 text-faint text-center text-[10px]">→</td>
+                                                <td className="px-3 py-1.5 font-mono text-text text-[10px]">{pkt.dst}</td>
+                                                <td className="px-3 py-1.5 font-mono text-faint text-[10px] text-right num">{pkt.size} B</td>
                                             </tr>
                                         ))
                                     )}
@@ -949,9 +949,9 @@ const AnalyticsDashboard = () => {
                     {/* Row 1: Bandwidth + Latency */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Bandwidth Chart */}
-                        <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
-                            <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                                <Activity className="w-4 h-4 text-emerald-400" /> Bandwidth Usage
+                        <div className="panel p-3 md:p-4 rounded-[var(--r-panel)] border border-line bg-panel">
+                            <h3 className="text-xs font-medium text-faint mb-3 flex items-center gap-2 font-mono">
+                                <Activity className="w-4 h-4 text-ok" /> Bandwidth Usage
                             </h3>
                             <div className="h-[250px]">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -966,10 +966,10 @@ const AnalyticsDashboard = () => {
                                                 <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                                        <XAxis dataKey="timestamp" stroke="#4b5563" fontSize={10} tickCount={5} />
-                                        <YAxis stroke="#4b5563" fontSize={10} />
-                                        <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }} itemStyle={{ color: '#e5e7eb' }} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+                                        <XAxis dataKey="timestamp" stroke="var(--faint)" fontSize={10} tickCount={5} />
+                                        <YAxis stroke="var(--faint)" fontSize={10} />
+                                        <Tooltip contentStyle={{ backgroundColor: 'var(--panel)', borderColor: 'var(--line)', borderRadius: '8px' }} itemStyle={{ color: 'var(--text)' }} />
                                         <Area type="monotone" dataKey="download_bytes" stroke="#22d3ee" strokeWidth={2} fillOpacity={1} fill="url(#colorDown2)" name="Download" />
                                         <Area type="monotone" dataKey="upload_bytes" stroke="#34d399" strokeWidth={2} fillOpacity={1} fill="url(#colorUp2)" name="Upload" />
                                     </AreaChart>
@@ -978,17 +978,17 @@ const AnalyticsDashboard = () => {
                         </div>
 
                         {/* Latency Chart */}
-                        <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
-                            <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                                <Wifi className="w-4 h-4 text-amber-400" /> Network Latency
+                        <div className="panel p-3 md:p-4 rounded-[var(--r-panel)] border border-line bg-panel">
+                            <h3 className="text-xs font-medium text-faint mb-3 flex items-center gap-2 font-mono">
+                                <Wifi className="w-4 h-4 text-warn" /> Network Latency
                             </h3>
                             <div className="h-[250px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={latencyData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                                        <XAxis dataKey="timestamp" stroke="#4b5563" fontSize={10} />
-                                        <YAxis stroke="#4b5563" fontSize={10} />
-                                        <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }} itemStyle={{ color: '#e5e7eb' }} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+                                        <XAxis dataKey="timestamp" stroke="var(--faint)" fontSize={10} />
+                                        <YAxis stroke="var(--faint)" fontSize={10} />
+                                        <Tooltip contentStyle={{ backgroundColor: 'var(--panel)', borderColor: 'var(--line)', borderRadius: '8px' }} itemStyle={{ color: 'var(--text)' }} />
                                         <Line type="monotone" dataKey="latency_ms" stroke="#f59e0b" strokeWidth={2} dot={false} name="Latency (ms)" />
                                     </LineChart>
                                 </ResponsiveContainer>
@@ -996,29 +996,28 @@ const AnalyticsDashboard = () => {
                         </div>
                     </div>
 
-                    {/* Row 2: Protocol Distribution + Top Devices */}
+                    {/* Row 2: Protocol Distribution + Top Devices Header */}
                     <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                            <BarChart3 className="w-5 h-5 text-blue-400" /> Traffic Statistics
+                        <h2 className="text-sm font-semibold text-text flex items-center gap-2 font-mono">
+                            <BarChart3 className="w-4 h-4 text-accent" /> Traffic Statistics
                         </h2>
                         <button
                             onClick={() => exportToCSV(
                                 Object.entries(analyticsData.protocols).map(([p, v]) => ({ Protocol: p, Packets: v, Bytes: analyticsData.bytes_per_protocol?.[p] || 0 })),
                                 'statistics'
                             )}
-                            className="px-3 py-1.5 bg-card/60 border border-border rounded-lg hover:border-border/80 hover:bg-secondary flex items-center gap-2 text-xs text-foreground/80 transition-colors"
+                            className="px-3 py-1.5 bg-raised border border-line rounded-[7px] hover:border-line-strong hover:bg-panel flex items-center gap-1.5 text-xs font-mono text-text-soft transition-colors"
                         >
-                            <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Export CSV
+                            <FileSpreadsheet className="w-3.5 h-3.5 text-ok" /> Export CSV
                         </button>
                     </div>
 
-                    {/* Row 2: Protocol Distribution + Top Devices */}
                     {dashboardConfig.showProtocolCharts && (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Protocol Distribution */}
-                            <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
-                                <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                                    <Server className="w-4 h-4 text-cyan-400" /> Protocol Distribution
+                            <div className="panel p-3 md:p-4 rounded-[var(--r-panel)] border border-line bg-panel">
+                                <h3 className="text-xs font-medium text-faint mb-3 flex items-center gap-2 font-mono">
+                                    <Server className="w-4 h-4 text-accent" /> Protocol Distribution
                                 </h3>
                                 <div className="h-[250px] flex items-center">
                                     <ResponsiveContainer width="50%" height="100%">
@@ -1029,15 +1028,15 @@ const AnalyticsDashboard = () => {
                                                     <Cell key={i} fill={entry.color} />
                                                 ))}
                                             </Pie>
-                                            <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }} itemStyle={{ color: '#e5e7eb' }} />
+                                            <Tooltip contentStyle={{ backgroundColor: 'var(--panel)', borderColor: 'var(--line)', borderRadius: '8px' }} itemStyle={{ color: 'var(--text)' }} />
                                         </PieChart>
                                     </ResponsiveContainer>
                                     <div className="flex flex-col gap-1.5 pl-2">
                                         {protocolChartData.map((entry) => (
-                                            <div key={entry.name} className="flex items-center gap-2 text-xs">
+                                            <div key={entry.name} className="flex items-center gap-2 text-xs font-mono">
                                                 <div className="w-2.5 h-2.5 rounded-full" style={{ background: entry.color }} />
-                                                <span className="text-muted-foreground w-12">{entry.name}</span>
-                                                <span className="text-muted-foreground font-mono">{entry.value.toLocaleString()}</span>
+                                                <span className="text-text-soft w-12">{entry.name}</span>
+                                                <span className="text-faint num">{entry.value.toLocaleString()}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -1045,9 +1044,9 @@ const AnalyticsDashboard = () => {
                             </div>
 
                             {/* Top Devices */}
-                            <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
-                                <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                                    <Monitor className="w-4 h-4 text-cyan-400" /> Top Devices by Traffic
+                            <div className="panel p-3 md:p-4 rounded-[var(--r-panel)] border border-line bg-panel">
+                                <h3 className="text-xs font-medium text-faint mb-3 flex items-center gap-2 font-mono">
+                                    <Monitor className="w-4 h-4 text-accent" /> Top Devices by Traffic
                                 </h3>
                                 <div className="h-[250px]">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -1056,10 +1055,10 @@ const AnalyticsDashboard = () => {
                                             Download: d.download,
                                             Upload: d.upload
                                         }))} layout="vertical" margin={{ left: 60 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                                            <XAxis type="number" stroke="#4b5563" fontSize={10} tickFormatter={(v: number) => formatBytes(v)} />
-                                            <YAxis type="category" dataKey="name" stroke="#4b5563" fontSize={11} width={55} />
-                                            <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }} itemStyle={{ color: '#e5e7eb' }}
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+                                            <XAxis type="number" stroke="var(--faint)" fontSize={10} tickFormatter={(v: number) => formatBytes(v)} />
+                                            <YAxis type="category" dataKey="name" stroke="var(--faint)" fontSize={11} width={55} />
+                                            <Tooltip contentStyle={{ backgroundColor: 'var(--panel)', borderColor: 'var(--line)', borderRadius: '8px' }} itemStyle={{ color: 'var(--text)' }}
                                                 formatter={(value: number) => formatBytes(value)} />
                                             <Bar dataKey="Download" fill="#22d3ee" radius={[0, 4, 4, 0]} barSize={10} />
                                             <Bar dataKey="Upload" fill="#34d399" radius={[0, 4, 4, 0]} barSize={10} />
@@ -1070,24 +1069,22 @@ const AnalyticsDashboard = () => {
                         </div>
                     )}
 
-                    {/* Row 3: Packet Size Distribution + Bytes per Protocol */}
-                    {/* Row 3: Packet Size Distribution + Bytes per Protocol */}
                     {dashboardConfig.showPacketCharts && (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Packet Size Distribution */}
-                            <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
-                                <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                                    <Layers className="w-4 h-4 text-amber-400" /> Packet Size Distribution
+                            <div className="panel p-3 md:p-4 rounded-[var(--r-panel)] border border-line bg-panel">
+                                <h3 className="text-xs font-medium text-faint mb-3 flex items-center gap-2 font-mono">
+                                    <Layers className="w-4 h-4 text-warn" /> Packet Size Distribution
                                 </h3>
                                 <div className="h-[220px]">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={sizeDistData} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 5 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                                            <XAxis type="number" stroke="#4b5563" fontSize={10} tickFormatter={(v: number) => formatNumber(v)} />
-                                            <YAxis type="category" dataKey="shortName" stroke="#4b5563" fontSize={10} width={50} />
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+                                            <XAxis type="number" stroke="var(--faint)" fontSize={10} tickFormatter={(v: number) => formatNumber(v)} />
+                                            <YAxis type="category" dataKey="shortName" stroke="var(--faint)" fontSize={10} width={50} />
                                             <Tooltip
-                                                contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }}
-                                                itemStyle={{ color: '#e5e7eb' }}
+                                                contentStyle={{ backgroundColor: 'var(--panel)', borderColor: 'var(--line)', borderRadius: '8px' }}
+                                                itemStyle={{ color: 'var(--text)' }}
                                                 formatter={(value: number) => value.toLocaleString()}
                                             />
                                             <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14} name="Packets">
@@ -1101,19 +1098,19 @@ const AnalyticsDashboard = () => {
                             </div>
 
                             {/* Bytes per Protocol */}
-                            <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4">
-                                <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                                    <BarChart3 className="w-4 h-4 text-blue-400" /> Traffic Volume by Protocol
+                            <div className="panel p-3 md:p-4 rounded-[var(--r-panel)] border border-line bg-panel">
+                                <h3 className="text-xs font-medium text-faint mb-3 flex items-center gap-2 font-mono">
+                                    <BarChart3 className="w-4 h-4 text-accent" /> Traffic Volume by Protocol
                                 </h3>
                                 <div className="h-[220px]">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={bytesPerProtoData} margin={{ left: 5 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                                            <XAxis dataKey="name" stroke="#4b5563" fontSize={10} />
-                                            <YAxis stroke="#4b5563" fontSize={10} tickFormatter={(v: number) => formatBytes(v)} />
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+                                            <XAxis dataKey="name" stroke="var(--faint)" fontSize={10} />
+                                            <YAxis stroke="var(--faint)" fontSize={10} tickFormatter={(v: number) => formatBytes(v)} />
                                             <Tooltip
-                                                contentStyle={{ backgroundColor: '#111827', borderColor: '#1f2937', borderRadius: '8px' }}
-                                                itemStyle={{ color: '#e5e7eb' }}
+                                                contentStyle={{ backgroundColor: 'var(--panel)', borderColor: 'var(--line)', borderRadius: '8px' }}
+                                                itemStyle={{ color: 'var(--text)' }}
                                                 formatter={(value: number) => formatBytes(value)}
                                             />
                                             <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={28} name="Bytes">
@@ -1136,15 +1133,15 @@ const AnalyticsDashboard = () => {
                     )}
 
                     {/* 7x24 Traffic Heatmap */}
-                    <div className="bg-card/60 border border-border rounded-xl p-3 md:p-4 mt-6">
-                        <h3 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                            <Activity className="w-4 h-4 text-cyan-400" /> 7×24 Traffic Heatmap (Volume)
+                    <div className="panel p-3 md:p-4 rounded-[var(--r-panel)] border border-line bg-panel mt-6">
+                        <h3 className="text-xs font-medium text-faint mb-3 flex items-center gap-2 font-mono">
+                            <Activity className="w-4 h-4 text-accent" /> 7×24 Traffic Heatmap (Volume)
                         </h3>
                         <div className="grid grid-cols-[auto_1fr] gap-2 lg:gap-4 overflow-x-auto custom-scrollbar pb-2">
                             {/* Days Column */}
-                            <div className="flex flex-col gap-1 pr-2 border-r border-border justify-between py-1 mt-5">
+                            <div className="flex flex-col gap-1 pr-2 border-r border-line justify-between py-1 mt-5">
                                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
-                                    <div key={d} className="text-[10px] text-muted-foreground font-medium h-4 sm:h-6 flex items-center">{d}</div>
+                                    <div key={d} className="text-[10px] text-faint font-medium h-4 sm:h-6 flex items-center font-mono">{d}</div>
                                 ))}
                             </div>
 
@@ -1152,7 +1149,7 @@ const AnalyticsDashboard = () => {
                             <div className="min-w-[600px]">
                                 <div className="grid grid-cols-24 gap-1 mb-2" style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}>
                                     {[...Array(24)].map((_, i) => (
-                                        <div key={i} className="text-[9px] text-muted-foreground/60 text-center">{i}</div>
+                                        <div key={i} className="text-[9px] text-faint/60 text-center font-mono">{i}</div>
                                     ))}
                                 </div>
                                 <div className="flex flex-col gap-1 justify-between">
@@ -1163,16 +1160,15 @@ const AnalyticsDashboard = () => {
                                                 const val = datum?.value || 0;
                                                 const maxVal = Math.max(...(heatmapData?.map(d => d.value) || [1]));
                                                 const normalized = maxVal > 0 ? val / maxVal : 0;
-                                                // Minimum opacity 0.05, max 1.0
                                                 const opacity = Math.max(0.05, normalized);
                                                 return (
                                                     <div
                                                         key={`${day}-${h}`}
                                                         title={`${day} ${h}:00 - ${formatBytes(val)}`}
-                                                        className="h-4 sm:h-6 rounded-[2px] cursor-pointer hover:ring-1 hover:ring-cyan-400 transition-all duration-200 group relative"
+                                                        className="h-4 sm:h-6 rounded-[2px] cursor-pointer hover:ring-1 hover:ring-accent transition-all duration-200 group relative"
                                                         style={{ backgroundColor: `rgba(34, 211, 238, ${opacity})` }}
                                                     >
-                                                        {val > 0 && <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-secondary text-foreground text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none whitespace-nowrap shadow-xl border border-border">
+                                                        {val > 0 && <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-raised text-text text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none whitespace-nowrap shadow-xl border border-line font-mono">
                                                             {formatBytes(val)}
                                                         </span>}
                                                     </div>
@@ -1191,15 +1187,15 @@ const AnalyticsDashboard = () => {
             {activeView === 'connections' && (
                 <div className="space-y-4">
                     {/* GeoIP World Map */}
-                    <div className="bg-card/60 border border-border rounded-xl p-4 w-full relative overflow-hidden">
+                    <div className="panel p-4 rounded-[var(--r-panel)] border border-line bg-panel w-full relative overflow-hidden">
                         <div className="absolute top-4 left-4 z-10 flex flex-col pointer-events-none">
-                            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                                <Globe className="w-4 h-4 text-cyan-400" /> Global Threat Map
+                            <h3 className="text-sm font-semibold text-text flex items-center gap-2 font-mono">
+                                <Globe className="w-4 h-4 text-accent" /> Global Threat Map
                             </h3>
-                            <span className="text-xs text-muted-foreground mt-1">{externalConnections.length} Active Connections</span>
+                            <span className="text-xs text-faint mt-1 font-mono">{externalConnections.length} Active Connections</span>
                         </div>
 
-                        <div className="w-full h-[350px] bg-[#0A0B0E] rounded-lg border border-border/50 mt-8 mb-2 flex items-center justify-center relative shadow-inner">
+                        <div className="w-full h-[350px] bg-raised rounded-lg border border-line mt-8 mb-2 flex items-center justify-center relative shadow-inner">
                             {/* Radar scan effect overlay */}
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.03)_0%,_transparent_70%)] pointer-events-none"></div>
 
@@ -1220,12 +1216,12 @@ const AnalyticsDashboard = () => {
                                             <Geography
                                                 key={geo.rsmKey}
                                                 geography={geo}
-                                                fill="#1e293b"
-                                                stroke="#334155"
+                                                fill="var(--raised)"
+                                                stroke="var(--line-strong)"
                                                 strokeWidth={0.5}
                                                 style={{
                                                     default: { outline: "none" },
-                                                    hover: { fill: "#334155", outline: "none" },
+                                                    hover: { fill: "var(--line-strong)", outline: "none" },
                                                     pressed: { outline: "none" },
                                                 }}
                                             />
@@ -1252,41 +1248,41 @@ const AnalyticsDashboard = () => {
                         </div>
                     </div>
 
-                    <div className="bg-card/60 border border-border rounded-xl overflow-hidden mt-6">
-                        <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+                    <div className="panel rounded-[var(--r-panel)] border border-line bg-panel overflow-hidden mt-6">
+                        <div className="px-4 py-3 border-b border-line flex items-center gap-2">
                             <div className="flex items-center gap-2">
-                                <Layers className="w-3.5 h-3.5 text-blue-400" />
-                                <h3 className="text-xs font-medium text-white">Connection Details</h3>
+                                <Layers className="w-3.5 h-3.5 text-accent" />
+                                <h3 className="text-xs font-medium text-text font-mono">Connection Details</h3>
                             </div>
                             <button
                                 onClick={() => exportToCSV(externalConnections, 'connections')}
-                                className="px-3 py-1 bg-secondary/50 border border-border rounded-lg hover:border-border/80 hover:bg-secondary flex items-center gap-2 text-[10px] text-foreground/80 transition-colors ml-auto"
+                                className="px-3 py-1 bg-raised border border-line rounded-[7px] hover:border-line-strong hover:bg-panel flex items-center gap-1.5 text-xs font-mono text-text-soft transition-colors ml-auto"
                             >
-                                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" /> Export CSV
+                                <FileSpreadsheet className="w-3.5 h-3.5 text-ok" /> Export CSV
                             </button>
                         </div>
                         <div className="h-[400px] overflow-y-auto custom-scrollbar">
                             <table className="w-full text-sm">
-                                <thead className="sticky top-0 bg-card/95 border-b border-border">
+                                <thead className="sticky top-0 bg-raised/95 border-b border-line">
                                     <tr>
-                                        <th className="text-left text-muted-foreground font-medium px-5 py-3 text-xs">IP ADDRESS</th>
-                                        <th className="text-left text-muted-foreground font-medium px-5 py-3 text-xs">LOCATION</th>
-                                        <th className="text-right text-muted-foreground font-medium px-5 py-3 text-xs">HITS</th>
-                                        <th className="text-right text-muted-foreground font-medium px-5 py-3 text-xs">TRAFFIC</th>
+                                        <th className="text-left text-faint font-mono font-medium px-4 py-2 text-[10px] uppercase">IP ADDRESS</th>
+                                        <th className="text-left text-faint font-mono font-medium px-4 py-2 text-[10px] uppercase">LOCATION</th>
+                                        <th className="text-right text-faint font-mono font-medium px-4 py-2 text-[10px] uppercase">HITS</th>
+                                        <th className="text-right text-faint font-mono font-medium px-4 py-2 text-[10px] uppercase">TRAFFIC</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {externalConnections.length === 0 ? (
-                                        <tr><td colSpan={4} className="text-center text-muted-foreground/60 py-12">No external connections detected yet</td></tr>
+                                        <tr><td colSpan={4} className="text-center text-faint font-mono py-12 text-xs">No external connections detected yet</td></tr>
                                     ) : (
                                         externalConnections.sort((a, b) => b.bytes - a.bytes).map((conn, i) => (
-                                            <tr key={i} className="border-b border-border/30 hover:bg-secondary/30 transition-colors">
-                                                <td className="px-5 py-3 font-mono text-foreground/80 text-xs">{conn.ip}</td>
-                                                <td className="px-5 py-3 text-muted-foreground text-xs">
+                                            <tr key={i} className="border-b border-line hover:bg-raised/60 transition-colors">
+                                                <td className="px-4 py-2 font-mono text-text text-xs">{conn.ip}</td>
+                                                <td className="px-4 py-2 text-text-soft text-xs">
                                                     <span className="mr-1">🌍</span> {conn.city}, {conn.country}
                                                 </td>
-                                                <td className="px-5 py-3 font-mono text-muted-foreground text-xs text-right">{conn.hits.toLocaleString()}</td>
-                                                <td className="px-5 py-3 font-mono text-cyan-400 text-xs text-right">{formatBytes(conn.bytes)}</td>
+                                                <td className="px-4 py-2 font-mono text-faint text-xs text-right num">{conn.hits.toLocaleString()}</td>
+                                                <td className="px-4 py-2 font-mono text-upload text-xs text-right num">{formatBytes(conn.bytes)}</td>
                                             </tr>
                                         ))
                                     )}
@@ -1299,49 +1295,49 @@ const AnalyticsDashboard = () => {
 
             {/* ═══════════════════ SECURITY ═══════════════════ */}
             {activeView === 'security' && (
-                <div className="bg-card/60 border border-border rounded-xl p-4">
+                <div className="panel p-4 rounded-[var(--r-panel)] border border-line bg-panel">
                     <div className="flex items-center gap-2 mb-3">
-                        <Shield className="h-4 w-4 text-primary" />
-                        <h3 className="text-sm font-semibold text-foreground">Security Events</h3>
-                        <span className="ml-auto text-[10px] text-muted-foreground">{securityEvents.length} events</span>
+                        <Shield className="h-4 w-4 text-accent" />
+                        <h3 className="text-sm font-semibold text-text font-mono">Security Events</h3>
+                        <span className="ml-auto text-[10px] text-faint font-mono">{securityEvents.length} events</span>
                         <button
                             onClick={() => exportToCSV(securityEvents, 'security_events')}
-                            className="ml-2 px-3 py-1 bg-secondary/50 border border-border rounded hover:border-border/80 hover:bg-secondary flex items-center gap-2 text-xs text-foreground/80 transition-colors"
+                            className="ml-2 px-3 py-1 bg-raised border border-line rounded-[7px] hover:border-line-strong hover:bg-panel flex items-center gap-1.5 text-xs font-mono text-text-soft transition-colors"
                         >
-                            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" /> Export CSV
+                            <FileSpreadsheet className="w-3.5 h-3.5 text-ok" /> Export CSV
                         </button>
-                        <button onClick={() => setShowRulesModal(true)} className="ml-2 px-2 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded text-xs font-medium transition-colors flex items-center gap-1">
+                        <button onClick={() => setShowRulesModal(true)} className="ml-2 px-2.5 py-1 bg-accent-soft text-accent hover:opacity-80 rounded-[7px] text-xs font-mono font-medium transition-opacity flex items-center gap-1">
                             <Settings className="w-3 h-3" /> Configure Rules
                         </button>
                     </div>
                     <div className="h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                         {securityEvents.length === 0 ? (
-                            <div className="text-center text-muted-foreground py-8 flex flex-col items-center gap-2">
-                                <Shield className="w-8 h-8 text-green-500/50" />
+                            <div className="text-center text-faint py-8 flex flex-col items-center gap-2 font-mono text-xs">
+                                <Shield className="w-8 h-8 text-ok opacity-60" />
                                 <span>No security events detected. Safe seas! 🌊</span>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {securityEvents.map((event) => (
-                                    <div key={event.id} className="flex items-start justify-between p-3 rounded-lg bg-secondary/40 border border-border/50 hover:border-border/80 transition-colors">
+                                    <div key={event.id} className="flex items-start justify-between p-3 rounded-lg bg-raised border border-line hover:border-line-strong transition-colors">
                                         <div className="flex items-start gap-3">
-                                            <AlertTriangle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${event.severity === 'CRITICAL' ? 'text-red-500' :
-                                                event.severity === 'HIGH' ? 'text-orange-500' : 'text-yellow-500'
+                                            <AlertTriangle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${event.severity === 'CRITICAL' ? 'text-danger' :
+                                                event.severity === 'HIGH' ? 'text-warn' : 'text-accent'
                                                 }`} />
                                             <div>
                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="font-semibold text-foreground/90 text-sm">{event.event_type}</span>
-                                                    <span className="px-1.5 py-0.5 rounded text-[10px] border border-border text-muted-foreground font-mono">
+                                                    <span className="font-semibold text-text text-xs font-mono">{event.event_type}</span>
+                                                    <span className="px-1.5 py-0.5 rounded text-[10px] border border-line text-faint font-mono">
                                                         {event.source_ip || 'Unknown IP'}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground mt-1">{event.description}</p>
-                                                <p className="text-[10px] text-muted-foreground/60 mt-1.5">{new Date(event.timestamp).toLocaleString()}</p>
+                                                <p className="text-xs text-text-soft mt-1">{event.description}</p>
+                                                <p className="text-[10px] text-faint mt-1.5 font-mono">{new Date(event.timestamp).toLocaleString()}</p>
                                             </div>
                                         </div>
-                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex-shrink-0 ${event.severity === 'CRITICAL' ? 'bg-red-500/20 text-red-400' :
-                                            event.severity === 'HIGH' ? 'bg-orange-500/20 text-orange-400' :
-                                                'bg-yellow-500/20 text-yellow-400'
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono flex-shrink-0 ${event.severity === 'CRITICAL' ? 'bg-danger/20 text-danger' :
+                                            event.severity === 'HIGH' ? 'bg-warn/20 text-warn' :
+                                                'bg-accent-soft text-accent'
                                             }`}>
                                             {event.severity}
                                         </span>

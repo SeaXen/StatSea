@@ -71,33 +71,33 @@ export function GroupManager({ isOpen, onClose, groups: initialGroups }: GroupMa
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-[#0A0B0E] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-                <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5">
-                    <h2 className="text-xl font-bold text-white">Manage Groups</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                        <X className="w-5 h-5 text-muted-foreground" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="panel bg-panel border border-line rounded-[var(--r-panel)] w-full max-w-md overflow-hidden shadow-2xl">
+                <div className="flex justify-between items-center p-5 border-b border-line bg-raised">
+                    <h2 className="text-base font-bold text-text">Manage Groups</h2>
+                    <button onClick={onClose} aria-label="Close" className="p-1.5 hover:bg-panel rounded-[5px] text-faint hover:text-text border border-transparent hover:border-line transition-colors">
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
 
-                <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     {/* Add New Group */}
                     {!isAdding ? (
                         <button
                             onClick={() => setIsAdding(true)}
-                            className="w-full py-3 border border-dashed border-white/20 rounded-xl text-muted-foreground hover:text-foreground hover:border-blue-500/50 hover:bg-blue-500/5 transition-all flex items-center justify-center gap-2"
+                            className="w-full py-2.5 border border-dashed border-line rounded-[7px] text-xs font-bold uppercase tracking-wider text-faint hover:text-text hover:border-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2"
                         >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-4 h-4 text-accent" />
                             Create New Group
                         </button>
                     ) : (
-                        <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+                        <div className="bg-raised p-4 rounded-[7px] border border-line space-y-3">
                             <input
                                 type="text"
                                 value={newGroupName}
                                 onChange={(e) => setNewGroupName(e.target.value)}
                                 placeholder="Group Name"
-                                className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500/50"
+                                className="w-full bg-panel border border-line rounded-[7px] px-3 py-2 text-sm text-text focus:outline-none focus:border-line-strong"
                                 autoFocus
                             />
                             <div className="flex gap-2 flex-wrap">
@@ -105,7 +105,7 @@ export function GroupManager({ isOpen, onClose, groups: initialGroups }: GroupMa
                                     <button
                                         key={color}
                                         onClick={() => setNewGroupColor(color)}
-                                        className={`w-6 h-6 rounded-full transition-transform ${newGroupColor === color ? 'scale-125 ring-2 ring-white/50' : 'hover:scale-110'}`}
+                                        className={`w-5 h-5 rounded-full transition-transform ${newGroupColor === color ? 'scale-125 ring-2 ring-accent' : 'hover:scale-110'}`}
                                         style={{ backgroundColor: color }}
                                     />
                                 ))}
@@ -113,15 +113,15 @@ export function GroupManager({ isOpen, onClose, groups: initialGroups }: GroupMa
                             <div className="flex gap-2 justify-end mt-2">
                                 <button
                                     onClick={() => setIsAdding(false)}
-                                    className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                                    className="px-3 py-1.5 text-xs text-faint hover:text-text font-bold uppercase tracking-wider"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleCreate}
-                                    className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg flex items-center gap-2"
+                                    className="px-3 py-1.5 bg-accent hover:opacity-90 text-black text-xs font-bold rounded-[5px] flex items-center gap-1.5 uppercase tracking-wider"
                                 >
-                                    <Plus className="w-3 h-3" />
+                                    <Plus className="w-3.5 h-3.5" />
                                     Create
                                 </button>
                             </div>
@@ -131,28 +131,28 @@ export function GroupManager({ isOpen, onClose, groups: initialGroups }: GroupMa
                     {/* Group List */}
                     <div className="space-y-2">
                         {localGroups.map(group => (
-                            <div key={group.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 group hover:border-white/10 transition-colors">
+                            <div key={group.id} className="flex items-center justify-between p-3 bg-raised rounded-[7px] border border-line group hover:border-line-strong transition-colors">
                                 {editingId === group.id ? (
                                     <div className="flex-1 flex gap-2 items-center">
                                         <input
                                             type="text"
                                             value={group.name}
                                             onChange={(e) => setLocalGroups(localGroups.map(g => g.id === group.id ? { ...g, name: e.target.value } : g))}
-                                            className="flex-1 bg-black/20 border border-white/10 rounded-lg px-2 py-1 text-sm"
+                                            className="flex-1 bg-panel border border-line rounded-[5px] px-2 py-1 text-sm text-text focus:outline-none focus:border-line-strong"
                                         />
                                         <div className="flex gap-1">
                                             {colors.slice(0, 5).map(color => (
                                                 <button
                                                     key={color}
                                                     onClick={() => setLocalGroups(localGroups.map(g => g.id === group.id ? { ...g, color } : g))}
-                                                    className={`w-4 h-4 rounded-full ${group.color === color ? 'ring-1 ring-white' : ''}`}
+                                                    className={`w-4 h-4 rounded-full ${group.color === color ? 'ring-1 ring-accent' : ''}`}
                                                     style={{ backgroundColor: color }}
                                                 />
                                             ))}
                                         </div>
                                         <button
                                             onClick={() => handleUpdate(group)}
-                                            className="p-1.5 hover:bg-green-500/20 text-green-400 rounded-lg"
+                                            className="p-1.5 hover:bg-emerald-500/20 text-emerald-400 rounded-[5px]"
                                         >
                                             <Check className="w-4 h-4" />
                                         </button>
@@ -160,19 +160,19 @@ export function GroupManager({ isOpen, onClose, groups: initialGroups }: GroupMa
                                 ) : (
                                     <>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: group.color }} />
-                                            <span className="font-medium text-foreground/90">{group.name}</span>
+                                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: group.color }} />
+                                            <span className="font-bold text-sm text-text">{group.name}</span>
                                         </div>
                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick={() => setEditingId(group.id)}
-                                                className="p-1.5 hover:bg-white/10 text-muted-foreground hover:text-foreground rounded-lg"
+                                                className="p-1.5 hover:bg-panel text-faint hover:text-text rounded-[5px] border border-transparent hover:border-line"
                                             >
                                                 <Edit2 className="w-3.5 h-3.5" />
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(group.id)}
-                                                className="p-1.5 hover:bg-red-500/20 text-muted-foreground hover:text-red-400 rounded-lg"
+                                                className="p-1.5 hover:bg-red-500/20 text-faint hover:text-red-400 rounded-[5px] border border-transparent hover:border-red-500/30"
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
                                             </button>
@@ -182,7 +182,7 @@ export function GroupManager({ isOpen, onClose, groups: initialGroups }: GroupMa
                             </div>
                         ))}
                         {localGroups.length === 0 && !isAdding && (
-                            <div className="text-center text-muted-foreground py-8 text-sm">
+                            <div className="text-center text-faint py-8 text-xs font-mono">
                                 No groups created yet.
                             </div>
                         )}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNotificationChannels, useCreateNotificationChannel, useUpdateNotificationChannel, useDeleteNotificationChannel, useTestNotificationChannel } from '../hooks/useNotifications';
 import { NotificationChannel, NotificationChannelType, NotificationChannelCreate } from '../types';
-import { Bell, Plus, Trash2, Play, Settings2, Loader2, ShieldCheck } from 'lucide-react';
+import { Bell, Plus, Trash2, Play, Settings2, Loader2, ShieldCheck, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { pushNotifications } from '../utils/pushNotifications';
 
@@ -78,21 +78,21 @@ export default function NotificationSettings() {
     };
 
     return (
-        <div className="space-y-8">
-            <div className="p-8 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-2xl bg-primary/10 text-primary">
-                            <Bell className="w-8 h-8" />
+        <div className="space-y-6">
+            <div className="panel p-5 md:p-6 rounded-[var(--r-panel)] border border-line bg-panel">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-lg bg-accent-soft text-accent">
+                            <Bell className="w-6 h-6" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-semibold">Notification Channels</h2>
-                            <p className="text-muted-foreground">Configure where to receive system alerts</p>
+                            <h2 className="text-base font-semibold text-text font-mono">Notification Channels</h2>
+                            <p className="text-xs text-faint font-mono">Configure where to receive system alerts</p>
                         </div>
                     </div>
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
+                        className="flex items-center gap-1.5 bg-accent text-accent-foreground px-3.5 py-1.5 rounded-[7px] hover:opacity-90 transition-opacity text-xs font-mono font-medium shadow-sm"
                     >
                         <Plus className="w-4 h-4" /> Add Channel
                     </button>
@@ -100,62 +100,62 @@ export default function NotificationSettings() {
 
                 {isLoading ? (
                     <div className="flex justify-center p-8">
-                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        <Loader2 className="w-6 h-6 animate-spin text-accent" />
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {channels.length === 0 ? (
-                            <div className="text-center p-8 text-muted-foreground bg-black/20 rounded-xl border border-border/20">
+                            <div className="text-center p-8 text-faint bg-raised rounded-[var(--r-panel)] border border-line font-mono text-xs">
                                 No notification channels configured.
                             </div>
                         ) : (
                             channels.map(channel => (
-                                <div key={channel.id} className="flex items-center justify-between p-4 rounded-xl bg-black/40 border border-white/10 group">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`p-2 rounded-lg ${channel.is_enabled ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                                            <Bell className="w-5 h-5" />
+                                <div key={channel.id} className="flex items-center justify-between p-3.5 rounded-[var(--r-panel)] bg-raised border border-line group transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg ${channel.is_enabled ? 'bg-accent-soft text-accent' : 'bg-panel text-faint'}`}>
+                                            <Bell className="w-4 h-4" />
                                         </div>
                                         <div>
-                                            <h3 className="font-medium text-foreground">{channel.name}</h3>
-                                            <div className="flex gap-2 items-center text-xs text-muted-foreground">
+                                            <h3 className="font-medium text-text text-xs font-mono">{channel.name}</h3>
+                                            <div className="flex gap-2 items-center text-[10px] text-faint font-mono mt-0.5">
                                                 <span className="uppercase tracking-wider font-semibold">{channel.type}</span>
                                                 <span>•</span>
-                                                <span className={channel.is_enabled ? 'text-green-400' : 'text-red-400'}>
+                                                <span className={channel.is_enabled ? 'text-ok font-semibold' : 'text-danger font-semibold'}>
                                                     {channel.is_enabled ? 'Enabled' : 'Disabled'}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5">
                                         <button
                                             onClick={() => handleToggleEnable(channel)}
-                                            className="p-2 text-muted-foreground hover:text-foreground bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                                            className="p-1.5 text-text-soft hover:text-text bg-panel hover:bg-line-strong rounded-[7px] border border-line transition-colors"
                                             title={channel.is_enabled ? "Disable Channel" : "Enable Channel"}
                                         >
-                                            <Settings2 className="w-4 h-4" />
+                                            <Settings2 className="w-3.5 h-3.5" />
                                         </button>
                                         <button
                                             onClick={() => handleTest(channel.id)}
-                                            className="p-2 text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors"
+                                            className="p-1.5 text-accent bg-accent-soft hover:opacity-80 rounded-[7px] transition-opacity"
                                             title="Test Channel"
                                         >
-                                            <Play className="w-4 h-4" />
+                                            <Play className="w-3.5 h-3.5" />
                                         </button>
                                         <button
                                             onClick={() => setEditingChannel(channel)}
-                                            className="p-2 text-primary hover:text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
+                                            className="p-1.5 text-accent bg-accent-soft hover:opacity-80 rounded-[7px] transition-opacity"
                                             title="Edit Channel"
-                                            disabled // Implement edit mode later
+                                            disabled
                                         >
-                                            <Settings2 className="w-4 h-4" />
+                                            <Settings2 className="w-3.5 h-3.5" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(channel.id)}
-                                            className="p-2 text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors"
+                                            className="p-1.5 text-danger bg-danger/10 hover:bg-danger/20 rounded-[7px] transition-colors"
                                             title="Delete Channel"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Trash2 className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 </div>
@@ -165,26 +165,26 @@ export default function NotificationSettings() {
                 )}
             </div>
 
-            <div className="flex items-center justify-between p-6 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
+            <div className="panel flex items-center justify-between p-5 md:p-6 rounded-[var(--r-panel)] border border-line bg-panel">
                 <div className="space-y-1">
-                    <div className="flex items-center gap-2 font-medium">
-                        <ShieldCheck className="w-5 h-5 text-primary" />
+                    <div className="flex items-center gap-2 font-medium text-text text-xs font-mono">
+                        <ShieldCheck className="w-4 h-4 text-accent" />
                         Browser Push Notifications
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-faint font-mono">
                         {pushStatus === 'unsupported'
                             ? 'Not supported by this browser'
                             : 'Receive alerts directly in your browser or on your phone'}
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {isPushLoading && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                    {isPushLoading && <Loader2 className="w-4 h-4 animate-spin text-accent" />}
                     <button
                         disabled={pushStatus === 'unsupported' || isPushLoading}
                         onClick={handlePushToggle}
-                        className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${pushStatus === 'granted' ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+                        className={`w-11 h-6 rounded-full relative transition-colors duration-200 border border-line ${pushStatus === 'granted' ? 'bg-accent' : 'bg-raised'}`}
                     >
-                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${pushStatus === 'granted' ? 'left-7' : 'left-1'}`} />
+                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 shadow-sm ${pushStatus === 'granted' ? 'left-6' : 'left-1'}`} />
                     </button>
                 </div>
             </div>
@@ -264,28 +264,30 @@ function ChannelModal({ isOpen, onClose, existingChannel, onSave }: { isOpen: bo
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-[#12141a] border border-border/50 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
-                <div className="p-6 border-b border-border/20 flex justify-between items-center">
-                    <h3 className="text-xl font-semibold">{existingChannel ? 'Edit Channel' : 'Add Channel'}</h3>
-                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
+            <div className="panel bg-panel border border-line rounded-[var(--r-panel)] w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+                <div className="p-4 md:p-5 border-b border-line flex justify-between items-center">
+                    <h3 className="text-sm font-semibold text-text font-mono">{existingChannel ? 'Edit Channel' : 'Add Channel'}</h3>
+                    <button onClick={onClose} aria-label="Close" className="text-faint hover:text-text p-1 rounded-[5px] hover:bg-panel transition-colors">
+                        <X className="w-4 h-4" />
+                    </button>
                 </div>
 
-                <div className="p-6 space-y-4 overflow-y-auto">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Name</label>
+                <div className="p-4 md:p-5 space-y-4 overflow-y-auto">
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-mono text-faint">Name</label>
                         <input
                             value={name} onChange={e => setName(e.target.value)}
-                            className="w-full bg-black/40 border border-border/50 rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50"
+                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent"
                             placeholder="e.g. My Telegram Alerts"
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Type</label>
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-mono text-faint">Type</label>
                         <select
                             value={type} onChange={e => handleTypeChange(e.target.value as NotificationChannelType)}
                             disabled={!!existingChannel}
-                            className="w-full bg-black/40 border border-border/50 rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 appearance-none"
+                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent"
                         >
                             <option value="telegram">Telegram</option>
                             <option value="discord">Discord (Webhook)</option>
@@ -295,29 +297,29 @@ function ChannelModal({ isOpen, onClose, existingChannel, onSave }: { isOpen: bo
                         </select>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Configuration (JSON)</label>
-                        <p className="text-xs text-muted-foreground mb-2">Provide the required keys for the selected provider.</p>
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-mono text-faint">Configuration (JSON)</label>
+                        <p className="text-[10px] text-faint font-mono mb-1">Provide the required keys for the selected provider.</p>
                         <textarea
                             value={configStr} onChange={e => setConfigStr(e.target.value)}
                             rows={6}
-                            className="w-full bg-black/40 border border-border/50 rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 font-mono text-sm"
+                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent"
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Events</label>
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-mono text-faint">Events</label>
                         <input
                             value={events.join(',')} onChange={e => setEvents(e.target.value.split(',').map(s => s.trim()))}
-                            className="w-full bg-black/40 border border-border/50 rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50"
+                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent"
                             placeholder="e.g. security.*, system.cpu_high, * for all"
                         />
                     </div>
                 </div>
 
-                <div className="p-6 border-t border-border/20 flex justify-end gap-3 bg-black/20 rounded-b-2xl">
-                    <button onClick={onClose} className="px-4 py-2 rounded-xl text-muted-foreground hover:bg-white/5 transition-colors">Cancel</button>
-                    <button onClick={handleSave} className="bg-primary text-primary-foreground px-6 py-2 rounded-xl hover:opacity-90 font-medium">Save Channel</button>
+                <div className="p-4 border-t border-line flex justify-end gap-2 bg-raised rounded-b-[var(--r-panel)]">
+                    <button onClick={onClose} className="px-3 py-1.5 rounded-[7px] text-faint hover:text-text font-mono text-xs transition-colors">Cancel</button>
+                    <button onClick={handleSave} className="bg-accent text-accent-foreground px-4 py-1.5 rounded-[7px] hover:opacity-90 font-mono text-xs font-medium">Save Channel</button>
                 </div>
             </div>
         </div>

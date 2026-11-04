@@ -52,17 +52,17 @@ const TrafficCategoriesWidget: React.FC<{ deviceId?: number }> = ({ deviceId }) 
 
     if (isLoading) {
         return (
-            <div className="bg-card/60 border border-border rounded-xl p-4 flex flex-col items-center justify-center min-h-[300px]">
-                <Activity className="w-8 h-8 animate-pulse text-cyan-500 mb-2" />
-                <span className="text-sm text-muted-foreground">Loading Analytics...</span>
+            <div className="panel border border-line rounded-[var(--r-panel)] p-4 flex flex-col items-center justify-center min-h-[300px] bg-panel">
+                <Activity className="w-6 h-6 animate-pulse text-accent mb-2" />
+                <span className="text-xs font-mono text-faint">Loading Analytics...</span>
             </div>
         );
     }
 
     if (isError || !categories) {
         return (
-            <div className="bg-card/60 border border-border rounded-xl p-4 flex flex-col items-center justify-center min-h-[300px] text-muted-foreground">
-                <span className="text-sm">Unable to load traffic categories</span>
+            <div className="panel border border-line rounded-[var(--r-panel)] p-4 flex flex-col items-center justify-center min-h-[300px] text-faint bg-panel font-mono text-xs">
+                <span>Unable to load traffic categories</span>
             </div>
         );
     }
@@ -77,30 +77,30 @@ const TrafficCategoriesWidget: React.FC<{ deviceId?: number }> = ({ deviceId }) 
 
     if (chartData.length === 0) {
         return (
-            <div className="bg-card/60 border border-border rounded-xl p-4 flex flex-col items-center justify-center min-h-[300px] text-muted-foreground">
-                <Layers className="w-8 h-8 opacity-50 mb-2" />
-                <span className="text-sm">No application traffic recorded yet</span>
+            <div className="panel border border-line rounded-[var(--r-panel)] p-4 flex flex-col items-center justify-center min-h-[300px] text-faint bg-panel font-mono text-xs">
+                <Layers className="w-6 h-6 opacity-40 mb-2" />
+                <span>No application traffic recorded yet</span>
             </div>
         );
     }
 
     return (
-        <div className="bg-card/60 border border-border rounded-xl p-4 flex flex-col h-full">
+        <div className="panel border border-line rounded-[var(--r-panel)] p-4 flex flex-col h-full bg-panel">
             <div className="flex items-center gap-2 mb-4">
-                <Layers className="w-4 h-4 text-cyan-400" />
-                <h3 className="text-sm font-semibold text-white">Application Traffic (DPI)</h3>
+                <Layers className="w-4 h-4 text-accent" />
+                <h3 className="text-xs font-semibold text-text font-mono">Application Traffic (DPI)</h3>
             </div>
 
             <div className="flex-1 w-full min-h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
-                        <XAxis type="number" tickFormatter={formatBytes} stroke="#6b7280" fontSize={11} />
-                        <YAxis dataKey="name" type="category" stroke="#6b7280" fontSize={11} tick={{ fill: '#d1d5db' }} width={80} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" horizontal={false} />
+                        <XAxis type="number" tickFormatter={formatBytes} stroke="var(--faint)" fontSize={10} />
+                        <YAxis dataKey="name" type="category" stroke="var(--faint)" fontSize={10} tick={{ fill: 'var(--text)' }} width={80} />
                         <Tooltip
-                            cursor={{ fill: '#1f2937' }}
-                            contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '8px', fontSize: '12px' }}
-                            itemStyle={{ color: '#e5e7eb' }}
+                            cursor={{ fill: 'var(--raised)' }}
+                            contentStyle={{ backgroundColor: 'var(--panel)', borderColor: 'var(--line)', borderRadius: '8px', fontSize: '11px', color: 'var(--text)' }}
+                            itemStyle={{ color: 'var(--text)' }}
                             formatter={(value: number, name: string) => [formatBytes(value), name === 'total' ? 'Total Traffic' : name.charAt(0).toUpperCase() + name.slice(1)]}
                         />
                         <Bar dataKey="total" radius={[0, 4, 4, 0]}>

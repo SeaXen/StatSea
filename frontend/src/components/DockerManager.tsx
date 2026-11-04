@@ -8,7 +8,8 @@ import {
     RotateCw,
     Terminal,
     RefreshCw,
-    Trash2
+    Trash2,
+    Search
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
@@ -134,8 +135,8 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
                         <Trash2 className="w-3 h-3" />
                         <span>Prune</span>
                     </button>
-                    <div className="search">
-                        <span aria-hidden="true">&#8981;</span>
+                    <div className="search flex items-center gap-1.5">
+                        <Search className="w-3.5 h-3.5 text-muted shrink-0" />
                         <input
                             type="search"
                             placeholder="Search containers…"
@@ -424,14 +425,14 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                                 <div className="w-2 h-2 rounded-full bg-ok animate-pulse" />
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 font-mono text-[10px] leading-relaxed text-muted-foreground bg-black/40 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-4 font-mono text-[10px] leading-relaxed text-faint bg-raised/70 custom-scrollbar">
                             {logs && Array.isArray(logs) && logs.length > 0 ? logs.map((log, i) => (
-                                <div key={i} className="mb-1 border-l border-white/5 pl-3 hover:bg-white/5 transition-colors">
-                                    <span className="text-muted-foreground/50 mr-3 select-none">{String(i + 1).padStart(3, '0')}</span>
+                                <div key={i} className="mb-1 border-l border-line pl-3 hover:bg-panel transition-colors text-text/80">
+                                    <span className="text-faint/60 mr-3 select-none">{String(i + 1).padStart(3, '0')}</span>
                                     {typeof log === 'string' ? log : JSON.stringify(log)}
                                 </div>
                             )) : (
-                                <div className="h-full flex items-center justify-center text-muted-foreground/50 italic">
+                                <div className="h-full flex items-center justify-center text-faint italic">
                                     {logsLoading ? 'Synchronizing stream...' : 'Waiting for telemetry...'}
                                 </div>
                             )}

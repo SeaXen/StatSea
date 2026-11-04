@@ -11,7 +11,8 @@ import {
     Sliders,
     Laptop,
     Activity,
-    Layers
+    Layers,
+    Search
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationCenter } from './NotificationCenter';
@@ -130,9 +131,6 @@ export const TopNav: React.FC<TopNavProps> = ({
         navigate('/login');
     };
 
-    const primaryRanges = ['15m', '1h', '6h', '24h', '7d'];
-    const isExtendedActive = !primaryRanges.includes(timeRange);
-
     return (
         <header className="topbar relative z-40">
             {/* Brand */}
@@ -216,81 +214,73 @@ export const TopNav: React.FC<TopNavProps> = ({
                 </span>
             )}
 
-            {/* Spacer */}
+            {/* Spacer & Controls */}
             <div className="spacer">
                 {/* Search */}
                 <button
                     type="button"
                     onClick={() => setCommandOpen(true)}
-                    className="search cursor-pointer text-left"
+                    className="search cursor-pointer text-left flex items-center gap-2"
                     aria-label="Search devices, IPs, domains"
                 >
-                    <span aria-hidden="true">&#8981;</span>
+                    <Search className="w-3.5 h-3.5 text-muted shrink-0" />
                     <span className="text-faint truncate text-[12px] flex-1">Search devices, IPs, domains…</span>
-                    <kbd className="mono text-[10px] text-muted ml-auto hidden sm:inline-block">⌘&nbsp;K</kbd>
+                    <kbd className="mono text-[10px] text-muted ml-auto hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-raised border border-line">⌘K</kbd>
                 </button>
 
-                {/* Range pills + Extended Dropdown */}
-                <div className="range hidden md:flex items-center" role="group" aria-label="Time range">
-                    {primaryRanges.map(r => (
-                        <button
-                            key={r}
-                            type="button"
-                            aria-pressed={timeRange === r}
-                            onClick={() => handleSelectTimeRange(r)}
-                        >
-                            {r}
-                        </button>
-                    ))}
+                {/* Unified Timeline Horizons Dropdown */}
+                <div className="relative" ref={timeRef}>
+                    {(() => {
+                        const activeRange = EXTENDED_RANGES.find(r => r.id === timeRange) || EXTENDED_RANGES[1];
+                        return (
+                            <button
+                                type="button"
+                                className="select flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono bg-panel border border-line-strong rounded-[7px] text-text hover:bg-raised transition-colors focus-visible:outline-none focus-visible:border-accent"
+                                onClick={() => setIsTimeDropdownOpen(!isTimeDropdownOpen)}
+                                aria-expanded={isTimeDropdownOpen}
+                                aria-label="Select timeline range"
+                                title="Timeline Range"
+                            >
+                                <Clock className="w-3.5 h-3.5 text-accent" />
+                                <span className="font-medium text-xs text-text">{activeRange.name}</span>
+                                <span className="text-[10px] text-faint font-mono">({activeRange.label})</span>
+                                <ChevronDown className={`w-3.5 h-3.5 text-muted transition-transform duration-150 ${isTimeDropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                        );
+                    })()}
 
-                    {/* Extended Timeline Dropdown Button */}
-                    <div className="relative ml-1" ref={timeRef}>
-                        <button
-                            type="button"
-                            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-[6px] border transition-colors ${
-                                isExtendedActive
-                                    ? 'bg-raised text-text border-line-strong font-medium'
-                                    : 'text-muted border-transparent hover:text-text hover:bg-raised/50'
-                            }`}
-                            onClick={() => setIsTimeDropdownOpen(!isTimeDropdownOpen)}
-                            aria-expanded={isTimeDropdownOpen}
-                            aria-label="More time ranges"
-                            title="More time ranges"
-                        >
-                            <Clock className="w-3 h-3 text-muted" />
-                            <span>{isExtendedActive ? timeRange : 'More'}</span>
-                            <ChevronDown className={`w-3 h-3 transition-transform ${isTimeDropdownOpen ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {isTimeDropdownOpen && (
-                            <div className="absolute right-0 top-full mt-1.5 w-56 rounded-[9px] bg-panel border border-line-strong shadow-2xl p-1.5 font-mono text-xs z-50 animate-in fade-in slide-in-from-top-1">
-                                <div className="px-2.5 py-1.5 text-[10px] font-semibold text-faint uppercase tracking-wider border-b border-line mb-1">
-                                    Time Horizons
-                                </div>
-                                <div className="space-y-0.5 max-h-64 overflow-y-auto">
-                                    {EXTENDED_RANGES.map((range) => {
-                                        const isSelected = timeRange === range.id;
-                                        return (
-                                            <button
-                                                key={range.id}
-                                                type="button"
-                                                onClick={() => handleSelectTimeRange(range.id)}
-                                                className={`w-full text-left px-2.5 py-1.5 rounded-[6px] flex items-center justify-between transition-colors ${
-                                                    isSelected ? 'bg-raised text-accent' : 'text-text hover:bg-raised/70'
-                                                }`}
-                                            >
-                                                <div className="flex flex-col">
-                                                    <span className="font-semibold text-xs text-text">{range.name}</span>
-                                                    <span className="text-[10px] text-muted">{range.desc}</span>
-                                                </div>
-                                                {isSelected && <Check className="w-3.5 h-3.5 text-accent" />}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                    {isTimeDropdownOpen && (
+                        <div className="absolute right-0 top-full mt-1.5 w-60 rounded-[9px] bg-panel border border-line-strong shadow-2xl p-1.5 font-mono text-xs z-50 animate-in fade-in slide-in-from-top-1">
+                            <div className="px-2.5 py-1.5 text-[10px] font-semibold text-faint uppercase tracking-wider border-b border-line mb-1 flex items-center justify-between">
+                                <span>Timeline Horizons</span>
+                                <Clock className="w-3 h-3 text-accent" />
                             </div>
-                        )}
-                    </div>
+                            <div className="space-y-0.5 max-h-72 overflow-y-auto custom-scrollbar">
+                                {EXTENDED_RANGES.map((range) => {
+                                    const isSelected = timeRange === range.id;
+                                    return (
+                                        <button
+                                            key={range.id}
+                                            type="button"
+                                            onClick={() => handleSelectTimeRange(range.id)}
+                                            className={`w-full text-left px-2.5 py-2 rounded-[6px] flex items-center justify-between transition-colors ${
+                                                isSelected ? 'bg-raised text-accent border border-accent/20' : 'text-text hover:bg-raised/70'
+                                            }`}
+                                        >
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="font-semibold text-xs text-text">{range.name}</span>
+                                                    <span className="text-[10px] text-faint">({range.label})</span>
+                                                </div>
+                                                <span className="text-[10px] text-muted">{range.desc}</span>
+                                            </div>
+                                            {isSelected && <Check className="w-3.5 h-3.5 text-accent shrink-0" />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Theme Toggle */}

@@ -93,25 +93,25 @@ export default function AuditLogTab() {
 
     return (
         <div className="space-y-6">
-            <div className="p-8 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+            <div className="panel p-5 md:p-6 rounded-[var(--r-panel)] border border-line bg-panel">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                     <div>
-                        <h2 className="text-2xl font-semibold flex items-center gap-3 mb-1">
-                            <Activity className="w-6 h-6 text-primary" />
+                        <h2 className="text-base font-semibold text-text font-mono flex items-center gap-2 mb-1">
+                            <Activity className="w-5 h-5 text-accent" />
                             System Audit Log
                         </h2>
-                        <p className="text-muted-foreground">Review system events, administrative actions, and logins.</p>
+                        <p className="text-xs text-faint font-mono">Review system events, administrative actions, and logins.</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="relative">
-                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-faint" />
                             <select
-                                className="pl-10 pr-8 py-2.5 rounded-xl border border-border/50 bg-card/50 focus:ring-2 focus:ring-primary/50 outline-none appearance-none font-medium text-sm transition-all"
+                                className="pl-9 pr-8 py-1.5 rounded-[7px] border border-line bg-raised focus:outline-none focus:border-accent appearance-none font-mono text-xs text-text transition-colors"
                                 value={actionFilter}
                                 onChange={(e) => {
                                     setActionFilter(e.target.value);
-                                    setPage(1); // Reset to first page
+                                    setPage(1);
                                 }}
                             >
                                 <option value="">All Actions</option>
@@ -122,21 +122,21 @@ export default function AuditLogTab() {
                             </select>
                         </div>
 
-                        <div className="flex items-center gap-2 bg-card/50 border border-border/50 rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <div className="flex items-center gap-2 bg-raised border border-line rounded-[7px] px-3 py-1 font-mono text-xs text-text">
+                            <Calendar className="w-3.5 h-3.5 text-faint" />
                             <input
                                 type="date"
-                                className="bg-transparent border-none text-sm outline-none w-[130px] text-foreground"
+                                className="bg-transparent border-none text-xs font-mono outline-none w-[120px] text-text"
                                 value={startDate}
                                 onChange={(e) => {
                                     setStartDate(e.target.value);
                                     setPage(1);
                                 }}
                             />
-                            <span className="text-muted-foreground">-</span>
+                            <span className="text-faint">-</span>
                             <input
                                 type="date"
-                                className="bg-transparent border-none text-sm outline-none w-[130px] text-foreground"
+                                className="bg-transparent border-none text-xs font-mono outline-none w-[120px] text-text"
                                 value={endDate}
                                 onChange={(e) => {
                                     setEndDate(e.target.value);
@@ -147,75 +147,75 @@ export default function AuditLogTab() {
                     </div>
                 </div>
 
-                <div className="bg-black/20 rounded-2xl border border-white/5 overflow-hidden">
+                <div className="panel rounded-[var(--r-panel)] border border-line bg-panel overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                            <thead className="bg-white/5 border-b border-white/5 text-muted-foreground">
+                            <thead className="bg-raised/95 border-b border-line text-faint font-mono text-[10px] uppercase">
                                 <tr>
-                                    <th className="px-6 py-4 font-medium whitespace-nowrap">Timestamp</th>
-                                    <th className="px-6 py-4 font-medium">Action</th>
-                                    <th className="px-6 py-4 font-medium">Actor</th>
-                                    <th className="px-6 py-4 font-medium">Resource</th>
-                                    <th className="px-6 py-4 font-medium w-1/3">Details</th>
+                                    <th className="px-4 py-2.5 font-medium whitespace-nowrap">Timestamp</th>
+                                    <th className="px-4 py-2.5 font-medium">Action</th>
+                                    <th className="px-4 py-2.5 font-medium">Actor</th>
+                                    <th className="px-4 py-2.5 font-medium">Resource</th>
+                                    <th className="px-4 py-2.5 font-medium w-1/3">Details</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
+                            <tbody className="divide-y divide-line">
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                                            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+                                        <td colSpan={5} className="px-4 py-12 text-center text-faint font-mono text-xs">
+                                            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-accent" />
                                             <p>Loading audit logs...</p>
                                         </td>
                                     </tr>
                                 ) : logs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                                            <Search className="w-8 h-8 mx-auto mb-4 opacity-50" />
+                                        <td colSpan={5} className="px-4 py-12 text-center text-faint font-mono text-xs">
+                                            <Search className="w-6 h-6 mx-auto mb-2 opacity-40" />
                                             <p>No audit logs found matching criteria.</p>
                                         </td>
                                     </tr>
                                 ) : (
                                     logs.map((log) => (
-                                        <tr key={log.id} className="hover:bg-white/5 transition-colors group">
-                                            <td className="px-6 py-4 whitespace-nowrap text-muted-foreground font-mono text-xs">
+                                        <tr key={log.id} className="hover:bg-raised/60 transition-colors group">
+                                            <td className="px-4 py-2.5 whitespace-nowrap text-faint font-mono text-xs">
                                                 {new Date(log.timestamp).toLocaleString(undefined, {
                                                     year: 'numeric', month: 'short', day: 'numeric',
                                                     hour: '2-digit', minute: '2-digit', second: '2-digit'
                                                 })}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-bold border ${getActionColor(log.action)}`}>
+                                            <td className="px-4 py-2.5 whitespace-nowrap">
+                                                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[5px] text-[10px] uppercase tracking-wider font-bold font-mono border ${getActionColor(log.action)}`}>
                                                     {getActionIcon(log.action)}
                                                     {log.action}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-4 py-2.5 whitespace-nowrap font-mono text-xs">
                                                 {log.actor ? (
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold">
+                                                        <div className="w-5 h-5 rounded-full bg-accent-soft text-accent flex items-center justify-center text-[10px] font-bold">
                                                             {log.actor.username.charAt(0).toUpperCase()}
                                                         </div>
-                                                        <span className="font-medium">{log.actor.full_name || log.actor.username}</span>
+                                                        <span className="font-medium text-text">{log.actor.full_name || log.actor.username}</span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-muted-foreground italic text-xs">System</span>
+                                                    <span className="text-faint italic text-xs">System</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-foreground/90">{log.resource_type}</span>
+                                            <td className="px-4 py-2.5 whitespace-nowrap">
+                                                <div className="flex flex-col font-mono text-xs">
+                                                    <span className="font-medium text-text">{log.resource_type}</span>
                                                     {log.resource_id && (
-                                                        <span className="text-xs text-muted-foreground font-mono">ID: {log.resource_id}</span>
+                                                        <span className="text-[10px] text-faint">ID: {log.resource_id}</span>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-xs font-mono text-muted-foreground break-words max-w-sm">
+                                            <td className="px-4 py-2.5 text-xs font-mono text-text-soft break-words max-w-sm">
                                                 {log.details ? (
-                                                    <div className="bg-black/30 p-2 rounded border border-white/5 max-h-24 overflow-y-auto custom-scrollbar">
+                                                    <div className="bg-raised p-2 rounded-[6px] border border-line max-h-24 overflow-y-auto custom-scrollbar text-[11px]">
                                                         {log.details}
                                                     </div>
                                                 ) : (
-                                                    <span className="italic opacity-50">-</span>
+                                                    <span className="italic text-faint">-</span>
                                                 )}
                                             </td>
                                         </tr>
@@ -227,27 +227,27 @@ export default function AuditLogTab() {
 
                     {/* Pagination */}
                     {!isLoading && logs.length > 0 && (
-                        <div className="px-6 py-4 border-t border-white/5 bg-white/5 flex items-center justify-between">
-                            <div className="text-sm text-muted-foreground">
-                                Showing <span className="font-medium text-foreground">{(page - 1) * perPage + 1}</span> to <span className="font-medium text-foreground">{Math.min(page * perPage, totalItems)}</span> of <span className="font-medium text-foreground">{totalItems}</span> entries
+                        <div className="px-4 py-2.5 border-t border-line bg-raised flex items-center justify-between">
+                            <div className="text-xs font-mono text-faint">
+                                Showing <span className="font-medium text-text">{(page - 1) * perPage + 1}</span> to <span className="font-medium text-text">{Math.min(page * perPage, totalItems)}</span> of <span className="font-medium text-text">{totalItems}</span> entries
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5">
                                 <button
                                     onClick={() => setPage(p => Math.max(1, p - 1))}
                                     disabled={page === 1}
-                                    className="p-2 rounded-lg border border-border/50 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="p-1.5 rounded-[7px] border border-line bg-panel hover:bg-line-strong disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-text"
                                 >
-                                    <ChevronLeft className="w-4 h-4" />
+                                    <ChevronLeft className="w-3.5 h-3.5" />
                                 </button>
-                                <span className="text-sm font-medium px-4 py-2 bg-black/30 rounded-lg border border-white/5">
+                                <span className="text-xs font-mono px-3 py-1 bg-panel rounded-[7px] border border-line text-text">
                                     Page {page} of {totalPages}
                                 </span>
                                 <button
                                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                     disabled={page === totalPages}
-                                    className="p-2 rounded-lg border border-border/50 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="p-1.5 rounded-[7px] border border-line bg-panel hover:bg-line-strong disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-text"
                                 >
-                                    <ChevronRight className="w-4 h-4" />
+                                    <ChevronRight className="w-3.5 h-3.5" />
                                 </button>
                             </div>
                         </div>

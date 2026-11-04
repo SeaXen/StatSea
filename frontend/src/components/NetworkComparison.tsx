@@ -148,28 +148,27 @@ const NetworkComparison: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-6">
             {/* Header / Controls */}
-            {/* Header / Controls */}
-            <div className="flex flex-col md:flex-row justify-between items-center bg-card/60 p-4 rounded-xl border border-border backdrop-blur-sm">
+            <div className="panel flex flex-col md:flex-row justify-between items-center p-4 rounded-[var(--r-panel)] border border-line bg-panel">
                 <div className="flex items-center gap-3 mb-4 md:mb-0">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <ArrowRightLeft className="w-5 h-5 text-primary" />
+                    <div className="p-2 bg-accent-soft rounded-lg text-accent">
+                        <ArrowRightLeft className="w-5 h-5" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold text-foreground">Network Comparison</h2>
-                        <p className="text-xs text-muted-foreground">Analyze performance across different timeframes</p>
+                        <h2 className="text-sm font-semibold text-text font-mono">Network Comparison</h2>
+                        <p className="text-xs text-faint font-mono">Analyze performance across different timeframes</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col gap-1">
-                        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold ml-1">Period A</label>
+                        <label className="text-[10px] uppercase tracking-wider text-faint font-mono font-bold ml-1">Period A</label>
                         <select
                             value={rangeA}
                             onChange={(e) => setRangeA(e.target.value)}
                             aria-label="Period A selection"
-                            className="bg-secondary border border-border text-foreground/90 text-sm rounded-lg p-2 focus:ring-primary focus:border-primary outline-none"
+                            className="bg-raised border border-line text-text text-xs font-mono rounded-[7px] px-3 py-1.5 focus:border-accent outline-none"
                         >
                             <option value="1h">Last Hour</option>
                             <option value="24h">Last 24 Hours</option>
@@ -177,15 +176,15 @@ const NetworkComparison: React.FC = () => {
                         </select>
                     </div>
 
-                    <span className="text-muted-foreground mt-4 font-semibold text-xs">VS</span>
+                    <span className="text-faint mt-4 font-mono text-xs">VS</span>
 
                     <div className="flex flex-col gap-1">
-                        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold ml-1">Period B</label>
+                        <label className="text-[10px] uppercase tracking-wider text-faint font-mono font-bold ml-1">Period B</label>
                         <select
                             value={rangeB}
                             onChange={(e) => setRangeB(e.target.value)}
                             aria-label="Period B selection"
-                            className="bg-secondary border border-border text-foreground/90 text-sm rounded-lg p-2 focus:ring-primary focus:border-primary outline-none"
+                            className="bg-raised border border-line text-text text-xs font-mono rounded-[7px] px-3 py-1.5 focus:border-accent outline-none"
                         >
                             <option value="prev_1h">Previous Hour</option>
                             <option value="prev_24h">Previous 24 Hours</option>
@@ -198,32 +197,32 @@ const NetworkComparison: React.FC = () => {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Period A Stats */}
-                <div className="bg-card/60 border border-primary/30 rounded-xl p-5 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Calendar className="w-24 h-24 text-primary" />
+                <div className="panel border border-accent/40 rounded-[var(--r-panel)] p-4 md:p-5 relative overflow-hidden bg-panel">
+                    <div className="absolute top-0 right-0 p-4 opacity-5">
+                        <Calendar className="w-24 h-24 text-accent" />
                     </div>
                     <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-sm font-medium text-primary">Period A (Current)</h3>
-                        <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                        <h3 className="text-xs font-medium text-accent font-mono">Period A (Current)</h3>
+                        <span className="px-2 py-0.5 bg-accent-soft text-accent text-[10px] rounded-[5px] font-mono">
                             {rangeA === '24h' ? 'Last 24h' : rangeA}
                         </span>
                     </div>
                     <div className="space-y-4">
                         <div>
-                            <p className="text-muted-foreground text-xs mb-1">Total Download</p>
+                            <p className="text-faint text-xs font-mono mb-1">Total Download</p>
                             <div className="flex items-end gap-2">
-                                <span className="text-2xl font-bold text-foreground tabular-nums">{formatBytes(statsA.totalDownload)}</span>
-                                <span className={`text-xs flex items-center tabular-nums ${getDiff(statsA.totalDownload, statsB.totalDownload) > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                <span className="text-xl font-bold text-text font-mono num">{formatBytes(statsA.totalDownload)}</span>
+                                <span className={`text-xs flex items-center font-mono num ${getDiff(statsA.totalDownload, statsB.totalDownload) > 0 ? 'text-ok' : 'text-danger'}`}>
                                     {getDiff(statsA.totalDownload, statsB.totalDownload) > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
                                     {Math.abs(getDiff(statsA.totalDownload, statsB.totalDownload)).toFixed(1)}%
                                 </span>
                             </div>
                         </div>
                         <div>
-                            <p className="text-muted-foreground text-xs mb-1">Total Upload</p>
+                            <p className="text-faint text-xs font-mono mb-1">Total Upload</p>
                             <div className="flex items-end gap-2">
-                                <span className="text-2xl font-bold text-foreground tabular-nums">{formatBytes(statsA.totalUpload)}</span>
-                                <span className={`text-xs flex items-center tabular-nums ${getDiff(statsA.totalUpload, statsB.totalUpload) > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                <span className="text-xl font-bold text-text font-mono num">{formatBytes(statsA.totalUpload)}</span>
+                                <span className={`text-xs flex items-center font-mono num ${getDiff(statsA.totalUpload, statsB.totalUpload) > 0 ? 'text-ok' : 'text-danger'}`}>
                                     {getDiff(statsA.totalUpload, statsB.totalUpload) > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
                                     {Math.abs(getDiff(statsA.totalUpload, statsB.totalUpload)).toFixed(1)}%
                                 </span>
@@ -233,38 +232,38 @@ const NetworkComparison: React.FC = () => {
                 </div>
 
                 {/* Period B Stats */}
-                <div className="bg-card/60 border border-border rounded-xl p-5 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Timer className="w-24 h-24 text-muted-foreground" />
+                <div className="panel border border-line rounded-[var(--r-panel)] p-4 md:p-5 relative overflow-hidden bg-panel">
+                    <div className="absolute top-0 right-0 p-4 opacity-5">
+                        <Timer className="w-24 h-24 text-faint" />
                     </div>
                     <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">Period B (Baseline)</h3>
-                        <span className="px-2 py-1 bg-secondary text-muted-foreground text-xs rounded-full">
+                        <h3 className="text-xs font-medium text-faint font-mono">Period B (Baseline)</h3>
+                        <span className="px-2 py-0.5 bg-raised text-faint text-[10px] rounded-[5px] font-mono">
                             {rangeB === 'prev_24h' ? 'Prev 24h' : rangeB}
                         </span>
                     </div>
-                    <div className="space-y-4 opacity-75">
+                    <div className="space-y-4">
                         <div>
-                            <p className="text-muted-foreground text-xs mb-1">Total Download</p>
-                            <span className="text-2xl font-bold text-foreground/80">{formatBytes(statsB.totalDownload)}</span>
+                            <p className="text-faint text-xs font-mono mb-1">Total Download</p>
+                            <span className="text-xl font-bold text-text font-mono num">{formatBytes(statsB.totalDownload)}</span>
                         </div>
                         <div>
-                            <p className="text-muted-foreground text-xs mb-1">Total Upload</p>
-                            <span className="text-2xl font-bold text-foreground/80">{formatBytes(statsB.totalUpload)}</span>
+                            <p className="text-faint text-xs font-mono mb-1">Total Upload</p>
+                            <span className="text-xl font-bold text-text font-mono num">{formatBytes(statsB.totalUpload)}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Comparison Chart */}
-            <div className="bg-card/60 border border-border rounded-xl p-4 md:p-6">
-                <h3 className="text-sm font-medium text-foreground/80 mb-6 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-cyan-400" />
+            <div className="panel border border-line rounded-[var(--r-panel)] p-4 md:p-5 bg-panel">
+                <h3 className="text-xs font-medium text-text mb-5 flex items-center gap-2 font-mono">
+                    <Activity className="w-4 h-4 text-accent" />
                     Traffic Trend Comparison
                 </h3>
-                <div className="h-[350px] w-full">
+                <div className="h-[320px] w-full">
                     {loading ? (
-                        <div className="h-full flex items-center justify-center text-muted-foreground">
+                        <div className="h-full flex items-center justify-center text-faint font-mono text-xs">
                             Loading comparison data...
                         </div>
                     ) : (
@@ -280,12 +279,12 @@ const NetworkComparison: React.FC = () => {
                                         <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
                                 <XAxis dataKey="time" hide />
-                                <YAxis stroke="#4b5563" fontSize={12} tickFormatter={formatBytes} />
+                                <YAxis stroke="var(--faint)" fontSize={10} tickFormatter={formatBytes} />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '8px' }}
-                                    itemStyle={{ color: '#e5e7eb' }}
+                                    contentStyle={{ backgroundColor: 'var(--panel)', borderColor: 'var(--line)', borderRadius: '8px' }}
+                                    itemStyle={{ color: 'var(--text)' }}
                                     formatter={(value: number) => formatBytes(value)}
                                     labelFormatter={() => `Data Point`}
                                 />
