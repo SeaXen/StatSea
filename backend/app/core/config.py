@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     # Features
     DEBUG: bool = False
     NETWORK_MONITOR_INTERVAL: int = 60
+    ALLOW_SYNTHETIC_TRAFFIC: bool = False
+    MONITOR_INTERFACE: str | None = None
 
     # Logging
     LOG_LEVEL: str = "INFO"

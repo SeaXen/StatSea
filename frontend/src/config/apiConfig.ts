@@ -1,9 +1,28 @@
 /// <reference types="vite/client" />
-// Basic API Configuration
-const API_PORT = import.meta.env.VITE_API_PORT || '8001';
+// Dynamic API & WebSocket Configuration for both Local Dev (Vite) and Production (Docker/Nginx)
+const isLocalDevVite = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
+const API_PORT = import.meta.env.VITE_API_PORT || (isLocalDevVite ? '8001' : window.location.port || '80');
+const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+
+const resolveBaseUrl = () => {
+    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+    if (typeof window === 'undefined') return 'http://localhost:8001/api';
+    // When served via Nginx in Docker (e.g. port 21080 or reverse proxy)
+    if (!isLocalDevVite) return `${window.location.origin}/api`;
+    return `http://${window.location.hostname}:${API_PORT}/api`;
+};
+
+const resolveWsUrl = () => {
+    if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL;
+    if (typeof window === 'undefined') return 'ws://localhost:8001/api';
+    const wsProto = isSecure ? 'wss:' : 'ws:';
+    if (!isLocalDevVite) return `${wsProto}//${window.location.host}/api`;
+    return `${wsProto}//${window.location.hostname}:${API_PORT}/api`;
+};
+
 export const API_CONFIG = {
-    BASE_URL: `http://${window.location.hostname}:${API_PORT}/api`,
-    WS_URL: `ws://${window.location.hostname}:${API_PORT}/api`,
+    BASE_URL: resolveBaseUrl(),
+    WS_URL: resolveWsUrl(),
     ENDPOINTS: {
         HEALTH: '/health',
         ANALYTICS: {

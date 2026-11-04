@@ -16,6 +16,7 @@ import requests
 import sqlalchemy.exc
 from mac_vendor_lookup import MacLookup
 
+from ..core.config import settings as app_settings
 from ..core.logging import get_logger
 from ..db.database import SessionLocal
 from ..models.models import (
@@ -177,14 +178,14 @@ class PacketCollector:
             return
 
         self.running = True
-        self.interface = interface
+        self.interface = interface or app_settings.MONITOR_INTERFACE
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
         self._persistence_thread = threading.Thread(target=self._persistence_loop, daemon=True)
         self._persistence_thread.start()
 
-        logger.info(f"Collector started on interface: {interface or 'default'}")
+        logger.info(f"Collector started on interface: {self.interface or 'default'}")
 
     def stop(self):
         """Stops the sniffing thread."""
@@ -387,8 +388,11 @@ class PacketCollector:
     def _run(self):
         """Resilient sniffer supervisor loop with automatic fallback."""
         if not SCAPY_AVAILABLE:
-            logger.warning("Scapy is not available. Falling back to autonomous telemetry generator.")
-            self._run_synthetic_loop()
+            if getattr(app_settings, "ALLOW_SYNTHETIC_TRAFFIC", False):
+                logger.warning("Scapy is not available. Falling back to autonomous telemetry generator.")
+                self._run_synthetic_loop()
+            else:
+                logger.warning("Scapy is not available and synthetic traffic fallback is disabled. Sniffer will stay idle.")
             return
 
         consecutive_failures = 0
@@ -404,10 +408,17 @@ class PacketCollector:
                 )
                 consecutive_failures = 0
             except PermissionError:
-                logger.warning(
-                    "Administrative/root permissions missing for packet sniffing. Switching to autonomous telemetry generator."
-                )
-                self._run_synthetic_loop()
+                if getattr(app_settings, "ALLOW_SYNTHETIC_TRAFFIC", False):
+                    logger.warning(
+                        "Administrative/root permissions missing for packet sniffing. Switching to autonomous telemetry generator."
+                    )
+                    self._run_synthetic_loop()
+                else:
+                    logger.error(
+                        "Administrative/root permissions missing for packet sniffing (NET_RAW capability required). "
+                        "Synthetic fallback disabled; paused."
+                    )
+                    time.sleep(10)
                 break
             except Exception as e:
                 consecutive_failures += 1
@@ -415,10 +426,16 @@ class PacketCollector:
                     f"Sniffer error on interface ({e}). Consecutive failures: {consecutive_failures}."
                 )
                 if consecutive_failures >= 2:
-                    logger.warning(
-                        "Sniffer driver unavailable (e.g. WinPcap/Npcap missing). Switching to autonomous telemetry generator."
-                    )
-                    self._run_synthetic_loop()
+                    if getattr(app_settings, "ALLOW_SYNTHETIC_TRAFFIC", False):
+                        logger.warning(
+                            "Sniffer driver unavailable (e.g. WinPcap/Npcap missing). Switching to autonomous telemetry generator."
+                        )
+                        self._run_synthetic_loop()
+                    else:
+                        logger.error(
+                            "Sniffer driver unavailable. Synthetic traffic fallback is disabled; sniffer paused."
+                        )
+                        time.sleep(10)
                     break
                 time.sleep(1)
 

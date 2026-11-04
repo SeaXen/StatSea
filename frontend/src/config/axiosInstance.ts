@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { toast } from 'sonner';
+import { API_CONFIG } from './apiConfig';
 
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8001/api`,
+    baseURL: API_CONFIG.BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
