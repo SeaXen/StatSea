@@ -3,16 +3,21 @@ import { useTheme } from "../context/ThemeContext"
 
 export function ThemeToggle() {
     const { themeConfig, updateTheme } = useTheme()
+    const isDark = themeConfig.mode === 'dark'
 
     return (
         <button
-            onClick={() => updateTheme({ mode: themeConfig.mode === 'light' ? 'dark' : 'light' })}
-            className="p-2 rounded-lg bg-secondary/80 border border-border hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+            type="button"
+            onClick={() => updateTheme({ mode: isDark ? 'light' : 'dark' })}
+            className="relative w-[30px] h-[30px] rounded-[7px] border border-line-strong bg-panel hover:bg-raised text-muted hover:text-text flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:border-accent"
             aria-label="Toggle theme"
             title="Toggle theme"
         >
-            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            {isDark ? (
+                <Moon className="w-3.5 h-3.5 text-accent transition-transform" />
+            ) : (
+                <Sun className="w-3.5 h-3.5 text-warn transition-transform" />
+            )}
             <span className="sr-only">Toggle theme</span>
         </button>
     )

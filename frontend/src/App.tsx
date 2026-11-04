@@ -147,7 +147,7 @@ function AppContent() {
                     </div>
                 }>
                     <div key={activeTab}>
-                        {activeTab === 'dashboard' && <Dashboard />}
+                        {activeTab === 'dashboard' && <Dashboard timeRange={timeRange} />}
                         {activeTab === 'devices' && (
                             <DevicesPage onDeviceHistory={(mac: string) => {
                                 setSelectedDeviceMac(mac);

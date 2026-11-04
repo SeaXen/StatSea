@@ -8,7 +8,109 @@ import { useContainers } from '../hooks/useDocker';
 import { useHealth } from '../hooks/useSystem';
 import SystemDetailOverlay from './SystemDetailOverlay';
 
-const Dashboard = () => {
+interface DashboardProps {
+    timeRange?: string;
+}
+
+const getTimeRangePoints = (range: string) => {
+    switch (range) {
+        case '15m':
+            return [
+                { time: "14:01", download: 96, upload: 32 },
+                { time: "14:03", download: 110, upload: 35 },
+                { time: "14:05", download: 125, upload: 44 },
+                { time: "14:07", download: 104, upload: 36 },
+                { time: "14:09", download: 138, upload: 48 },
+                { time: "14:11", download: 152, upload: 55 },
+                { time: "14:13", download: 170, upload: 62 },
+                { time: "14:15", download: 184, upload: 68 },
+            ];
+        case '6h':
+            return [
+                { time: "15:00", download: 140, upload: 52 },
+                { time: "16:00", download: 120, upload: 44 },
+                { time: "17:00", download: 165, upload: 58 },
+                { time: "18:00", download: 195, upload: 72 },
+                { time: "19:00", download: 210, upload: 80 },
+                { time: "20:00", download: 175, upload: 64 },
+                { time: "21:00", download: 184, upload: 68 },
+            ];
+        case '24h':
+            return [
+                { time: "00:00", download: 45, upload: 16 },
+                { time: "04:00", download: 28, upload: 10 },
+                { time: "08:00", download: 110, upload: 38 },
+                { time: "12:00", download: 175, upload: 60 },
+                { time: "16:00", download: 195, upload: 70 },
+                { time: "20:00", download: 220, upload: 85 },
+                { time: "23:59", download: 160, upload: 55 },
+            ];
+        case '7d':
+            return [
+                { time: "Mon", download: 162, upload: 58 },
+                { time: "Tue", download: 174, upload: 62 },
+                { time: "Wed", download: 190, upload: 70 },
+                { time: "Thu", download: 185, upload: 66 },
+                { time: "Fri", download: 215, upload: 84 },
+                { time: "Sat", download: 240, upload: 92 },
+                { time: "Sun", download: 228, upload: 88 },
+            ];
+        case '1m':
+            return [
+                { time: "Week 1", download: 160, upload: 56 },
+                { time: "Week 2", download: 185, upload: 68 },
+                { time: "Week 3", download: 172, upload: 62 },
+                { time: "Week 4", download: 205, upload: 78 },
+            ];
+        case '3m':
+            return [
+                { time: "Aug", download: 155, upload: 54 },
+                { time: "Sep", download: 178, upload: 65 },
+                { time: "Oct", download: 198, upload: 74 },
+            ];
+        case '6m':
+            return [
+                { time: "Jun", download: 142, upload: 48 },
+                { time: "Jul", download: 158, upload: 56 },
+                { time: "Aug", download: 165, upload: 60 },
+                { time: "Sep", download: 180, upload: 66 },
+                { time: "Oct", download: 195, upload: 72 },
+                { time: "Nov", download: 210, upload: 80 },
+            ];
+        case '1y':
+            return [
+                { time: "Q1", download: 145, upload: 50 },
+                { time: "Q2", download: 168, upload: 60 },
+                { time: "Q3", download: 188, upload: 70 },
+                { time: "Q4", download: 215, upload: 82 },
+            ];
+        case 'all':
+            return [
+                { time: "2023", download: 120, upload: 42 },
+                { time: "2024", download: 165, upload: 60 },
+                { time: "2025", download: 195, upload: 72 },
+                { time: "2026", download: 220, upload: 84 },
+            ];
+        case '1h':
+        default:
+            return [
+                { time: "20:05", download: 112, upload: 40 },
+                { time: "20:10", download: 104, upload: 38 },
+                { time: "20:15", download: 108, upload: 36 },
+                { time: "20:20", download: 88, upload: 30 },
+                { time: "20:25", download: 94, upload: 34 },
+                { time: "20:30", download: 76, upload: 28 },
+                { time: "20:35", download: 98, upload: 36 },
+                { time: "20:40", download: 84, upload: 26 },
+                { time: "20:45", download: 120, upload: 42 },
+                { time: "20:50", download: 145, upload: 54 },
+                { time: "20:55", download: 168, upload: 62 },
+                { time: "21:05", download: 184, upload: 68 },
+            ];
+    }
+};
+
+const Dashboard: React.FC<DashboardProps> = ({ timeRange = '1h' }) => {
     const { wsData, notifications } = useWebSocket();
     const { data: devicesData = [] } = useDevices();
     const { data: containersData = [] } = useContainers();
@@ -32,30 +134,15 @@ const Dashboard = () => {
 
     // Chart telemetry data
     const chartData = useMemo(() => {
-        if (wsData && wsData.length > 0) {
+        if (wsData && wsData.length > 0 && timeRange === '1h') {
             return wsData.map((d: any, idx: number) => ({
                 time: d.time || `20:${(idx * 5) % 60}`,
                 download: Math.min(320, Math.round(Number(d.download || 0) * 8 / 1024)),
                 upload: Math.min(180, Math.round(Number(d.upload || 0) * 8 / 1024)),
             }));
         }
-        // Fallback smooth sparkline matching console aesthetic
-        const points = [
-            { time: "20:05", download: 112, upload: 40 },
-            { time: "20:10", download: 104, upload: 38 },
-            { time: "20:15", download: 108, upload: 36 },
-            { time: "20:20", download: 88, upload: 30 },
-            { time: "20:25", download: 94, upload: 34 },
-            { time: "20:30", download: 76, upload: 28 },
-            { time: "20:35", download: 98, upload: 36 },
-            { time: "20:40", download: 84, upload: 26 },
-            { time: "20:45", download: 120, upload: 42 },
-            { time: "20:50", download: 145, upload: 54 },
-            { time: "20:55", download: 168, upload: 62 },
-            { time: "21:05", download: 184, upload: 68 },
-        ];
-        return points;
-    }, [wsData]);
+        return getTimeRangePoints(timeRange);
+    }, [wsData, timeRange]);
 
     // Live events
     const displayEvents = useMemo(() => {
@@ -121,7 +208,12 @@ const Dashboard = () => {
                 {/* Bandwidth Chart Panel */}
                 <section className="panel" aria-labelledby="bw">
                     <div className="panel-head">
-                        <h2 id="bw">Bandwidth</h2>
+                        <div className="flex items-center gap-2">
+                            <h2 id="bw">Bandwidth</h2>
+                            <span className="text-[10px] font-mono text-faint uppercase px-1.5 py-0.5 rounded-[4px] bg-raised border border-line">
+                                {timeRange}
+                            </span>
+                        </div>
                         <div className="legend">
                             <span><i className="dl"></i>Download</span>
                             <span><i className="ul"></i>Upload</span>
