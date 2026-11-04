@@ -280,7 +280,7 @@ export default function BandwidthPage() {
                             onChange={(val) => setSelectedInterface(val)}
                         />
                     )}
-                    <button className="px-3.5 py-1.5 bg-accent hover:opacity-90 text-[#0f1115] rounded-[7px] text-xs font-semibold font-mono transition-opacity">
+                    <button className="px-3.5 py-1.5 bg-raised hover:bg-line-strong text-text-soft hover:text-text border border-line rounded-[7px] text-xs font-mono transition-colors">
                         FULL REPORT
                     </button>
                 </div>

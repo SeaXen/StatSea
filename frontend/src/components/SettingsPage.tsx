@@ -130,7 +130,7 @@ export default function Settings() {
         <button
             onClick={() => setActiveSection(id)}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-[5px] font-mono text-xs transition-colors ${activeSection === id
-                ? 'bg-accent/20 text-accent font-medium'
+                ? 'bg-accent/15 text-accent font-medium border-l-2 border-accent'
                 : 'text-text-soft hover:bg-raised hover:text-text'
                 }`}
         >
@@ -222,59 +222,59 @@ export default function Settings() {
                         >
                             {/* Account Section */}
                             {activeSection === 'account' && (
-                                <div className="space-y-6">
-                                    <div className="p-8 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
-                                        <div className="flex items-center gap-6">
-                                            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                                                <User className="w-10 h-10" />
+                                <div className="space-y-4">
+                                    <div className="panel p-5">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-[7px] bg-raised border border-line flex items-center justify-center text-accent">
+                                                <User className="w-6 h-6" />
                                             </div>
                                             <div>
-                                                <h2 className="text-2xl font-bold">{user?.full_name || user?.username || 'User'}</h2>
-                                                <p className="text-muted-foreground">{user?.email || 'No email provided'}</p>
-                                                <div className="mt-2 text-xs font-mono bg-primary/5 text-primary px-2 py-1 rounded inline-block border border-primary/10">
+                                                <h2 className="text-base font-semibold text-text tracking-tight">{user?.full_name || user?.username || 'User'}</h2>
+                                                <p className="text-xs text-text-soft font-mono mt-0.5">{user?.email || 'No email configured'}</p>
+                                                <div className="mt-2 text-[10px] font-mono bg-raised text-accent px-2 py-0.5 rounded-[4px] inline-block border border-accent/20">
                                                     ROLE: {user?.is_admin ? 'ADMINISTRATOR' : 'GENERAL USER'}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="p-8 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
-                                        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                                            <ShieldCheck className="w-5 h-5 text-primary" />
+                                    <div className="panel p-5">
+                                        <h3 className="text-xs font-mono uppercase tracking-wider text-text font-semibold mb-4 flex items-center gap-2">
+                                            <ShieldCheck className="w-4 h-4 text-accent" />
                                             Security & Password
                                         </h3>
 
-                                        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-muted-foreground">Current Password</label>
+                                        <form onSubmit={handleChangePassword} className="space-y-3 max-w-md">
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-mono text-text-soft">Current Password</label>
                                                 <input
                                                     type="password"
                                                     required
                                                     value={currentPassword}
                                                     onChange={(e) => setCurrentPassword(e.target.value)}
-                                                    className="w-full bg-card/50 border border-border/50 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text placeholder:text-faint focus:outline-none focus:border-accent transition-colors"
                                                     placeholder="••••••••"
                                                 />
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-muted-foreground">New Password</label>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-mono text-text-soft">New Password</label>
                                                 <input
                                                     type="password"
                                                     required
                                                     value={newPassword}
                                                     onChange={(e) => setNewPassword(e.target.value)}
-                                                    className="w-full bg-card/50 border border-border/50 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text placeholder:text-faint focus:outline-none focus:border-accent transition-colors"
                                                     placeholder="••••••••"
                                                 />
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-muted-foreground">Confirm New Password</label>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-mono text-text-soft">Confirm New Password</label>
                                                 <input
                                                     type="password"
                                                     required
                                                     value={confirmPassword}
                                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                                    className="w-full bg-card/50 border border-border/50 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text placeholder:text-faint focus:outline-none focus:border-accent transition-colors"
                                                     placeholder="••••••••"
                                                 />
                                             </div>
@@ -282,11 +282,11 @@ export default function Settings() {
                                             <button
                                                 type="submit"
                                                 disabled={changePasswordMutation.isPending}
-                                                className="w-full bg-primary text-primary-foreground font-semibold py-3 rounded-xl hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                                                className="mt-2 bg-accent text-accent-foreground font-mono font-semibold py-1.5 px-4 rounded-[7px] text-xs hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
                                             >
                                                 {changePasswordMutation.isPending ? (
                                                     <>
-                                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                                         Updating...
                                                     </>
                                                 ) : (
@@ -294,17 +294,6 @@ export default function Settings() {
                                                 )}
                                             </button>
                                         </form>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-50 pointer-events-none filter grayscale">
-                                        <div className="p-6 rounded-2xl bg-card/20 border border-border/20">
-                                            <h3 className="font-semibold mb-2">Sync Settings</h3>
-                                            <p className="text-sm text-muted-foreground">Cloud sync coming soon</p>
-                                        </div>
-                                        <div className="p-6 rounded-2xl bg-card/20 border border-border/20">
-                                            <h3 className="font-semibold mb-2">API Keys</h3>
-                                            <p className="text-sm text-muted-foreground">Manage access tokens</p>
-                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -314,32 +303,61 @@ export default function Settings() {
                                 <div className="space-y-8">
                                     {/* Theme Presets */}
                                     <section>
-                                        <h3 className="text-lg font-medium mb-4 px-1">Base Theme</h3>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div className="flex items-center justify-between mb-3 px-1">
+                                            <h3 className="text-xs font-mono uppercase tracking-wider text-text font-semibold">Base Theme</h3>
+                                            <span className="text-[11px] font-mono text-faint">Active: {presets[themeConfig.mode]?.name || themeConfig.mode}</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                             {Object.entries(presets).map(([key, theme]) => (
                                                 <button
                                                     key={key}
                                                     onClick={() => updateTheme({ mode: key as ThemeMode })}
-                                                    className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 p-5 text-left h-28 hover:scale-[1.02] ${themeConfig.mode === key
-                                                        ? 'border-primary ring-2 ring-primary/20 shadow-lg shadow-primary/10'
-                                                        : 'border-border/40 hover:border-primary/30 hover:shadow-lg'
+                                                    className={`panel p-3 text-left transition-all hover:border-line-strong flex flex-col justify-between h-28 relative rounded-[7px] ${themeConfig.mode === key
+                                                        ? 'border-accent ring-1 ring-accent/40 bg-raised/90'
+                                                        : 'bg-panel border-line hover:bg-raised/40'
                                                         }`}
-                                                    style={{ background: `hsl(${theme.colors['--background']})` }}
                                                 >
-                                                    <div className="flex items-center justify-between mb-3 relative z-10">
-                                                        <span className="font-bold text-lg" style={{ color: `hsl(${theme.colors['--foreground']})` }}>
-                                                            {theme.name}
-                                                        </span>
+                                                    <div className="flex items-center justify-between w-full">
+                                                        <div>
+                                                            <div className="font-semibold text-xs text-text font-mono">
+                                                                {theme.name}
+                                                            </div>
+                                                            <div className="text-[10px] font-mono text-faint uppercase">
+                                                                {theme.type} mode
+                                                            </div>
+                                                        </div>
                                                         {themeConfig.mode === key && (
-                                                            <div className="bg-primary rounded-full p-1">
-                                                                <Check className="w-3 h-3 text-primary-foreground" />
+                                                            <div className="w-4 h-4 rounded-full bg-accent text-accent-foreground flex items-center justify-center">
+                                                                <Check className="w-2.5 h-2.5" />
                                                             </div>
                                                         )}
                                                     </div>
-                                                    {/* Color swatches logic for the card */}
-                                                    <div className="flex gap-2 relative z-10 opacity-80">
-                                                        <div className="w-6 h-6 rounded-full shadow-sm ring-1 ring-white/10" style={{ background: `hsl(${theme.colors['--card']})` }} />
-                                                        <div className="w-6 h-6 rounded-full shadow-sm ring-1 ring-white/10" style={{ background: `hsl(${theme.colors['--primary']})` }} />
+
+                                                    {/* Mini UI Preview Palette */}
+                                                    <div
+                                                        className="w-full h-10 rounded-[5px] p-1.5 flex items-center justify-between border"
+                                                        style={{
+                                                            background: `hsl(${theme.colors['--background']})`,
+                                                            borderColor: `hsl(${theme.colors['--border']})`
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div
+                                                                className="w-4 h-4 rounded-[3px] border"
+                                                                style={{
+                                                                    background: `hsl(${theme.colors['--card']})`,
+                                                                    borderColor: `hsl(${theme.colors['--border']})`
+                                                                }}
+                                                            />
+                                                            <div
+                                                                className="w-10 h-2 rounded-[2px]"
+                                                                style={{ background: `hsl(${theme.colors['--muted']})` }}
+                                                            />
+                                                        </div>
+                                                        <div
+                                                            className="w-3.5 h-3.5 rounded-full"
+                                                            style={{ background: `hsl(${theme.colors['--primary']})` }}
+                                                        />
                                                     </div>
                                                 </button>
                                             ))}
@@ -348,30 +366,30 @@ export default function Settings() {
 
                                     {/* Accent Color Selection */}
                                     <section>
-                                        <h3 className="text-lg font-medium mb-4 px-1">Accent Color</h3>
-                                        <div className="p-6 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
-                                            <div className="flex flex-wrap gap-4">
+                                        <h3 className="text-xs font-mono uppercase tracking-wider text-text font-semibold mb-3 px-1">Accent Color</h3>
+                                        <div className="panel p-4 rounded-[7px]">
+                                            <div className="flex flex-wrap gap-3">
                                                 {accentColors.map((color) => (
                                                     <button
                                                         key={color.name}
                                                         onClick={() => updateTheme({ accent: color.value })}
-                                                        className={`w-12 h-12 rounded-full relative transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 ring-offset-background ${themeConfig.accent === color.value ? 'ring-2 ring-foreground scale-110' : ''}`}
+                                                        className={`w-9 h-9 rounded-full relative transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 ring-offset-background ${themeConfig.accent === color.value ? 'ring-2 ring-text scale-105' : ''}`}
                                                         style={{ backgroundColor: color.hex }}
                                                         title={color.name}
                                                     >
                                                         {themeConfig.accent === color.value && (
                                                             <div className="absolute inset-0 flex items-center justify-center">
-                                                                <Check className="w-6 h-6 text-white drop-shadow-md" />
+                                                                <Check className="w-4 h-4 text-white drop-shadow-md" />
                                                             </div>
                                                         )}
                                                     </button>
                                                 ))}
                                             </div>
-                                            <div className="mt-4 pt-4 border-t border-border/10 flex items-center gap-2">
-                                                <div className="w-full h-2 rounded-full bg-muted/30 overflow-hidden">
-                                                    <div className="h-full bg-primary transition-all duration-300 w-2/3" />
+                                            <div className="mt-4 pt-3 border-t border-line flex items-center gap-3">
+                                                <div className="w-full h-1.5 rounded-full bg-raised overflow-hidden">
+                                                    <div className="h-full bg-accent transition-all duration-300 w-2/3" />
                                                 </div>
-                                                <span className="text-xs font-mono text-muted-foreground whitespace-nowrap">Preview</span>
+                                                <span className="text-[11px] font-mono text-faint whitespace-nowrap">Active Accent</span>
                                             </div>
                                         </div>
                                     </section>
@@ -380,56 +398,62 @@ export default function Settings() {
 
                             {/* Monitoring Section */}
                             {activeSection === 'monitoring' && (
-                                <div className="p-8 rounded-3xl border border-border/40 bg-card/30 backdrop-blur-xl">
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400">
-                                            <Activity className="w-8 h-8" />
+                                <div className="panel p-5 space-y-5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-[7px] bg-raised border border-line flex items-center justify-center text-accent">
+                                            <Activity className="w-4 h-4" />
                                         </div>
                                         <div>
-                                            <h2 className="text-2xl font-semibold">Monitoring Intervals</h2>
-                                            <p className="text-muted-foreground">Configure how frequently Statsea gathers data</p>
+                                            <h2 className="text-base font-semibold text-text tracking-tight">Monitoring Intervals</h2>
+                                            <p className="text-xs text-text-soft font-mono mt-0.5">Configure automated telemetry collection intervals</p>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-8">
-                                        <div className="group space-y-3">
-                                            <label className="text-sm font-medium text-foreground/80 group-hover:text-primary transition-colors">Ping Interval (seconds)</label>
-                                            <div className="flex gap-4">
+                                    <div className="space-y-4 pt-2">
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-xs font-mono text-text">Ping Interval (seconds)</label>
+                                                <span className="text-[11px] font-mono text-faint">Gateway & Google DNS</span>
+                                            </div>
+                                            <div className="flex gap-2 max-w-sm">
                                                 <input
                                                     type="number"
-                                                    className="bg-card/50 border border-border/50 rounded-xl px-5 py-3 w-full focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-mono"
+                                                    className="bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text w-full focus:outline-none focus:border-accent transition-colors"
                                                     value={settings['ping_interval'] || '5'}
                                                     onChange={(e) => setSettings(prev => ({ ...prev, ping_interval: e.target.value }))}
                                                 />
                                                 <button
                                                     onClick={() => saveSetting('ping_interval', settings['ping_interval'] || '5', 'int')}
-                                                    className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
+                                                    className="bg-accent hover:opacity-90 text-accent-foreground px-3 py-1.5 rounded-[7px] text-xs font-mono font-semibold transition-opacity flex items-center gap-1.5 shadow-sm"
                                                 >
-                                                    <Save className="w-5 h-5" />
+                                                    <Save className="w-3.5 h-3.5" />
+                                                    SAVE
                                                 </button>
                                             </div>
-                                            <p className="text-sm text-muted-foreground pl-1">Frequency of latency checks to Google DNS and Gateway.</p>
                                         </div>
 
-                                        <div className="h-px bg-border/20" />
+                                        <div className="h-px bg-line" />
 
-                                        <div className="group space-y-3">
-                                            <label className="text-sm font-medium text-foreground/80 group-hover:text-primary transition-colors">Speedtest Interval (minutes)</label>
-                                            <div className="flex gap-4">
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-xs font-mono text-text">Speedtest Interval (minutes)</label>
+                                                <span className="text-[11px] font-mono text-faint">0 = disabled</span>
+                                            </div>
+                                            <div className="flex gap-2 max-w-sm">
                                                 <input
                                                     type="number"
-                                                    className="bg-card/50 border border-border/50 rounded-xl px-5 py-3 w-full focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-mono"
+                                                    className="bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text w-full focus:outline-none focus:border-accent transition-colors"
                                                     value={settings['speedtest_interval'] || '180'}
                                                     onChange={(e) => setSettings(prev => ({ ...prev, speedtest_interval: e.target.value }))}
                                                 />
                                                 <button
                                                     onClick={() => saveSetting('speedtest_interval', settings['speedtest_interval'] || '180', 'int')}
-                                                    className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
+                                                    className="bg-accent hover:opacity-90 text-accent-foreground px-3 py-1.5 rounded-[7px] text-xs font-mono font-semibold transition-opacity flex items-center gap-1.5 shadow-sm"
                                                 >
-                                                    <Save className="w-5 h-5" />
+                                                    <Save className="w-3.5 h-3.5" />
+                                                    SAVE
                                                 </button>
                                             </div>
-                                            <p className="text-sm text-muted-foreground pl-1">Automatic Internet speed check interval. Set to 0 to disable.</p>
                                         </div>
                                     </div>
                                 </div>

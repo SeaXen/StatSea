@@ -249,162 +249,162 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
             <header className="flex items-center gap-4">
                 <button
                     onClick={onBack}
-                    className="p-2 bg-card border border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-border/80 transition-all"
+                    className="p-2 bg-raised border border-line rounded-[7px] text-text-soft hover:text-text hover:bg-line-strong transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                 </button>
                 <div className="flex-1">
                     <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-bold text-white uppercase tracking-tight">{container.name}</h2>
+                        <h2 className="text-base font-semibold text-text tracking-tight uppercase">{container.name}</h2>
                         {container.update_available && (
-                            <span className="text-[9px] px-2 py-0.5 rounded-full border border-blue-400/30 font-black uppercase text-blue-400 bg-blue-400/10 tracking-widest" title="Update Available">
+                            <span className="text-[9px] px-2 py-0.5 rounded-[4px] border border-accent/30 font-mono uppercase text-accent bg-accent/10" title="Update Available">
                                 Update Available
                             </span>
                         )}
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full border border-current font-black uppercase ${getStatusColor(container.status)}`}>
+                        <span className={`text-[9px] px-2 py-0.5 rounded-[4px] border border-current font-mono uppercase ${getStatusColor(container.status)}`}>
                             {container.status}
                         </span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">ID: {container.id?.substring(0, 12)}</p>
+                    <p className="text-[10px] text-faint font-mono mt-0.5">ID: {container.id?.substring(0, 12)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         disabled={!!actionLoading}
                         onClick={() => onAction(container.id, 'start')}
-                        className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+                        className="px-3 py-1.5 bg-ok/10 hover:bg-ok/20 text-ok border border-ok/30 rounded-[7px] text-xs font-mono font-medium transition-colors disabled:opacity-50"
                     >
-                        Start
+                        START
                     </button>
                     <button
                         disabled={!!actionLoading}
                         onClick={() => onAction(container.id, 'stop')}
-                        className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+                        className="px-3 py-1.5 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 rounded-[7px] text-xs font-mono font-medium transition-colors disabled:opacity-50"
                     >
-                        Stop
+                        STOP
                     </button>
                     <button
                         disabled={!!actionLoading}
                         onClick={() => onAction(container.id, 'restart')}
-                        className="p-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl transition-all disabled:opacity-50"
+                        className="p-2 bg-raised hover:bg-line-strong text-text border border-line rounded-[7px] transition-colors disabled:opacity-50"
                     >
-                        <RotateCw className={`w-4 h-4 ${actionLoading?.includes('restart') ? 'animate-spin' : ''}`} />
+                        <RotateCw className={`w-3.5 h-3.5 ${actionLoading?.includes('restart') ? 'animate-spin' : ''}`} />
                     </button>
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="lg:col-span-1 space-y-4">
-                    <div className="bg-card/60 border border-border/50 rounded-2xl p-4">
-                        <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">Node Configuration</h3>
-                        <div className="space-y-4">
+                    <div className="panel p-4">
+                        <h3 className="text-xs font-mono uppercase tracking-wider text-text font-semibold mb-3">Node Configuration</h3>
+                        <div className="space-y-3 font-mono">
                             {[
                                 { label: 'Image', value: container.image, icon: Box },
                                 { label: 'Started', value: container.state?.StartedAt ? new Date(container.state.StartedAt).toLocaleString() : 'N/A', icon: Clock },
                                 { label: 'Network Rx', value: formatBytes(container.net_rx || 0), icon: Activity },
                                 { label: 'Network Tx', value: formatBytes(container.net_tx || 0), icon: Activity },
                             ].map((item, i) => (
-                                <div key={i} className="flex gap-3">
-                                    <item.icon className="w-4 h-4 text-muted-foreground mt-0.5" />
+                                <div key={i} className="flex gap-2.5 items-start">
+                                    <item.icon className="w-3.5 h-3.5 text-accent mt-0.5" />
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">{item.label}</p>
-                                        <p className="text-xs text-foreground/90 mt-0.5 break-all font-mono truncate">{item.value}</p>
+                                        <p className="text-[10px] text-faint uppercase">{item.label}</p>
+                                        <p className="text-xs text-text break-all truncate">{item.value}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-border rounded-2xl p-4">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Activity className="w-4 h-4 text-blue-400" />
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Real-time Load</span>
+                    <div className="panel p-4 bg-raised/40">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Activity className="w-3.5 h-3.5 text-accent" />
+                            <span className="text-xs font-mono uppercase tracking-wider text-text font-semibold">Real-time Load</span>
                         </div>
-                        <div className="flex justify-between items-end gap-2">
+                        <div className="flex justify-between items-end gap-2 font-mono">
                             <div>
-                                <p className="text-[9px] text-muted-foreground font-black uppercase">CPU</p>
-                                <p className="text-2xl font-black text-foreground">{(container.cpu_pct || 0).toFixed(2)}%</p>
+                                <p className="text-[10px] text-faint uppercase">CPU Usage</p>
+                                <p className="text-xl font-semibold text-text num">{(container.cpu_pct || 0).toFixed(1)}%</p>
                             </div>
                             <div>
-                                <p className="text-[9px] text-muted-foreground font-black uppercase text-right">MEM</p>
-                                <p className="text-2xl font-black text-foreground text-right">{container.mem_usage || 0}<span className="text-xs ml-0.5">MB</span></p>
+                                <p className="text-[10px] text-faint uppercase text-right">Memory</p>
+                                <p className="text-xl font-semibold text-text num text-right">{container.mem_usage || 0}<span className="text-xs ml-0.5">MB</span></p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-2 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-card border border-border rounded-2xl p-4 h-[200px] flex flex-col">
+                        <div className="panel p-4 h-[200px] flex flex-col">
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Processor Intensity</span>
-                                <span className="text-xs font-mono text-blue-400 font-bold">{(container.cpu_pct || 0).toFixed(1)}%</span>
+                                <span className="text-xs font-mono uppercase tracking-wider text-text font-semibold">Processor Intensity</span>
+                                <span className="text-xs font-mono text-accent num">{(container.cpu_pct || 0).toFixed(1)}%</span>
                             </div>
                             <div className="flex-1 min-h-0">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={cpuData}>
-                                        <Area type="monotone" dataKey="v" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
+                                        <Area type="monotone" dataKey="v" stroke="var(--accent)" fill="var(--accent-soft)" strokeWidth={2} isAnimationActive={false} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
-                        <div className="bg-card border border-border rounded-2xl p-4 h-[200px] flex flex-col">
+                        <div className="panel p-4 h-[200px] flex flex-col">
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Memory Isolation</span>
-                                <span className="text-xs font-mono text-cyan-400 font-bold">{container.mem_usage || 0}MB</span>
+                                <span className="text-xs font-mono uppercase tracking-wider text-text font-semibold">Memory Isolation</span>
+                                <span className="text-xs font-mono text-upload num">{container.mem_usage || 0}MB</span>
                             </div>
                             <div className="flex-1 min-h-0">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={memData}>
-                                        <Area type="monotone" dataKey="v" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
+                                        <Area type="monotone" dataKey="v" stroke="var(--upload)" fill="rgba(79, 209, 232, 0.1)" strokeWidth={2} isAnimationActive={false} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-card border border-border rounded-2xl p-4 h-[200px] flex flex-col">
+                    <div className="panel p-4 h-[200px] flex flex-col">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Network Throughput (RX/TX)</span>
-                            <div className="flex gap-3 text-[9px] font-bold">
-                                <span className="text-blue-400">RX</span>
-                                <span className="text-emerald-400">TX</span>
+                            <span className="text-xs font-mono uppercase tracking-wider text-text font-semibold">Network Flux (RX / TX)</span>
+                            <div className="flex gap-3 text-[10px] font-mono">
+                                <span className="text-ok">RX</span>
+                                <span className="text-upload">TX</span>
                             </div>
                         </div>
                         <div className="flex-1 min-h-0">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={netData}>
-                                    <Area type="monotone" dataKey="rx" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
-                                    <Area type="monotone" dataKey="tx" stroke="#10b981" fill="#10b981" fillOpacity={0.1} strokeWidth={2} isAnimationActive={false} />
+                                    <Area type="monotone" dataKey="rx" stroke="var(--ok)" fill="rgba(61, 214, 140, 0.1)" strokeWidth={2} isAnimationActive={false} />
+                                    <Area type="monotone" dataKey="tx" stroke="var(--upload)" fill="rgba(79, 209, 232, 0.1)" strokeWidth={2} isAnimationActive={false} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
 
                     {usage && (
-                        <div className="bg-card/60 border border-border/50 rounded-2xl p-4">
-                            <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">Historical Usage Table</h3>
+                        <div className="panel p-4">
+                            <h3 className="text-xs font-mono uppercase tracking-wider text-text font-semibold mb-3">Historical Usage Ledger</h3>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
+                                <table className="w-full text-left text-xs whitespace-nowrap">
                                     <thead>
-                                        <tr className="border-b border-border">
-                                            <th className="py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">Period</th>
-                                            <th className="py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">Received (RX)</th>
-                                            <th className="py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">Transmitted (TX)</th>
-                                            <th className="py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest text-right">Total</th>
+                                        <tr className="border-b border-line text-faint font-mono text-[10px] uppercase">
+                                            <th className="py-2">Period</th>
+                                            <th className="py-2">Received (RX)</th>
+                                            <th className="py-2">Transmitted (TX)</th>
+                                            <th className="py-2 text-right">Total</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-border/50">
+                                    <tbody className="divide-y divide-line-soft font-mono">
                                         {[
                                             { label: 'Today (24h)', stats: usage.daily },
                                             { label: 'Monthly', stats: usage.monthly },
                                             { label: 'Yearly', stats: usage.yearly },
                                             { label: 'All-time', stats: usage.all_time },
                                         ].map((row, i) => (
-                                            <tr key={i} className="hover:bg-white/5 transition-colors">
-                                                <td className="py-2 text-xs font-bold text-muted-foreground">{row.label}</td>
-                                                <td className="py-2 text-xs font-mono text-blue-400">{formatBytes(row.stats.rx)}</td>
-                                                <td className="py-2 text-xs font-mono text-emerald-400">{formatBytes(row.stats.tx)}</td>
-                                                <td className="py-2 text-xs font-mono text-white text-right font-bold">{formatBytes(row.stats.rx + row.stats.tx)}</td>
+                                            <tr key={i} className="hover:bg-raised/40 transition-colors">
+                                                <td className="py-2 text-text font-medium">{row.label}</td>
+                                                <td className="py-2 text-ok">{formatBytes(row.stats.rx)}</td>
+                                                <td className="py-2 text-upload">{formatBytes(row.stats.tx)}</td>
+                                                <td className="py-2 text-text text-right font-semibold">{formatBytes(row.stats.rx + row.stats.tx)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -413,15 +413,15 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                         </div>
                     )}
 
-                    <div className="bg-card border border-border rounded-2xl overflow-hidden flex flex-col h-[300px]">
-                        <div className="px-4 py-3 border-b border-border bg-card/50 flex items-center justify-between">
+                    <div className="panel p-0 overflow-hidden flex flex-col h-[300px]">
+                        <div className="px-4 py-2.5 border-b border-line bg-raised/50 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <Terminal className="w-3.5 h-3.5 text-emerald-500" />
-                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Console Stream</span>
+                                <Terminal className="w-3.5 h-3.5 text-accent" />
+                                <span className="text-xs font-mono uppercase tracking-wider text-text font-semibold">Console Telemetry Stream</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                {logsLoading && <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin" />}
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                {logsLoading && <RefreshCw className="w-3 h-3 text-faint animate-spin" />}
+                                <div className="w-2 h-2 rounded-full bg-ok animate-pulse" />
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 font-mono text-[10px] leading-relaxed text-muted-foreground bg-black/40 custom-scrollbar">

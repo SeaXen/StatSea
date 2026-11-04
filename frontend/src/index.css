@@ -373,8 +373,11 @@ th.right, td.right { text-align: right; }
 /* Status indicator chips */
 .status { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; }
 .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c, var(--ok)); }
+.status.ok { --c: var(--ok); color: var(--ok); }
 .status.idle { --c: var(--faint); color: var(--muted); }
+.status.offline { --c: var(--faint); color: var(--muted); }
 .status.alert { --c: var(--danger); color: var(--danger); }
+.status.danger { --c: var(--danger); color: var(--danger); }
 .status.live { color: var(--muted); }
 .status.warn { --c: var(--warn); color: var(--warn); }
 

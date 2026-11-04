@@ -224,7 +224,7 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                         <Layers className="w-3.5 h-3.5 text-accent" />
                         <span>GROUPS</span>
                     </button>
-                    <button className="px-3.5 py-1.5 bg-accent hover:opacity-90 text-[#0f1115] rounded-[7px] text-xs font-semibold font-mono transition-opacity">
+                    <button className="px-3.5 py-1.5 bg-accent hover:opacity-90 text-accent-foreground rounded-[7px] text-xs font-semibold font-mono transition-opacity shadow-sm">
                         + ADD DEVICE
                     </button>
                 </div>
@@ -286,7 +286,7 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                             className={cn(
                                 "px-2.5 py-1 rounded-[5px] transition-colors text-xs font-mono flex items-center gap-1.5",
                                 viewMode === 'list'
-                                    ? "bg-accent/20 text-accent font-medium"
+                                    ? "bg-accent/15 text-accent border border-accent/20 font-medium"
                                     : "text-text-soft hover:text-text"
                             )}
                         >
@@ -299,7 +299,7 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                             className={cn(
                                 "px-2.5 py-1 rounded-[5px] transition-colors text-xs font-mono flex items-center gap-1.5",
                                 viewMode === 'grid'
-                                    ? "bg-accent/20 text-accent font-medium"
+                                    ? "bg-accent/15 text-accent border border-accent/20 font-medium"
                                     : "text-text-soft hover:text-text"
                             )}
                         >
@@ -356,7 +356,7 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                                                 <td className="px-4 py-3 text-center">
                                                     <span className={cn(
                                                         "status text-[10px] uppercase font-mono px-2 py-0.5",
-                                                        device.is_online ? "ok" : "danger"
+                                                        device.is_online ? "ok" : "offline"
                                                     )}>
                                                         {device.is_online ? 'ONLINE' : 'OFFLINE'}
                                                     </span>

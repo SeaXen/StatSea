@@ -168,7 +168,7 @@ export const UserManagement: React.FC = () => {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => handleOpenModal('add')}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-accent hover:opacity-90 text-[#0f1115] rounded-[7px] text-xs font-semibold font-mono transition-opacity"
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-accent hover:opacity-90 text-accent-foreground rounded-[7px] text-xs font-semibold font-mono transition-opacity shadow-sm"
                     >
                         <UserPlus className="w-3.5 h-3.5" />
                         + ADD OPERATOR
@@ -261,7 +261,7 @@ export const UserManagement: React.FC = () => {
                                                 onClick={() => toggleUserStatus(user)}
                                                 className={cn(
                                                     "status text-[9px] uppercase px-1.5 py-0.5",
-                                                    user.is_active ? "ok" : "danger"
+                                                    user.is_active ? "ok" : "offline"
                                                 )}
                                             >
                                                 {user.is_active ? 'Authorized' : 'Disabled'}

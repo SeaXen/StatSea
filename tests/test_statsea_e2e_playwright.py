@@ -57,7 +57,8 @@ def run_e2e_tests():
             assert page.locator("text=StatSea").first.is_visible()
             assert page.locator('input[placeholder="Enter your username"]').is_visible()
             assert page.locator('input[type="password"]').is_visible()
-            print("  [PASS] Login branding, username, and password fields visible")
+            page.screenshot(path=os.path.join(ARTIFACT_DIR, "page_01_login.png"), full_page=True)
+            print("  [PASS] Login branding, username, and password fields visible (captured page_01_login.png)")
 
             # Step 3: Rejected Bad Credentials
             print("[Step 3] Testing rejection of invalid credentials...")
@@ -125,7 +126,7 @@ def run_e2e_tests():
                 ("Settings", "settings"),
             ]
 
-            for tab_label, tab_id in all_tabs:
+            for idx, (tab_label, tab_id) in enumerate(all_tabs, start=2):
                 btn = page.locator(f'nav.tabs button:has-text("{tab_label}"), aside button:has-text("{tab_label}"), button.tab-btn:has-text("{tab_label}")').first
                 if not btn.is_visible():
                     # Try partial text or alternative label
@@ -137,7 +138,10 @@ def run_e2e_tests():
                     # Assert ErrorBoundary was NOT triggered
                     error_boundary = page.locator("text='Something went wrong'").first
                     assert not error_boundary.is_visible(), f"ErrorBoundary triggered on tab '{tab_label}' ({tab_id})!"
-                    print(f"  [PASS] Successfully opened tab '{tab_label}' with zero runtime errors")
+
+                    tab_screenshot = os.path.join(ARTIFACT_DIR, f"page_{idx:02d}_{tab_id}.png")
+                    page.screenshot(path=tab_screenshot, full_page=True)
+                    print(f"  [PASS] Successfully opened tab '{tab_label}' ({tab_screenshot})")
 
             # Switch back to Overview
             overview_btn = page.locator('nav.tabs button:has-text("Overview"), aside button:has-text("Overview"), button.tab-btn:has-text("Overview")').first

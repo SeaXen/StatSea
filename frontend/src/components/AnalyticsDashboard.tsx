@@ -581,12 +581,12 @@ const AnalyticsDashboard = () => {
                         onClick={() => handleGenerateReport('network_summary')}
                         disabled={isGeneratingReport}
                         aria-label="Generate network summary report"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:opacity-90 text-[#0f1115] rounded-[7px] text-xs font-mono font-semibold transition-opacity disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-raised hover:bg-line-strong text-text-soft hover:text-text border border-line rounded-[7px] text-xs font-mono transition-colors disabled:opacity-50"
                     >
                         {isGeneratingReport ? (
-                            <div className="w-3.5 h-3.5 border-2 border-[#0f1115] border-t-transparent rounded-full animate-spin" />
+                            <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                         ) : (
-                            <FileText className="w-3.5 h-3.5" />
+                            <FileText className="w-3.5 h-3.5 text-accent" />
                         )}
                         REPORT
                     </button>

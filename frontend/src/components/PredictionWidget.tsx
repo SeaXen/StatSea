@@ -1,6 +1,7 @@
 import React from 'react';
-import { Brain, TrendingUp, TrendingDown, AlertTriangle, ShieldCheck, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertTriangle, ShieldCheck, Zap } from 'lucide-react';
 import { usePrediction, useAnomalies } from '../hooks/useAnalytics';
+import { cn } from '../lib/utils';
 
 interface PredictionData {
     predicted_bytes: number;
@@ -33,55 +34,55 @@ const PredictionWidget: React.FC = () => {
     };
 
     if (loading) return (
-        <div className="bg-card/50 backdrop-blur-md border border-border/50 rounded-2xl p-6 h-full flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="panel p-6 h-40 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-accent border-t-transparent" />
         </div>
     );
 
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {/* Month Forecast */}
-            <div className="bg-card/50 backdrop-blur-md border border-border/50 rounded-2xl p-6 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <Brain size={120} />
-                </div>
+    const progressPct = Math.min(100, Math.round(((prediction?.current_usage || 0) / (prediction?.predicted_bytes || 1)) * 100));
 
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Zap className="text-primary" size={20} />
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {/* Month Forecast */}
+            <div className="panel p-4 flex flex-col justify-between relative overflow-hidden">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-[5px] bg-raised border border-line flex items-center justify-center text-accent">
+                            <Zap className="w-3.5 h-3.5" />
+                        </div>
+                        <h3 className="text-xs font-mono uppercase tracking-wider text-text font-semibold">AI Monthly Forecast</h3>
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground">AI Monthly Forecast</h3>
+                    {prediction?.trend && (
+                        <span className={cn(
+                            "status text-[10px] uppercase font-mono px-2 py-0.5",
+                            prediction.trend === 'up' ? 'warn' : 'ok'
+                        )}>
+                            {prediction.trend === 'up' ? <TrendingUp className="w-3 h-3 inline mr-1" /> : <TrendingDown className="w-3 h-3 inline mr-1" />}
+                            {prediction.growth_rate_pct.toFixed(1)}% Trend
+                        </span>
+                    )}
                 </div>
 
                 {prediction?.error ? (
-                    <div className="text-muted-foreground text-sm italic">Learning usage patterns... (Requires 3+ days of data)</div>
+                    <div className="text-text-soft text-xs font-mono py-4">Learning usage patterns (requires 3+ days of baseline traffic)</div>
                 ) : (
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-end">
-                            <div>
-                                <p className="text-muted-foreground text-sm mb-1">Predicted Total</p>
-                                <p className="text-3xl font-bold text-foreground font-mono">
-                                    {formatBytes(prediction?.predicted_bytes || 0)}
-                                </p>
-                            </div>
-                            <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${prediction?.trend === 'up' ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'
-                                }`}>
-                                {prediction?.trend === 'up' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                                {prediction?.growth_rate_pct.toFixed(1)}% Trend
+                    <div className="space-y-3">
+                        <div>
+                            <span className="text-[10px] font-mono uppercase tracking-wider text-faint">Predicted Total Bandwidth</span>
+                            <div className="text-2xl font-semibold text-text font-mono num leading-tight mt-0.5">
+                                {formatBytes(prediction?.predicted_bytes || 0)}
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Current Progress</span>
-                                <span className="text-foreground font-mono">
-                                    {((prediction?.current_usage || 0) / (prediction?.predicted_bytes || 1) * 100).toFixed(0)}%
-                                </span>
+                        <div className="space-y-1">
+                            <div className="flex justify-between text-[11px] font-mono">
+                                <span className="text-text-soft">Current Cycle Consumption</span>
+                                <span className="text-accent num font-semibold">{progressPct}%</span>
                             </div>
-                            <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                            <div className="w-full h-2 rounded-[3px] bg-raised overflow-hidden border border-line">
                                 <div
-                                    className="h-full bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)] transition-all duration-1000"
-                                    style={{ width: `${Math.min(100, (prediction?.current_usage || 0) / (prediction?.predicted_bytes || 1) * 100)}%` }}
+                                    className="h-full bg-accent transition-all duration-700"
+                                    style={{ width: `${progressPct}%` }}
                                 />
                             </div>
                         </div>
@@ -90,36 +91,38 @@ const PredictionWidget: React.FC = () => {
             </div>
 
             {/* Anomalies */}
-            <div className="bg-card/50 backdrop-blur-md border border-border/50 rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-amber-500/10 rounded-lg">
-                            <ShieldCheck className="text-amber-500" size={20} />
+            <div className="panel p-4 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-[5px] bg-raised border border-line flex items-center justify-center text-accent">
+                            <ShieldCheck className="w-3.5 h-3.5" />
                         </div>
-                        <h3 className="text-lg font-semibold text-foreground">Anomaly Detection</h3>
+                        <h3 className="text-xs font-mono uppercase tracking-wider text-text font-semibold">Anomaly Detector</h3>
                     </div>
-                    <span className="text-xs text-muted-foreground px-2 py-0.5 bg-secondary rounded-full">Last 14 Days</span>
+                    <span className="text-[10px] font-mono text-faint uppercase px-2 py-0.5 bg-raised rounded-[4px] border border-line">
+                        14-DAY WINDOW
+                    </span>
                 </div>
 
-                <div className="space-y-4 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-2 max-h-[130px] overflow-y-auto pr-1 custom-scrollbar">
                     {anomalies.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
-                            <ShieldCheck size={32} className="mb-2 opacity-20" />
-                            <p className="text-sm">No unusual activity detected</p>
+                        <div className="flex flex-col items-center justify-center py-6 text-faint text-xs font-mono">
+                            <ShieldCheck className="w-6 h-6 mb-1 text-ok opacity-60" />
+                            <span>No traffic anomalies detected on subnet</span>
                         </div>
                     ) : (
                         anomalies.map((anom, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl border border-white/5">
-                                <div className="flex items-center gap-3">
-                                    <AlertTriangle className="text-rose-500" size={16} />
+                            <div key={idx} className="flex items-center justify-between p-2 rounded-[5px] bg-raised border border-line">
+                                <div className="flex items-center gap-2">
+                                    <AlertTriangle className="text-danger w-3.5 h-3.5 flex-shrink-0" />
                                     <div>
-                                        <p className="text-sm font-medium text-foreground">{anom.device_name}</p>
-                                        <p className="text-xs text-muted-foreground uppercase">{anom.device_mac}</p>
+                                        <div className="text-xs font-medium text-text">{anom.device_name}</div>
+                                        <div className="text-[10px] font-mono text-faint uppercase">{anom.device_mac}</div>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-xs font-bold text-rose-400">+{((anom.current_usage / anom.avg_usage - 1) * 100).toFixed(0)}% Spike</p>
-                                    <p className="text-[10px] text-muted-foreground uppercase">Severe Anomaly</p>
+                                <div className="text-right font-mono">
+                                    <div className="text-xs font-semibold text-danger num">+{((anom.current_usage / anom.avg_usage - 1) * 100).toFixed(0)}% Spike</div>
+                                    <div className="text-[9px] text-faint uppercase">Z-Score {anom.z_score.toFixed(1)}</div>
                                 </div>
                             </div>
                         ))
