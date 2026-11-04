@@ -502,12 +502,12 @@ export default function BandwidthPage() {
                                                         </tr>
                                                     ))}
                                                     {/* Estimated row for current year */}
-                                                    {yearly[0]?.estimated_total && (
+                                                    {Boolean((yearly as BandwidthRow[])[0]?.estimated_total) && (
                                                         <tr className="border-b border-border/40 bg-muted/20">
                                                             <td className="px-4 py-3 text-muted-foreground/60 italic font-bold text-[10px] uppercase tracking-widest pl-10">estimated</td>
-                                                            <td className="px-4 py-3 text-right text-emerald-500/70 font-bold font-mono tabular-nums">{formatBytes(Number(yearly[0].estimated_rx) || 0)}</td>
-                                                            <td className="px-4 py-3 text-right text-blue-500/70 font-bold font-mono tabular-nums">{formatBytes(Number(yearly[0].estimated_tx) || 0)}</td>
-                                                            <td className="px-4 py-3 text-right text-foreground/80 font-black font-mono tabular-nums">{formatBytes(Number(yearly[0].estimated_total) || 0)}</td>
+                                                            <td className="px-4 py-3 text-right text-emerald-500/70 font-bold font-mono tabular-nums">{formatBytes((yearly as BandwidthRow[])[0]?.estimated_rx || 0)}</td>
+                                                            <td className="px-4 py-3 text-right text-blue-500/70 font-bold font-mono tabular-nums">{formatBytes((yearly as BandwidthRow[])[0]?.estimated_tx || 0)}</td>
+                                                            <td className="px-4 py-3 text-right text-foreground/80 font-black font-mono tabular-nums">{formatBytes((yearly as BandwidthRow[])[0]?.estimated_total || 0)}</td>
                                                             <td className="px-4 py-3"></td>
                                                         </tr>
                                                     )}
