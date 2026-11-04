@@ -58,7 +58,6 @@ def refresh_token(
 def logout(
     logout_req: schemas.LogoutRequest,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
 ):
     AuthService.logout(db, logout_req.refresh_token)
     return {"status": "success"}
