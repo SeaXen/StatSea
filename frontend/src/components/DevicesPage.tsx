@@ -5,15 +5,13 @@ import {
     Cast, Server, HelpCircle, Download, FileJson
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useDevices, useDeviceGroups, useWakeDevice } from '../hooks/useDevices';
 import axiosInstance from '../config/axiosInstance';
 import { DeviceDetail } from './DeviceDetail';
 import { Device, DeviceGroup } from '../types';
 import { Skeleton, TableRowSkeleton } from './skeletons/WidgetSkeleton';
 import { GroupManager } from './GroupManager';
-import { EmptyState } from './EmptyState';
-import { PremiumCard } from './ui/PremiumCard';
 import { CustomSelect } from './ui/CustomSelect';
 import { cn } from '../lib/utils';
 
@@ -174,287 +172,230 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             {/* Header */}
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-4">
-                <div className="space-y-1">
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center gap-4"
-                    >
-                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
-                            <Activity className="w-6 h-6 text-primary" />
+            <div className="panel p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-[7px] bg-raised border border-line-strong flex items-center justify-center text-accent">
+                        <Activity className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-base font-semibold text-text tracking-tight">Device Fleet</h1>
+                            <span className="status ok text-[10px] uppercase font-mono px-2 py-0.5">
+                                {filteredDevices.filter((d: any) => d.is_online || d.status === 'online').length} ONLINE
+                            </span>
                         </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
-                                Device <span className="text-primary">Fleet</span>
-                            </h1>
-                            <div className="flex items-center gap-3 mt-1">
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{filteredDevices.filter((d: any) => d.is_online || d.status === 'online').length} Online</span>
-                                </div>
-                                <span className="text-muted-foreground/40 text-[10px] font-bold uppercase tracking-widest leading-none">•</span>
-                                <p className="text-muted-foreground font-medium text-sm tracking-tight">{filteredDevices.length} Total Managed Units</p>
-                            </div>
-                        </div>
-                    </motion.div>
+                        <p className="text-xs text-text-soft font-mono mt-0.5">
+                            {filteredDevices.length} managed endpoints on subnet
+                        </p>
+                    </div>
                 </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-wrap items-center gap-3"
-                >
-                    <div className="flex bg-secondary/50 p-1 rounded-2xl border border-border shadow-sm overflow-hidden">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex bg-panel p-0.5 rounded-[7px] border border-line-strong">
                         <button
                             onClick={() => handleExport('devices', 'csv')}
                             disabled={isExporting}
-                            className="px-4 py-2 hover:bg-secondary rounded-xl text-[10px] font-black text-muted-foreground hover:text-foreground transition-all flex items-center gap-2 group/btn disabled:opacity-50"
+                            className="px-2.5 py-1 hover:bg-raised rounded-[5px] text-xs font-mono text-text-soft hover:text-text transition-colors flex items-center gap-1.5 disabled:opacity-50"
                         >
-                            <Download className="w-3.5 h-3.5 text-primary group-hover/btn:scale-110 transition-transform" />
+                            <Download className="w-3 h-3 text-accent" />
                             CSV
                         </button>
-                        <div className="w-[1px] bg-border my-2" />
+                        <div className="w-[1px] bg-line my-1" />
                         <button
                             onClick={() => handleExport('devices', 'json')}
                             disabled={isExporting}
-                            className="px-4 py-2 hover:bg-secondary rounded-xl text-[10px] font-black text-muted-foreground hover:text-foreground transition-all flex items-center gap-2 group/btn disabled:opacity-50"
+                            className="px-2.5 py-1 hover:bg-raised rounded-[5px] text-xs font-mono text-text-soft hover:text-text transition-colors flex items-center gap-1.5 disabled:opacity-50"
                         >
-                            <FileJson className="w-3.5 h-3.5 text-cyan-500 group-hover/btn:scale-110 transition-transform" />
+                            <FileJson className="w-3 h-3 text-upload" />
                             JSON
                         </button>
                     </div>
 
-                    <button className="px-5 py-3 bg-secondary/60 hover:bg-secondary rounded-2xl text-[10px] font-black text-foreground transition-all border border-border flex items-center gap-3 group/btn hover:border-primary/30 shadow-sm overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700" />
-                        <Zap className="w-4 h-4 text-amber-500 group-hover/btn:scale-110 transition-transform" />
-                        SCAN NETWORK
+                    <button className="px-3 py-1.5 bg-raised hover:bg-line-strong rounded-[7px] text-xs font-mono text-text transition-colors border border-line flex items-center gap-2">
+                        <Zap className="w-3.5 h-3.5 text-warn" />
+                        <span>SCAN</span>
                     </button>
                     <button
                         onClick={() => setIsGroupManagerOpen(true)}
-                        className="px-5 py-3 bg-secondary/60 hover:bg-secondary rounded-2xl text-xs font-black text-foreground transition-all border border-border flex items-center gap-3 group/btn hover:border-primary/30 shadow-sm"
+                        className="px-3 py-1.5 bg-raised hover:bg-line-strong rounded-[7px] text-xs font-mono text-text transition-colors border border-line flex items-center gap-2"
                     >
-                        <Layers className="w-4 h-4 text-primary group-hover/btn:scale-110 transition-transform" />
-                        GROUPS
+                        <Layers className="w-3.5 h-3.5 text-accent" />
+                        <span>GROUPS</span>
                     </button>
-                    <button className="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl text-xs font-black transition-all shadow-md hover:scale-[1.03] active:scale-[0.97] uppercase tracking-widest">
-                        Add Device
+                    <button className="px-3.5 py-1.5 bg-accent hover:opacity-90 text-[#0f1115] rounded-[7px] text-xs font-semibold font-mono transition-opacity">
+                        + ADD DEVICE
                     </button>
-                </motion.div>
-            </header>
+                </div>
+            </div>
 
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="flex flex-col md:flex-row gap-6 items-center"
-            >
-                <div className="relative flex-1 group w-full">
-                    <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-                        <Search className="w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            {/* Filter & Search Bar */}
+            <div className="panel p-3 flex flex-col md:flex-row gap-3 items-center">
+                <div className="relative flex-1 w-full">
+                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                        <Search className="w-3.5 h-3.5 text-faint" />
                     </div>
                     <input
                         type="text"
-                        placeholder="Search devices by name, IP, MAC or vendor..."
-                        className="w-full bg-card/70 backdrop-blur-md border border-border rounded-3xl pl-14 pr-6 py-4 text-base text-foreground focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted-foreground/40 focus:ring-4 focus:ring-primary/10 shadow-lg"
+                        placeholder="Filter by name, IP, MAC address or vendor..."
+                        className="w-full bg-raised border border-line rounded-[7px] pl-9 pr-3 py-1.5 text-xs font-mono text-text placeholder:text-faint focus:outline-none focus:border-accent transition-colors"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
 
-                <div className="flex items-center gap-6 w-full md:w-auto">
-                    <div className="flex items-center gap-3">
-                        <CustomSelect
-                            label="Filter"
-                            options={[
-                                { value: 'all', label: 'All Status' },
-                                { value: 'online', label: 'Online' },
-                                { value: 'offline', label: 'Offline' }
-                            ]}
-                            value={filterStatus}
-                            onChange={(val) => setFilterStatus(val as any)}
-                        />
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <CustomSelect
+                        label="Filter"
+                        options={[
+                            { value: 'all', label: 'All Status' },
+                            { value: 'online', label: 'Online' },
+                            { value: 'offline', label: 'Offline' }
+                        ]}
+                        value={filterStatus}
+                        onChange={(val) => setFilterStatus(val as any)}
+                    />
 
-                        <CustomSelect
-                            label="Group"
-                            options={[
-                                { value: 'all', label: 'All Groups' },
-                                ...groups.map((g: DeviceGroup) => ({ value: String(g.id), label: g.name }))
-                            ]}
-                            value={String(filterGroupId)}
-                            onChange={(val) => setFilterGroupId(val === 'all' ? 'all' : Number(val))}
-                        />
-                    </div>
+                    <CustomSelect
+                        label="Group"
+                        options={[
+                            { value: 'all', label: 'All Groups' },
+                            ...groups.map((g: DeviceGroup) => ({ value: String(g.id), label: g.name }))
+                        ]}
+                        value={String(filterGroupId)}
+                        onChange={(val) => setFilterGroupId(val === 'all' ? 'all' : Number(val))}
+                    />
 
-                    <div className="h-10 w-[1px] bg-border hidden md:block" />
+                    <div className="h-6 w-[1px] bg-line hidden md:block" />
 
-                    <div className="flex bg-card/70 backdrop-blur-md rounded-2xl p-1.5 border border-border shadow-sm">
-                        <button
-                            onClick={() => setSortBy(sortBy === 'status' ? 'bandwidth' : 'status')}
-                            className="px-3 py-2 rounded-xl transition-all flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                            aria-label={`Sort by ${sortBy === 'status' ? 'Bandwidth' : 'Status'}`}
-                            title={`Sort by ${sortBy === 'status' ? 'Bandwidth' : 'Status'}`}
-                        >
-                            <SortDesc className={cn("w-4 h-4", sortBy === 'bandwidth' ? "text-primary" : "text-muted-foreground")} />
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setSortBy(sortBy === 'status' ? 'bandwidth' : 'status')}
+                        className="px-2.5 py-1.5 rounded-[7px] bg-raised hover:bg-line-strong border border-line text-xs font-mono text-text-soft hover:text-text transition-colors flex items-center gap-1.5"
+                        aria-label={`Sort by ${sortBy === 'status' ? 'Bandwidth' : 'Status'}`}
+                        title={`Sort by ${sortBy === 'status' ? 'Bandwidth' : 'Status'}`}
+                    >
+                        <SortDesc className={cn("w-3.5 h-3.5", sortBy === 'bandwidth' ? "text-accent" : "text-text-soft")} />
+                        <span className="hidden sm:inline">{sortBy === 'bandwidth' ? 'BW' : 'STATUS'}</span>
+                    </button>
 
-                    <div className="flex bg-card/70 backdrop-blur-md rounded-2xl p-1.5 border border-border shadow-sm">
+                    <div className="flex bg-raised rounded-[7px] p-0.5 border border-line">
                         <button
                             onClick={() => setViewMode('list')}
                             aria-label="List view"
                             className={cn(
-                                "px-3 py-2 rounded-xl transition-all flex items-center gap-2 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                                "px-2.5 py-1 rounded-[5px] transition-colors text-xs font-mono flex items-center gap-1.5",
                                 viewMode === 'list'
-                                    ? "bg-primary text-primary-foreground shadow-sm"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                                    ? "bg-accent/20 text-accent font-medium"
+                                    : "text-text-soft hover:text-text"
                             )}
                         >
-                            <LayoutList className="w-4 h-4" />
+                            <LayoutList className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">LIST</span>
                         </button>
                         <button
                             onClick={() => setViewMode('grid')}
                             aria-label="Grid view"
                             className={cn(
-                                "px-3 py-2 rounded-xl transition-all flex items-center gap-2 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                                "px-2.5 py-1 rounded-[5px] transition-colors text-xs font-mono flex items-center gap-1.5",
                                 viewMode === 'grid'
-                                    ? "bg-primary text-primary-foreground shadow-sm"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                                    ? "bg-accent/20 text-accent font-medium"
+                                    : "text-text-soft hover:text-text"
                             )}
                         >
-                            <LayoutGrid className="w-4 h-4" />
+                            <LayoutGrid className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">GRID</span>
                         </button>
                     </div>
                 </div>
-            </motion.div>
-
-
-
+            </div>
 
             {/* Device List */}
             {viewMode === 'list' ? (
-                <PremiumCard
-                    className="p-0 border border-border bg-card/85 backdrop-blur-2xl shadow-sm overflow-hidden rounded-2xl"
-                    hover={false}
-                >
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm whitespace-nowrap border-separate border-spacing-0">
+                <div className="panel p-0 overflow-hidden">
+                    <div className="table-wrap">
+                        <table className="w-full text-left text-xs whitespace-nowrap">
                             <thead>
-                                <tr className="bg-muted/50 text-muted-foreground uppercase tracking-[0.15em] text-[10px] font-bold border-b border-border">
-                                    <th className="px-8 py-4 font-bold border-b border-border">DEVICE IDENTITY</th>
-                                    <th className="px-8 py-4 font-bold border-b border-border">NETWORK INTERFACE</th>
-                                    <th className="px-8 py-4 font-bold border-b border-border text-center">STATUS</th>
-                                    <th className="px-8 py-4 font-bold border-b border-border text-center">BANDWIDTH USAGE</th>
-                                    <th className="px-8 py-4 font-bold border-b border-border text-right">CONTROLS</th>
+                                <tr className="border-b border-line bg-raised/50 text-faint uppercase font-mono text-[10px] tracking-wider">
+                                    <th className="px-4 py-2.5 font-medium">Device Identity</th>
+                                    <th className="px-4 py-2.5 font-medium">Network Interface</th>
+                                    <th className="px-4 py-2.5 font-medium text-center">Status</th>
+                                    <th className="px-4 py-2.5 font-medium text-right">Bandwidth</th>
+                                    <th className="px-4 py-2.5 font-medium text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-border/50">
+                            <tbody className="divide-y divide-line">
                                 <AnimatePresence mode='popLayout'>
-                                    {filteredDevices.map((device: Device, index: number) => {
+                                    {filteredDevices.map((device: Device) => {
                                         const Icon = getIcon(device.type, device.icon_type);
                                         return (
-                                            <motion.tr
+                                            <tr
                                                 key={device.id || device.mac_address}
-                                                layout
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, scale: 0.98 }}
-                                                transition={{
-                                                    duration: 0.4,
-                                                    delay: index * 0.02,
-                                                    ease: [0.23, 1, 0.32, 1]
-                                                }}
                                                 onClick={() => openDetail(device)}
-                                                className="group hover:bg-muted/40 cursor-pointer transition-all relative border-b border-border/30 last:border-none"
+                                                className="hover:bg-raised/60 cursor-pointer transition-colors"
                                             >
-                                                <td className="px-8 py-6">
-                                                    <div className="flex items-center gap-5">
-                                                        <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shadow-sm group-hover:scale-110 transition-transform duration-500">
-                                                            <Icon className="w-6 h-6" />
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-7 h-7 rounded-[5px] bg-raised border border-line flex items-center justify-center text-accent">
+                                                            <Icon className="w-3.5 h-3.5" />
                                                         </div>
                                                         <div>
-                                                            <div className="font-bold text-foreground text-base group-hover:text-primary transition-colors tracking-tight">{device.hostname || 'Unknown Device'}</div>
-                                                            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.1em]">{device.vendor || 'Unknown Vendor'}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <div className="flex items-center gap-2">
-                                                            <Globe className="w-3 h-3 text-muted-foreground" />
-                                                            <code className="text-primary/90 font-mono text-xs tabular-nums tracking-wide">{device.ip_address || '---'}</code>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                                                            <span className="text-muted-foreground font-mono text-[10px] uppercase tracking-wider">{device.mac_address}</span>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex justify-center">
-                                                        <div className={cn(
-                                                            "inline-flex items-center px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] border transition-all duration-500",
-                                                            device.is_online
-                                                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.05)]'
-                                                                : 'bg-secondary text-muted-foreground border-border'
-                                                        )}>
-                                                            <div className={cn(
-                                                                "w-2 h-2 rounded-full mr-2.5",
-                                                                device.is_online ? 'bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-muted-foreground/30'
-                                                            )} />
-                                                            {device.is_online ? 'ONLINE' : 'OFFLINE'}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex flex-col items-center gap-3">
-                                                        <div className="flex items-center gap-6 text-[11px] font-mono font-bold tabular-nums">
-                                                            <div className="flex flex-col items-center gap-1 text-emerald-500">
-                                                                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-black">DL</span>
-                                                                <span>↓ {device.download || '0 KB/s'}</span>
+                                                            <div className="font-medium text-text text-xs hover:text-accent transition-colors">
+                                                                {device.hostname || 'Unknown Device'}
                                                             </div>
-                                                            <div className="flex flex-col items-center gap-1 text-primary">
-                                                                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-black">UL</span>
-                                                                <span>↑ {device.upload || '0 KB/s'}</span>
+                                                            <div className="text-[10px] font-mono text-faint uppercase">
+                                                                {device.vendor || 'Unknown Vendor'}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-8 py-6 text-right">
-                                                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0 group-focus-within:translate-x-0">
+                                                <td className="px-4 py-3 font-mono">
+                                                    <div className="text-text text-xs">{device.ip_address || '---'}</div>
+                                                    <div className="text-faint text-[10px]">{device.mac_address}</div>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <span className={cn(
+                                                        "status text-[10px] uppercase font-mono px-2 py-0.5",
+                                                        device.is_online ? "ok" : "danger"
+                                                    )}>
+                                                        {device.is_online ? 'ONLINE' : 'OFFLINE'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-mono num">
+                                                    <div className="text-ok text-xs">↓ {device.download || '0 B/s'}</div>
+                                                    <div className="text-upload text-[10px]">↑ {device.upload || '0 B/s'}</div>
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <div className="flex justify-end gap-1.5">
                                                         {onDeviceHistory && (
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); onDeviceHistory(device.mac_address); }}
-                                                                className="w-10 h-10 flex items-center justify-center bg-primary/10 hover:bg-primary/20 rounded-xl transition-all text-primary border border-primary/20 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                                                className="w-7 h-7 flex items-center justify-center rounded-[5px] bg-raised hover:bg-line-strong border border-line text-accent transition-colors"
                                                                 aria-label={`Bandwidth history for ${device.hostname || device.mac_address}`}
                                                                 title="Bandwidth History"
                                                             >
-                                                                <BarChart3 className="w-5 h-5" />
+                                                                <BarChart3 className="w-3.5 h-3.5" />
                                                             </button>
                                                         )}
                                                         {!device.is_online && (
                                                             <button
                                                                 onClick={(e) => wakeDevice(e, device.mac_address)}
-                                                                className="w-10 h-10 flex items-center justify-center bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl transition-all text-emerald-500 border border-emerald-500/20 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                                                                className="w-7 h-7 flex items-center justify-center rounded-[5px] bg-raised hover:bg-line-strong border border-line text-ok transition-colors"
                                                                 aria-label={`Wake ${device.hostname || device.mac_address}`}
                                                                 title="Wake on LAN"
                                                             >
-                                                                <Power className="w-5 h-5" />
+                                                                <Power className="w-3.5 h-3.5" />
                                                             </button>
                                                         )}
                                                         <button 
-                                                            className="w-10 h-10 flex items-center justify-center bg-secondary hover:bg-secondary/80 rounded-xl transition-all text-muted-foreground hover:text-foreground border border-border shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                                            className="w-7 h-7 flex items-center justify-center rounded-[5px] bg-raised hover:bg-line-strong border border-line text-text-soft hover:text-text transition-colors"
                                                             aria-label="More options"
                                                         >
-                                                            <MoreVertical className="w-5 h-5" />
+                                                            <MoreVertical className="w-3.5 h-3.5" />
                                                         </button>
                                                     </div>
                                                 </td>
-                                            </motion.tr>
+                                            </tr>
                                         );
                                     })}
                                 </AnimatePresence>
@@ -462,125 +403,89 @@ export function DevicesPage({ onDeviceHistory }: DevicesPageProps = {}) {
                         </table>
                     </div>
                     {filteredDevices.length === 0 && (
-                        <div className="p-12">
-                            <EmptyState
-                                title="No devices found"
-                                description="No devices match your search criteria or filters across your network."
-                                icon={Search}
-                            />
+                        <div className="p-8 text-center text-text-soft font-mono text-xs">
+                            No devices found matching query.
                         </div>
                     )}
-                </PremiumCard>
+                </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     <AnimatePresence mode='popLayout'>
-                        {filteredDevices.map((device: Device, index: number) => {
+                        {filteredDevices.map((device: Device) => {
                             const Icon = getIcon(device.type, device.icon_type);
                             return (
-                                <PremiumCard
+                                <div
                                     key={device.id || device.mac_address}
-                                    delay={index * 0.04}
-                                    className="p-8 transition-all bg-card/75 backdrop-blur-3xl group flex flex-col relative overflow-hidden border border-border/70 hover:border-primary/40 shadow-xl"
+                                    className="panel p-3 cursor-pointer hover:border-line-strong transition-colors flex flex-col justify-between"
                                     onClick={() => openDetail(device)}
                                 >
-                                    <div className="absolute top-0 right-0 p-5 flex gap-2">
-                                        {onDeviceHistory && (
-                                            <motion.button
-                                                initial={{ scale: 0.8, opacity: 0 }}
-                                                animate={{ scale: 1, opacity: 1 }}
-                                                whileHover={{ scale: 1.1 }}
-                                                onClick={(e) => { e.stopPropagation(); onDeviceHistory(device.mac_address); }}
-                                                className="w-9 h-9 flex items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 z-10 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                                                aria-label={`Bandwidth History for ${device.hostname || device.mac_address}`}
-                                                title="Bandwidth History"
-                                            >
-                                                <BarChart3 className="w-4 h-4" />
-                                            </motion.button>
-                                        )}
-                                        {!device.is_online && (
-                                            <motion.button
-                                                initial={{ scale: 0.8, opacity: 0 }}
-                                                animate={{ scale: 1, opacity: 1 }}
-                                                whileHover={{ scale: 1.1 }}
-                                                onClick={(e) => wakeDevice(e, device.mac_address)}
-                                                className="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 transition-all opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 z-10 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                                                aria-label={`Wake ${device.hostname || device.mac_address}`}
-                                                title="Wake on LAN"
-                                            >
-                                                <Power className="w-4 h-4" />
-                                            </motion.button>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-start justify-between mb-8">
-                                        <div className="w-16 h-16 rounded-[2rem] bg-primary/10 text-primary flex items-center justify-center border border-primary/20 group-hover:bg-primary/20 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 shadow-sm">
-                                            <Icon className="w-8 h-8" />
+                                    <div>
+                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-7 h-7 rounded-[5px] bg-raised border border-line flex items-center justify-center text-accent">
+                                                    <Icon className="w-3.5 h-3.5" />
+                                                </div>
+                                                <div>
+                                                    <div className="font-medium text-text text-xs hover:text-accent transition-colors truncate max-w-[140px]">
+                                                        {device.hostname || 'Unknown Device'}
+                                                    </div>
+                                                    <div className="text-[10px] font-mono text-faint uppercase">
+                                                        {device.vendor || 'Generic'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span className={cn(
+                                                "status text-[9px] uppercase font-mono px-1.5 py-0.5",
+                                                device.is_online ? "ok" : "danger"
+                                            )}>
+                                                {device.is_online ? 'ONLINE' : 'OFFLINE'}
+                                            </span>
                                         </div>
-                                        <div className={cn(
-                                            "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border transition-all duration-700",
-                                            device.is_online
-                                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
-                                                : 'bg-secondary text-muted-foreground border-border'
-                                        )}>
-                                            {device.is_online ? 'ONLINE' : 'OFFLINE'}
+
+                                        <div className="bg-raised rounded-[5px] border border-line p-2 space-y-1 my-2 font-mono text-[11px]">
+                                            <div className="flex justify-between items-center text-text-soft">
+                                                <span>IP</span>
+                                                <span className="text-text">{device.ip_address || '---'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-text-soft">
+                                                <span>MAC</span>
+                                                <span className="text-faint text-[10px]">{device.mac_address}</span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex-1">
-                                        <h3 className="font-black text-foreground text-2xl truncate group-hover:text-primary transition-all duration-300 mb-1.5 tracking-tighter">{device.hostname || 'Unknown Device'}</h3>
-                                        <div className="flex items-center gap-3 mb-8">
-                                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{device.vendor || 'Generic'}</span>
-                                            {device.group_id && (
-                                                <>
-                                                    <span className="w-1 h-1 rounded-full bg-border" />
-                                                    <span
-                                                        className="text-[10px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md bg-secondary border border-border"
-                                                        style={{ color: groups.find((g: DeviceGroup) => g.id === device.group_id)?.color || 'hsl(var(--primary))' }}
-                                                    >
-                                                        {groups.find((g: DeviceGroup) => g.id === device.group_id)?.name}
-                                                    </span>
-                                                </>
+                                    <div className="flex items-center justify-between pt-2 border-t border-line font-mono text-[11px]">
+                                        <div className="flex gap-3 num">
+                                            <span className="text-ok">↓ {device.download || '0 B/s'}</span>
+                                            <span className="text-upload">↑ {device.upload || '0 B/s'}</span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            {onDeviceHistory && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); onDeviceHistory(device.mac_address); }}
+                                                    className="w-6 h-6 flex items-center justify-center rounded-[4px] bg-raised hover:bg-line-strong text-accent"
+                                                    title="History"
+                                                >
+                                                    <BarChart3 className="w-3 h-3" />
+                                                </button>
+                                            )}
+                                            {!device.is_online && (
+                                                <button
+                                                    onClick={(e) => wakeDevice(e, device.mac_address)}
+                                                    className="w-6 h-6 flex items-center justify-center rounded-[4px] bg-raised hover:bg-line-strong text-ok"
+                                                    title="WoL"
+                                                >
+                                                    <Power className="w-3 h-3" />
+                                                </button>
                                             )}
                                         </div>
-
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/40 border border-border group-hover:border-border/80 hover:bg-secondary/60 transition-all duration-300">
-                                                <div className="flex items-center gap-2">
-                                                    <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-                                                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Address</span>
-                                                </div>
-                                                <code className="text-xs font-mono text-primary/90 font-bold tabular-nums">{device.ip_address || '---'}</code>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="p-4 rounded-2xl bg-secondary/40 border border-border group-hover:border-border/80 hover:bg-secondary/60 transition-all duration-300">
-                                                    <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Download</div>
-                                                    <div className="text-sm font-mono text-emerald-500 font-black flex items-center gap-2 tabular-nums">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                                                        {device.download || '0 KB/s'}
-                                                    </div>
-                                                </div>
-                                                <div className="p-4 rounded-2xl bg-secondary/40 border border-border group-hover:border-border/80 hover:bg-secondary/60 transition-all duration-300">
-                                                    <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Upload</div>
-                                                    <div className="text-sm font-mono text-primary font-black flex items-center gap-2 tabular-nums">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.5)]" />
-                                                        {device.upload || '0 KB/s'}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
-
-                                    {/* Bottom aesthetic elements */}
-                                    <div className="absolute -bottom-16 -right-16 w-48 h-48 rounded-full bg-primary/5 blur-[80px] group-hover:bg-primary/10 transition-all duration-1000 pointer-events-none" />
-                                    <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border to-transparent" />
-                                </PremiumCard>
+                                </div>
                             );
                         })}
                     </AnimatePresence>
                 </div>
-            )
-            }
+            )}
 
             <DeviceDetail
                 device={selectedDevice}

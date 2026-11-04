@@ -9,11 +9,9 @@ import {
     Clock,
     MapPin,
     AlertCircle,
-    CheckCircle2,
     Loader2,
     History
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import axiosInstance from '../config/axiosInstance';
 import { useAuth } from '../context/AuthContext';
@@ -89,76 +87,81 @@ const SessionManager: React.FC = () => {
     );
 
     return (
-        <div className="space-y-6">
-            <header className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                    Active Sessions
-                </h1>
-                <p className="text-muted-foreground">
-                    Manage your active logins across different devices and browsers.
-                </p>
-            </header>
-
-            <div className="glass-card p-6 rounded-2xl border border-border bg-card/60 space-y-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
-                            <Shield className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-lg text-foreground">Current Login</h3>
-                            <p className="text-sm text-muted-foreground">You are currently using this device.</p>
-                        </div>
+        <div className="space-y-4">
+            {/* Header */}
+            <div className="panel p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-[7px] bg-raised border border-line-strong flex items-center justify-center text-accent">
+                        <Shield className="w-4 h-4" />
                     </div>
-                    <button
-                        onClick={() => revokeOthersMutation.mutate()}
-                        disabled={revokeOthersMutation.isPending || (sessions?.length || 0) <= 1}
-                        className="px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center gap-2"
-                    >
-                        {revokeOthersMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-                        Logout Other Devices
-                    </button>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-base font-semibold text-text tracking-tight">Active Sessions</h1>
+                            <span className="status ok text-[10px] uppercase font-mono px-2 py-0.5">
+                                {sessions?.length || 0} CONCURRENT
+                            </span>
+                        </div>
+                        <p className="text-xs text-text-soft font-mono mt-0.5">
+                            Manage and revoke active authenticated tokens across client browsers
+                        </p>
+                    </div>
                 </div>
 
-                <div className="space-y-4">
+                <button
+                    onClick={() => revokeOthersMutation.mutate()}
+                    disabled={revokeOthersMutation.isPending || (sessions?.length || 0) <= 1}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] bg-raised hover:bg-line-strong border border-line text-danger hover:text-danger font-mono text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {revokeOthersMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
+                    REVOKE OTHERS
+                </button>
+            </div>
+
+            <div className="panel p-0 overflow-hidden">
+                <div className="panel-head border-b border-line px-4 py-2.5 flex items-center justify-between">
+                    <span className="font-mono text-xs uppercase tracking-wider text-text font-medium">Session Ledger</span>
+                    <span className="text-faint text-xs font-mono">{sessions?.length || 0} active</span>
+                </div>
+
+                <div className="p-3 space-y-2">
                     {sessions?.map((session: Session) => {
                         const Icon = getDeviceIcon(session.user_agent);
                         const isCurrent = session.is_current;
 
                         return (
-                            <motion.div
+                            <div
                                 key={session.id}
-                                layout
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className={`flex items-center justify-between p-4 rounded-xl border ${isCurrent ? 'bg-blue-500/5 border-blue-500/20' : 'bg-card border-border'
-                                    }`}
+                                className={`flex items-center justify-between p-3 rounded-[7px] border transition-colors ${
+                                    isCurrent ? 'bg-raised/80 border-accent/40' : 'bg-panel border-line hover:border-line-strong'
+                                }`}
                             >
-                                <div className="flex items-center gap-4">
-                                    <div className={`p-3 rounded-xl ${isCurrent ? 'bg-blue-500/20 text-blue-400' : 'bg-white/10 text-white/40'}`}>
-                                        <Icon className="w-6 h-6" />
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-[5px] flex items-center justify-center border ${
+                                        isCurrent ? 'bg-accent/15 border-accent text-accent' : 'bg-raised border-line text-text-soft'
+                                    }`}>
+                                        <Icon className="w-4 h-4" />
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <span className="font-medium text-white">
+                                            <span className="font-mono text-xs font-semibold text-text">
                                                 {parseUA(session.user_agent)}
                                             </span>
                                             {isCurrent && (
-                                                <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-wider">
-                                                    Current
+                                                <span className="status ok text-[9px] uppercase font-mono px-1.5 py-0.2">
+                                                    CURRENT DEVICE
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 font-mono text-[11px] text-faint">
+                                            <span className="flex items-center gap-1 text-text-soft">
                                                 <MapPin className="w-3 h-3" />
                                                 {session.ip_address || 'Unknown IP'}
                                             </span>
-                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <span className="flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />
                                                 Started {formatDate(session.created_at)}
                                             </span>
-                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <span className="flex items-center gap-1">
                                                 <History className="w-3 h-3" />
                                                 Expires {formatDate(session.expires_at)}
                                             </span>
@@ -166,22 +169,21 @@ const SessionManager: React.FC = () => {
                                     </div>
                                 </div>
                                 {!isCurrent && (
-                                    <div className="flex items-center gap-2 text-emerald-400 text-xs font-medium">
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        Active
-                                    </div>
+                                    <span className="status ok text-[9px] uppercase font-mono px-1.5 py-0.5">
+                                        ACTIVE
+                                    </span>
                                 )}
-                            </motion.div>
+                            </div>
                         );
                     })}
                 </div>
             </div>
 
-            <div className="flex items-start gap-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
-                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <div className="text-sm text-amber-200/60 leading-relaxed">
-                    If you see a login from a device you don't recognize, we recommend revoking its access immediately and changing your password to keep your account secure.
-                </div>
+            <div className="panel p-3 border-line flex items-center gap-3 font-mono text-xs text-text-soft">
+                <AlertCircle className="w-4 h-4 text-warn shrink-0" />
+                <span>
+                    If you identify an unrecognized active session, revoke it immediately and update your master passphrase.
+                </span>
             </div>
         </div>
     );

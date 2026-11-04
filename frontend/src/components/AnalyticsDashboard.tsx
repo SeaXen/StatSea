@@ -17,6 +17,7 @@ import YearlyStatsView from './YearlyStatsView';
 import TrafficCategoriesWidget from './TrafficCategoriesWidget';
 import { NetworkTopology } from './NetworkTopology';
 import { RulesModal } from './analytics/RulesModal';
+import { cn } from '../lib/utils';
 
 
 // ─── Protocol Color Map ───
@@ -138,22 +139,21 @@ function formatNumber(num: number): string {
 const StatCard = ({ label, value, icon: Icon, color, sub, trend }: {
     label: string; value: string | number; icon: React.ElementType; color: string; sub?: string; trend?: 'up' | 'down' | 'neutral';
 }) => (
-    <div className="bg-card/60 border border-border rounded-xl p-3 flex flex-col gap-0.5 relative overflow-hidden group hover:border-border/80 transition-all duration-300 hover:shadow-lg" style={{ '--glow': color } as React.CSSProperties}>
+    <div className="panel p-3 rounded-[7px] border border-line bg-panel flex flex-col gap-1 hover:border-line-strong transition-colors">
         <div className="flex items-center justify-between">
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110" style={{ background: `${color}15` }}>
-                <Icon className="h-3.5 w-3.5" style={{ color }} />
+            <span className="text-[10px] font-mono uppercase tracking-wider text-faint">{label}</span>
+            <div className="w-5 h-5 rounded-[4px] flex items-center justify-center bg-raised border border-line">
+                <Icon className="h-3 w-3" style={{ color }} />
             </div>
         </div>
-        <span className="text-xl font-bold text-white font-mono leading-tight">{value}</span>
+        <span className="text-lg font-semibold text-text font-mono num leading-tight">{value}</span>
         {sub && (
-            <div className="flex items-center gap-1">
-                {trend === 'up' && <TrendingUp className="w-2.5 h-2.5 text-emerald-400" />}
-                {trend === 'down' && <TrendingUp className="w-2.5 h-2.5 text-red-400 rotate-180" />}
-                <span className="text-[10px] text-muted-foreground truncate">{sub}</span>
+            <div className="flex items-center gap-1 font-mono text-[10px] text-text-soft">
+                {trend === 'up' && <TrendingUp className="w-2.5 h-2.5 text-ok" />}
+                {trend === 'down' && <TrendingUp className="w-2.5 h-2.5 text-danger rotate-180" />}
+                <span className="truncate">{sub}</span>
             </div>
         )}
-        <div className="absolute bottom-0 left-0 h-[1.5px] w-full opacity-30 group-hover:opacity-50 transition-opacity" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
     </div>
 );
 
@@ -543,36 +543,45 @@ const AnalyticsDashboard = () => {
     const allProtocols = ['TCP', 'UDP', 'HTTP', 'HTTPS', 'DNS', 'ICMP', 'SSH', 'FTP'];
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             {/* ─── Header ─── */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-3">
-                        <Activity className="w-7 h-7 text-cyan-400" />
-                        Traffic Analyzer
-                    </h1>
-                    <p className="text-muted-foreground mt-0.5 text-xs">Real-time packet monitoring and deep analysis</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-card/60 border border-border rounded-lg">
-                        <div className={`w-2 h-2 rounded-full ${paused ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
-                        <span className="text-xs text-muted-foreground">{paused ? 'Paused' : 'Capturing'}</span>
+            <div className="panel p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-[7px] bg-raised border border-line-strong flex items-center justify-center text-accent">
+                        <Activity className="w-4 h-4" />
                     </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-base font-semibold text-text tracking-tight">Traffic Analyzer</h1>
+                            <span className={cn(
+                                "status text-[10px] uppercase font-mono px-2 py-0.5",
+                                paused ? "warn" : "ok"
+                            )}>
+                                {paused ? 'PAUSED' : 'LIVE CAPTURE'}
+                            </span>
+                        </div>
+                        <p className="text-xs text-text-soft font-mono mt-0.5">Real-time packet inspection & telemetry engine</p>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
                     <button onClick={() => setPaused(!paused)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${paused
-                            ? 'bg-green-500/10 text-green-400 border border-green-500/30 hover:bg-green-500/20'
-                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20'
-                            }`}>
+                        className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-xs font-mono transition-colors border",
+                            paused
+                                ? "bg-raised border-line text-ok hover:bg-line-strong"
+                                : "bg-raised border-line text-warn hover:bg-line-strong"
+                        )}>
                         {paused ? <><Play className="w-3.5 h-3.5" /> Resume</> : <><Pause className="w-3.5 h-3.5" /> Pause</>}
                     </button>
                     <button
                         onClick={() => handleGenerateReport('network_summary')}
                         disabled={isGeneratingReport}
                         aria-label="Generate network summary report"
-                        className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary border border-primary/30 rounded-lg text-xs font-medium hover:bg-primary/20 transition-all disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-accent hover:opacity-90 text-[#0f1115] rounded-[7px] text-xs font-mono font-semibold transition-opacity disabled:opacity-50"
                     >
                         {isGeneratingReport ? (
-                            <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            <div className="w-3.5 h-3.5 border-2 border-[#0f1115] border-t-transparent rounded-full animate-spin" />
                         ) : (
                             <FileText className="w-3.5 h-3.5" />
                         )}
@@ -582,34 +591,39 @@ const AnalyticsDashboard = () => {
                         <button
                             onClick={() => setShowSettings(!showSettings)}
                             aria-label="Dashboard settings"
-                            className={`p-2 rounded-lg transition-colors border ${showSettings ? 'bg-secondary border-border text-cyan-400' : 'bg-card/60 border-border text-muted-foreground hover:text-foreground'}`}
+                            className={cn(
+                                "p-1.5 rounded-[7px] transition-colors border",
+                                showSettings ? "bg-raised border-line-strong text-accent" : "bg-panel border-line text-text-soft hover:text-text"
+                            )}
                         >
                             <Settings className="w-4 h-4" />
                         </button>
 
                         {/* Settings Dropdown */}
                         {showSettings && (
-                            <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-xl shadow-xl z-50 p-3 animate-in fade-in slide-in-from-top-2">
-                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">Dashboard Layout</h4>
+                            <div className="absolute right-0 top-full mt-1 w-56 bg-panel border border-line-strong rounded-[7px] shadow-lg z-50 p-2 font-mono text-xs">
+                                <div className="text-[10px] text-faint uppercase tracking-wider mb-2 px-1">Layout Sections</div>
                                 <div className="space-y-1">
                                     {[
                                         { key: 'showStatsRow', label: 'Key Statistics' },
-                                        { key: 'showLiveBandwidth', label: 'Live Bandwidth Graph' },
+                                        { key: 'showLiveBandwidth', label: 'Bandwidth Graph' },
                                         { key: 'showGauges', label: 'Network Gauges' },
                                         { key: 'showProtocolFilters', label: 'Protocol Filters' },
                                         { key: 'showProtocolCharts', label: 'Protocol Distribution' },
-                                        { key: 'showPacketCharts', label: 'Packet Size/Volume' },
-
+                                        { key: 'showPacketCharts', label: 'Packet Volume' },
                                     ].map(item => (
                                         <button
                                             key={item.key}
                                             onClick={() => toggleWidget(item.key as keyof DashboardConfig)}
-                                            className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-secondary rounded-lg text-xs text-foreground/80 transition-colors"
+                                            className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-raised rounded-[5px] text-xs text-text transition-colors"
                                         >
                                             <span>{item.label}</span>
-                                            <div className={`w-8 h-4 rounded-full relative transition-colors ${dashboardConfig[item.key as keyof DashboardConfig] ? 'bg-cyan-500/20' : 'bg-secondary'}`}>
-                                                <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${dashboardConfig[item.key as keyof DashboardConfig] ? 'left-4.5 bg-cyan-400' : 'left-0.5 bg-muted-foreground'}`} style={{ left: dashboardConfig[item.key as keyof DashboardConfig] ? '18px' : '2px' }} />
-                                            </div>
+                                            <span className={cn(
+                                                "status text-[9px] uppercase px-1 py-0.2",
+                                                dashboardConfig[item.key as keyof DashboardConfig] ? "ok" : "warn"
+                                            )}>
+                                                {dashboardConfig[item.key as keyof DashboardConfig] ? 'ON' : 'OFF'}
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
@@ -619,42 +633,42 @@ const AnalyticsDashboard = () => {
                 </div>
             </div>
 
-            {/* Real-time Totals Bar */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-card/40 border border-border/60 rounded-xl p-3 shadow-inner my-6">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                        <Activity className="w-4 h-4 text-cyan-400" />
+            {/* Real-time Totals Strip */}
+            <div className="panel strip">
+                <div className="cell">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-mono text-faint">Total Packets</span>
+                        <Zap className="w-3 h-3 text-accent" />
                     </div>
-                    <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Packets</p>
-                        <p className="font-mono text-sm text-foreground/90 mt-0.5">{analyticsData?.total_packets.toLocaleString() || '---'}</p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-3 border-l border-border/60 pl-4">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                        <Database className="w-4 h-4 text-blue-400" />
-                    </div>
-                    <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Bytes</p>
-                        <p className="font-mono text-sm text-foreground/90 mt-0.5">{analyticsData ? formatBytes(analyticsData.total_bytes) : '---'}</p>
+                    <div className="num text-base font-semibold text-text mt-1">
+                        {analyticsData?.total_packets.toLocaleString() || '---'}
                     </div>
                 </div>
-                <div className="flex items-center gap-3 border-l border-border/60 pl-4">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                        <Network className="w-4 h-4 text-emerald-400" />
+                <div className="cell">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-mono text-faint">Total Bytes</span>
+                        <Database className="w-3 h-3 text-upload" />
                     </div>
-                    <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Connections</p>
-                        <p className="font-mono text-sm text-foreground/90 mt-0.5">{externalConnections.length.toLocaleString()}</p>
+                    <div className="num text-base font-semibold text-text mt-1">
+                        {analyticsData ? formatBytes(analyticsData.total_bytes) : '---'}
                     </div>
                 </div>
-                <div className="flex items-center gap-3 border-l border-border/60 pl-4">
-                    <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
-                        <AlertTriangle className="w-4 h-4 text-red-400" />
+                <div className="cell">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-mono text-faint">Active Conns</span>
+                        <Network className="w-3 h-3 text-ok" />
                     </div>
-                    <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Security Events</p>
-                        <p className="font-mono text-sm text-foreground/90 mt-0.5">{securityEvents.length}</p>
+                    <div className="num text-base font-semibold text-text mt-1">
+                        {externalConnections.length.toLocaleString()}
+                    </div>
+                </div>
+                <div className="cell">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-mono text-faint">Security Events</span>
+                        <AlertTriangle className="w-3 h-3 text-warn" />
+                    </div>
+                    <div className="num text-base font-semibold text-text mt-1">
+                        {securityEvents.length}
                     </div>
                 </div>
             </div>

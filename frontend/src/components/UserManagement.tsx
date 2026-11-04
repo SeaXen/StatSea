@@ -147,42 +147,43 @@ export const UserManagement: React.FC = () => {
     });
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             {/* ── Header ── */}
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center gap-3 mb-2"
-                    >
-                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
-                            <Users className="w-6 h-6 text-primary" />
+            <div className="panel p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-[7px] bg-raised border border-line-strong flex items-center justify-center text-accent">
+                        <Users className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-base font-semibold text-text tracking-tight">Access Control</h1>
+                            <span className="status ok text-[10px] uppercase font-mono px-2 py-0.5">
+                                {filteredUsers.filter(u => u.is_active).length} ACTIVE OPERATORS
+                            </span>
                         </div>
-                        <h1 className="text-3xl font-bold text-foreground tracking-tight">Access <span className="text-primary">Control</span></h1>
-                    </motion.div>
-                    <p className="text-muted-foreground font-medium text-sm ml-15">Manage system operators, permissions, and security profiles</p>
+                        <p className="text-xs text-text-soft font-mono mt-0.5">Manage operator identities, security credentials, and role privileges</p>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                     <button
                         onClick={() => handleOpenModal('add')}
-                        className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-black transition-all shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-accent hover:opacity-90 text-[#0f1115] rounded-[7px] text-xs font-semibold font-mono transition-opacity"
                     >
-                        <UserPlus className="w-4 h-4" />
-                        Add Operator
+                        <UserPlus className="w-3.5 h-3.5" />
+                        + ADD OPERATOR
                     </button>
                 </div>
-            </header>
+            </div>
 
             {/* ── Controls ── */}
-            <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="relative flex-1 group w-full">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <div className="panel p-3 flex flex-col md:flex-row gap-3 items-center">
+                <div className="relative flex-1 w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-faint" />
                     <input
                         type="text"
-                        placeholder="Quick search by name, username or email..."
-                        className="w-full bg-card/70 backdrop-blur-md border border-border rounded-2xl py-3 pl-12 pr-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium placeholder:text-muted-foreground/50"
+                        placeholder="Search operator by name, username or email..."
+                        className="w-full bg-raised border border-line rounded-[7px] py-1.5 pl-9 pr-3 text-xs font-mono text-text focus:outline-none focus:border-accent transition-colors placeholder:text-faint"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -196,124 +197,105 @@ export const UserManagement: React.FC = () => {
                     ]}
                     value={filterStatus}
                     onChange={(val) => setFilterStatus(val as any)}
-                    className="w-full md:w-auto min-w-[180px]"
                 />
             </div>
 
             {/* ── Users Table ── */}
-            <PremiumCard className="overflow-hidden border-border/70 bg-card/60 backdrop-blur-2xl p-0">
-                <div className="px-6 py-5 border-b border-border/50 flex items-center justify-between bg-card/40">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-secondary/70 border border-border">
-                            <Shield className="w-4.5 h-4.5 text-primary" />
-                        </div>
-                        <h2 className="text-[13px] font-black text-foreground uppercase tracking-widest">Active Operators</h2>
+            <div className="panel p-0 overflow-hidden">
+                <div className="panel-head border-b border-line px-4 py-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Shield className="w-3.5 h-3.5 text-accent" />
+                        <span className="font-mono text-xs uppercase tracking-wider text-text font-medium">Configured Operators</span>
                     </div>
+                    <span className="text-faint text-xs font-mono">{filteredUsers.length} total</span>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                <div className="table-wrap">
+                    <table className="w-full text-left text-xs whitespace-nowrap">
                         <thead>
-                            <tr className="border-b border-border/70">
-                                <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Operator</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Security Level</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] text-center">Status</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] text-center">Last Activity</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] text-right">Actions</th>
+                            <tr className="border-b border-line bg-raised/50 text-faint uppercase font-mono text-[10px] tracking-wider">
+                                <th className="px-4 py-2 font-medium">Operator</th>
+                                <th className="px-4 py-2 font-medium">Security Role</th>
+                                <th className="px-4 py-2 font-medium text-center">Status</th>
+                                <th className="px-4 py-2 font-medium text-center">Last Activity</th>
+                                <th className="px-4 py-2 font-medium text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-border/40">
+                        <tbody className="divide-y divide-line">
                             <AnimatePresence mode="popLayout">
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={5} className="py-24 text-center">
-                                            <div className="flex flex-col items-center gap-4">
-                                                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                                                <span className="text-muted-foreground font-mono text-[10px] uppercase tracking-[0.2em]">Syncing User Base...</span>
-                                            </div>
+                                        <td colSpan={5} className="py-12 text-center text-text-soft font-mono text-xs animate-pulse">
+                                            Syncing operator directory...
                                         </td>
                                     </tr>
-                                ) : filteredUsers.length > 0 ? filteredUsers.map((user, idx) => (
-                                    <motion.tr
+                                ) : filteredUsers.length > 0 ? filteredUsers.map((user) => (
+                                    <tr
                                         key={user.id}
-                                        layout
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        transition={{ delay: idx * 0.03 }}
-                                        className="hover:bg-secondary/30 transition-colors group"
+                                        className="hover:bg-raised/60 transition-colors"
                                     >
-                                        <td className="px-6 py-5">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-secondary/70 border border-border flex items-center justify-center text-primary font-black">
+                                        <td className="px-4 py-2.5">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-7 h-7 rounded-[5px] bg-raised border border-line flex items-center justify-center text-accent font-mono text-xs font-semibold">
                                                     {user.username[0].toUpperCase()}
                                                 </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-foreground font-bold tracking-tight">{user.full_name || user.username}</span>
-                                                    <span className="text-muted-foreground text-[10px] uppercase font-black tracking-widest">{user.email}</span>
+                                                <div>
+                                                    <div className="text-text font-medium text-xs">{user.full_name || user.username}</div>
+                                                    <div className="text-faint text-[10px] font-mono">{user.email}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5">
+                                        <td className="px-4 py-2.5 font-mono">
                                             <button
                                                 onClick={() => toggleAdminStatus(user)}
                                                 className={cn(
-                                                    "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all",
-                                                    user.is_admin
-                                                        ? "bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]"
-                                                        : "bg-secondary/50 text-muted-foreground border-border hover:text-foreground"
+                                                    "status text-[9px] uppercase px-1.5 py-0.5",
+                                                    user.is_admin ? "warn" : "ok"
                                                 )}
                                             >
-                                                {user.is_admin ? 'Admin' : 'Junior'}
+                                                {user.is_admin ? 'Admin' : 'Operator'}
                                             </button>
                                         </td>
-                                        <td className="px-6 py-5 text-center">
+                                        <td className="px-4 py-2.5 text-center font-mono">
                                             <button
                                                 onClick={() => toggleUserStatus(user)}
                                                 className={cn(
-                                                    "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                                    user.is_active
-                                                        ? "bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-                                                        : "bg-rose-500/20 text-rose-500 border border-rose-500/20"
+                                                    "status text-[9px] uppercase px-1.5 py-0.5",
+                                                    user.is_active ? "ok" : "danger"
                                                 )}
                                             >
-                                                {user.is_active ? 'Authorized' : 'Locked'}
+                                                {user.is_active ? 'Authorized' : 'Disabled'}
                                             </button>
                                         </td>
-                                        <td className="px-6 py-5">
-                                            <div className="flex flex-col items-center gap-1">
-                                                <span className="text-foreground/80 font-bold font-mono text-[11px] tabular-nums tracking-tighter">
-                                                    {user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
-                                                </span>
-                                                <span className="text-muted-foreground text-[9px] uppercase font-black">Created {new Date(user.created_at).toLocaleDateString()}</span>
+                                        <td className="px-4 py-2.5 text-center font-mono">
+                                            <div className="text-text-soft text-xs num">
+                                                {user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
                                             </div>
+                                            <div className="text-faint text-[9px]">Created {new Date(user.created_at).toLocaleDateString()}</div>
                                         </td>
-                                        <td className="px-6 py-5">
-                                            <div className="flex justify-end gap-2">
+                                        <td className="px-4 py-2.5 text-right">
+                                            <div className="flex justify-end gap-1.5">
                                                 <button
                                                     onClick={() => handleOpenModal('edit', user)}
                                                     aria-label={`Edit ${user.username}`}
-                                                    className="p-2.5 rounded-xl bg-secondary/60 border border-border text-muted-foreground hover:text-foreground hover:bg-primary/20 hover:border-primary/30 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                                    className="w-7 h-7 flex items-center justify-center rounded-[5px] bg-raised hover:bg-line-strong border border-line text-text-soft hover:text-text transition-colors"
                                                 >
-                                                    <Edit2 className="w-4 h-4" />
+                                                    <Edit2 className="w-3.5 h-3.5" />
                                                 </button>
                                                 <button
                                                     onClick={() => deleteUser(user.id)}
                                                     aria-label={`Delete ${user.username}`}
-                                                    className="p-2.5 rounded-xl bg-secondary/60 border border-border text-muted-foreground hover:text-rose-500 hover:bg-rose-600/20 hover:border-rose-500/30 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
+                                                    className="w-7 h-7 flex items-center justify-center rounded-[5px] bg-raised hover:bg-line-strong border border-line text-danger hover:text-danger transition-colors"
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
+                                                    <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
                                             </div>
                                         </td>
-                                    </motion.tr>
+                                    </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan={5} className="py-24 text-center">
-                                            <div className="flex flex-col items-center gap-4 text-muted-foreground/50">
-                                                <Search className="w-12 h-12" />
-                                                <span className="text-sm font-black uppercase tracking-widest">No matching operators found</span>
-                                            </div>
+                                        <td colSpan={5} className="py-8 text-center text-text-soft font-mono text-xs">
+                                            No matching operators found
                                         </td>
                                     </tr>
                                 )}
@@ -321,7 +303,7 @@ export const UserManagement: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
-            </PremiumCard>
+            </div>
 
             {/* ── Modal ── */}
             <AnimatePresence>

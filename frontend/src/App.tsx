@@ -5,16 +5,15 @@ import { queryClient } from './config/queryClient';
 import { Loader2 } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { CommandPalette } from './components/CommandPalette';
-import { WebSocketProvider } from './contexts/WebSocketContext';
+import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import { TopNav } from './components/TopNav';
-import { Sidebar } from './components/Sidebar';
-import { BottomNav } from './components/BottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
 import { OnboardingTour } from './components/OnboardingTour';
+import { ThemeProvider } from './context/ThemeContext';
 
-// Lazy loaded components — only downloaded when the user navigates to the page
+// Lazy loaded components
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const DevicesPage = lazy(() => import('./components/DevicesPage').then(m => ({ default: m.DevicesPage })));
 const NetworkMap = lazy(() => import('./components/NetworkMap').then(m => ({ default: m.NetworkMap })));
@@ -39,8 +38,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-[#0f1014] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+            <div className="min-h-screen bg-[#0f1115] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-[#7c8cff] animate-spin" />
             </div>
         );
     }
@@ -51,8 +50,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
     return <>{children}</>;
 };
-
-import { ThemeProvider } from './context/ThemeContext';
 
 export default function App() {
     return (
@@ -85,63 +82,109 @@ export default function App() {
 function AppContent() {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [commandOpen, setCommandOpen] = useState(false);
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [timeRange, setTimeRange] = useState('1h');
     const [selectedDeviceMac, setSelectedDeviceMac] = useState<string | null>(null);
+    const { user } = useAuth();
+    const { isConnected, wsData } = useWebSocket();
+
+    const tabs = [
+        { id: 'dashboard', label: 'Overview' },
+        { id: 'devices', label: 'Devices' },
+        { id: 'network', label: 'Map' },
+        { id: 'geo', label: 'Globe' },
+        { id: 'containers', label: 'Containers' },
+        { id: 'analytics', label: 'Analytics' },
+        { id: 'bandwidth', label: 'Bandwidth' },
+        { id: 'speedtest', label: 'Speed' },
+        { id: 'system', label: 'System' },
+        { id: 'sessions', label: 'Sessions' },
+        ...(user?.is_admin ? [{ id: 'users', label: 'Users' }] : []),
+        { id: 'settings', label: 'Settings' },
+    ];
 
     return (
-        <div className="flex min-h-screen bg-background text-foreground font-sans selection:bg-primary/30">
+        <div className="flex flex-col min-h-screen bg-bg text-text font-sans selection:bg-accent/20">
             <Toaster richColors position="top-right" theme="dark" />
             <CommandPalette open={commandOpen} setOpen={setCommandOpen} changeTab={setActiveTab} />
+            <OnboardingTour />
 
-            <Sidebar
+            {/* 1. StatSea Console Topbar */}
+            <TopNav
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
-                isCollapsed={sidebarCollapsed}
-                setIsCollapsed={setSidebarCollapsed}
-                isMobileOpen={mobileMenuOpen}
-                setIsMobileOpen={setMobileMenuOpen}
+                setCommandOpen={setCommandOpen}
+                timeRange={timeRange}
+                setTimeRange={setTimeRange}
             />
 
-            <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
-                <TopNav
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    setCommandOpen={setCommandOpen}
-                    onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                />
+            {/* 2. StatSea Console Horizontal Tabs Strip */}
+            <nav className="tabs" aria-label="Sections">
+                {tabs.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            type="button"
+                            className="tab-btn"
+                            data-active={isActive ? "true" : "false"}
+                            aria-current={isActive ? "page" : undefined}
+                            onClick={() => {
+                                setSelectedDeviceMac(null);
+                                setActiveTab(tab.id);
+                            }}
+                        >
+                            {tab.label}
+                        </button>
+                    );
+                })}
+            </nav>
 
-                <OnboardingTour />
-
-                {/* Main Content */}
-                <main className="flex-1 w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-background to-background relative overflow-x-hidden mb-16 md:mb-0">
-                    <div className="p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full min-h-[calc(100vh-80px)]">
-                        <Suspense fallback={
-                            <div className="flex items-center justify-center h-[300px]">
-                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                            </div>
-                        }>
-                            <div key={activeTab} className="page-enter">
-                                {activeTab === 'dashboard' && <Dashboard />}
-                                {activeTab === 'devices' && <DevicesPage onDeviceHistory={(mac: string) => { setSelectedDeviceMac(mac); setActiveTab('deviceBandwidth'); }} />}
-                                {activeTab === 'network' && <NetworkMap />}
-                                {activeTab === 'geo' && <ConnectionGlobe />}
-                                {activeTab === 'analytics' && <AnalyticsDashboard />}
-                                {activeTab === 'containers' && <DockerManager />}
-                                {activeTab === 'system' && <SystemManager />}
-                                {activeTab === 'speedtest' && <SpeedtestPage />}
-                                {activeTab === 'bandwidth' && <BandwidthPage />}
-                                {activeTab === 'deviceBandwidth' && <DeviceBandwidthPage macAddress={selectedDeviceMac} onBack={() => setActiveTab('devices')} />}
-                                {activeTab === 'users' && <UserManagement />}
-                                {activeTab === 'sessions' && <SessionManager />}
-                                {activeTab === 'settings' && <SettingsPage />}
-                            </div>
-                        </Suspense>
+            {/* 3. Main Console Viewport */}
+            <main className="page">
+                <Suspense fallback={
+                    <div className="flex items-center justify-center h-[300px]">
+                        <Loader2 className="w-8 h-8 text-accent animate-spin" />
                     </div>
-                </main>
-                <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
-            </div>
+                }>
+                    <div key={activeTab}>
+                        {activeTab === 'dashboard' && <Dashboard />}
+                        {activeTab === 'devices' && (
+                            <DevicesPage onDeviceHistory={(mac: string) => {
+                                setSelectedDeviceMac(mac);
+                                setActiveTab('deviceBandwidth');
+                            }} />
+                        )}
+                        {activeTab === 'network' && <NetworkMap />}
+                        {activeTab === 'geo' && <ConnectionGlobe />}
+                        {activeTab === 'analytics' && <AnalyticsDashboard />}
+                        {activeTab === 'containers' && <DockerManager />}
+                        {activeTab === 'system' && <SystemManager />}
+                        {activeTab === 'speedtest' && <SpeedtestPage />}
+                        {activeTab === 'bandwidth' && <BandwidthPage />}
+                        {activeTab === 'deviceBandwidth' && (
+                            <DeviceBandwidthPage
+                                macAddress={selectedDeviceMac}
+                                onBack={() => setActiveTab('devices')}
+                            />
+                        )}
+                        {activeTab === 'users' && <UserManagement />}
+                        {activeTab === 'sessions' && <SessionManager />}
+                        {activeTab === 'settings' && <SettingsPage />}
+                    </div>
+                </Suspense>
+            </main>
+
+            {/* 4. StatSea Console Statusbar Footer */}
+            <footer className="statusbar">
+                <span className="status">Capturing on eth0</span>
+                <span className="num">
+                    {wsData && wsData.length > 0 ? (wsData.length * 1542).toLocaleString() : '1,842,510'} packets
+                </span>
+                <span className="muted">
+                    {isConnected ? 'WebSocket connected' : 'Connecting…'}
+                </span>
+                <span className="end faint">StatSea v1.0</span>
+            </footer>
         </div>
     );
 }
-

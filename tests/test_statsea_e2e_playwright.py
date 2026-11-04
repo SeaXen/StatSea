@@ -98,23 +98,24 @@ def run_e2e_tests():
             print(f"  [PASS] Telemetry Transparency Badge verified: '{badge_text}'")
 
             # Verify presence of core dashboard overview elements
-            traffic_card = page.locator('text="Live Network Traffic"').first
-            traffic_card.wait_for(state="visible", timeout=8000)
-            assert traffic_card.is_visible()
-            print("  [PASS] Overview dashboard loaded with live UI indicators ('Live Network Traffic')")
-
-            bandwidth_card = page.locator('text="Bandwidth Summary"').first
-            bandwidth_card.wait_for(state="visible", timeout=5000)
+            # Verify presence of core dashboard overview elements
+            bandwidth_card = page.locator('h2:has-text("Bandwidth")').first
+            bandwidth_card.wait_for(state="visible", timeout=8000)
             assert bandwidth_card.is_visible()
-            print("  [PASS] Overview dashboard 'Bandwidth Summary' card confirmed")
+            print("  [PASS] Overview dashboard 'Bandwidth' panel confirmed")
+
+            events_card = page.locator('h2:has-text("Live events")').first
+            events_card.wait_for(state="visible", timeout=5000)
+            assert events_card.is_visible()
+            print("  [PASS] Overview dashboard loaded with live UI indicators ('Live events')")
 
             # Step 6: Comprehensive Navigation Across All Tabs
-            print("[Step 6] Testing Sidebar navigation across all tabs...")
+            print("[Step 6] Testing navigation across all tabs...")
             all_tabs = [
                 ("Overview", "dashboard"),
                 ("Devices", "devices"),
                 ("Map", "network"),
-                ("Global", "geo"),
+                ("Globe", "geo"),
                 ("Containers", "containers"),
                 ("System", "system"),
                 ("Analytics", "analytics"),
@@ -126,10 +127,10 @@ def run_e2e_tests():
             ]
 
             for tab_label, tab_id in all_tabs:
-                btn = page.locator(f'aside button:has-text("{tab_label}")').first
+                btn = page.locator(f'nav.tabs button:has-text("{tab_label}"), aside button:has-text("{tab_label}"), button.tab-btn:has-text("{tab_label}")').first
                 if not btn.is_visible():
                     # Try partial text or alternative label
-                    btn = page.locator(f'aside button[title*="{tab_label}"]').first
+                    btn = page.locator(f'nav button:has-text("{tab_label}"), button[title*="{tab_label}"]').first
                 if btn.is_visible():
                     btn.click()
                     page.wait_for_timeout(1000)
@@ -140,7 +141,7 @@ def run_e2e_tests():
                     print(f"  [PASS] Successfully opened tab '{tab_label}' with zero runtime errors")
 
             # Switch back to Overview
-            overview_btn = page.locator('aside button:has-text("Overview")').first
+            overview_btn = page.locator('nav.tabs button:has-text("Overview"), aside button:has-text("Overview"), button.tab-btn:has-text("Overview")').first
             overview_btn.wait_for(state="visible", timeout=5000)
             overview_btn.click()
             page.wait_for_timeout(1200)

@@ -30,7 +30,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+                        className="fixed inset-0 z-50 bg-[#0f1115]/75"
                     />
 
                     {/* Sidebar Panel */}
@@ -38,18 +38,18 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                         initial={{ x: '100%' }}
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-sm border-l border-border bg-background shadow-2xl"
+                        transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                        className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-sm border-l border-line bg-panel shadow-2xl"
                     >
-                        <div className="flex h-full flex-col">
+                        <div className="flex h-full flex-col font-sans">
                             {/* Header */}
-                            <div className="flex items-center justify-between border-b border-border px-4 py-4">
+                            <div className="flex items-center justify-between border-b border-line px-4 py-3 bg-bar">
                                 <div className="flex items-center gap-2">
-                                    <Bell className="h-5 w-5 text-muted-foreground" />
-                                    <h2 className="font-semibold text-foreground">Notifications</h2>
+                                    <Bell className="h-4 w-4 text-accent" />
+                                    <h2 className="font-semibold text-xs text-text uppercase tracking-wider font-mono">System Telemetry Log</h2>
                                     {unreadCount > 0 && (
-                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                                            {unreadCount} New
+                                        <span className="status warn text-[9px] font-mono px-1.5 py-0.2">
+                                            {unreadCount} NEW
                                         </span>
                                     )}
                                 </div>
@@ -58,67 +58,67 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                                         <>
                                             <button
                                                 onClick={markAllAsRead}
-                                                className="group rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                                                className="p-1 rounded-[5px] text-muted hover:text-text hover:bg-raised transition-colors"
                                                 title="Mark all as read"
                                             >
-                                                <Check className="h-4 w-4" />
+                                                <Check className="h-3.5 w-3.5" />
                                             </button>
                                             <button
                                                 onClick={clearNotifications}
-                                                className="group rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive transition-colors"
+                                                className="p-1 rounded-[5px] text-muted hover:text-danger hover:bg-raised transition-colors"
                                                 title="Clear all"
                                             >
-                                                <Trash2 className="h-4 w-4" />
+                                                <Trash2 className="h-3.5 w-3.5" />
                                             </button>
                                         </>
                                     )}
                                     <button
                                         onClick={onClose}
-                                        className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                                        className="p-1 rounded-[5px] text-muted hover:text-text hover:bg-raised transition-colors"
                                     >
-                                        <X className="h-5 w-5" />
+                                        <X className="h-4 w-4" />
                                     </button>
                                 </div>
                             </div>
 
                             {/* Content */}
-                            <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                            <div className="flex-1 overflow-y-auto px-3 py-3">
                                 {notifications.length === 0 ? (
-                                    <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
-                                        <Bell className="h-12 w-12 opacity-20 mb-4" />
-                                        <p className="font-medium">All caught up!</p>
-                                        <p className="text-sm">No new notifications to show.</p>
+                                    <div className="flex h-full flex-col items-center justify-center text-center text-muted font-mono text-xs">
+                                        <Bell className="h-8 w-8 opacity-20 mb-3 text-muted" />
+                                        <p className="font-semibold text-text">Zero Unread Events</p>
+                                        <p className="text-[11px] text-faint mt-1">Audit log is clear</p>
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col gap-3">
+                                    <div className="flex flex-col gap-2">
                                         {notifications.map((notification) => (
                                             <motion.div
                                                 key={notification.id}
                                                 layout
-                                                initial={{ opacity: 0, y: 20 }}
+                                                initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, x: -20 }}
-                                                className={`relative rounded-xl border p-4 transition-colors ${notification.read
-                                                    ? 'border-border bg-card/50'
-                                                    : 'border-primary/20 bg-primary/5'
+                                                exit={{ opacity: 0, x: -10 }}
+                                                className={`relative rounded-[7px] border p-3 transition-colors cursor-pointer ${notification.read
+                                                    ? 'border-line bg-raised/30 text-text-soft'
+                                                    : 'border-line-strong bg-raised text-text'
                                                     }`}
                                                 onClick={() => markAsRead(notification.id)}
                                             >
                                                 {!notification.read && (
-                                                    <div className="absolute right-4 top-4 h-2 w-2 rounded-full bg-primary" />
+                                                    <div className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full bg-accent" />
                                                 )}
-                                                <div className="flex gap-4">
-                                                    <div className="mt-1 flex-shrink-0">
+                                                <div className="flex gap-2.5">
+                                                    <div className="mt-0.5 flex-shrink-0">
                                                         {getIcon(notification.type)}
                                                     </div>
-                                                    <div className="flex-1 space-y-1">
-                                                        <h3 className={`text-sm font-medium ${notification.read ? 'text-muted-foreground' : 'text-foreground'}`}>
+                                                    <div className="flex-1 space-y-0.5">
+                                                        <h3 className={`text-xs font-semibold ${notification.read ? 'text-text-soft' : 'text-text'}`}>
                                                             {notification.title}
                                                         </h3>
-                                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                                        <p className="text-[11px] text-text-soft leading-relaxed font-mono">
                                                             {notification.description}
                                                         </p>
-                                                        <span className="text-[10px] text-muted-foreground/70">
+                                                        <span className="text-[9.5px] font-mono text-faint block mt-1">
                                                             {new Date(notification.timestamp).toLocaleTimeString()}
                                                         </span>
                                                     </div>

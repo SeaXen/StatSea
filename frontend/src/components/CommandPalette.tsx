@@ -23,61 +23,62 @@ export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, se
             open={open}
             onOpenChange={setOpen}
             label="Global Command Menu"
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] max-w-full bg-background/80 backdrop-blur-xl border border-border rounded-xl shadow-2xl p-2 z-50 text-foreground"
-            overlayClassName="fixed inset-0 bg-background/50 backdrop-blur-sm z-40"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[580px] max-w-[94vw] bg-panel border border-line-strong rounded-[9px] shadow-2xl p-2 z-50 text-text font-sans"
+            overlayClassName="fixed inset-0 bg-[#0f1115]/80 backdrop-blur-none z-40"
         >
-            <div className="flex items-center border-b border-border px-3" cmdk-input-wrapper="">
-                <Search className="w-5 h-5 text-muted-foreground mr-2" />
+            <div className="flex items-center border-b border-line px-3 py-1" cmdk-input-wrapper="">
+                <Search className="w-4 h-4 text-muted mr-2" />
                 <Command.Input
-                    className="w-full bg-transparent border-none focus:outline-none p-4 text-lg placeholder:text-muted-foreground text-foreground"
-                    placeholder="Type a command or search..."
+                    className="w-full bg-transparent border-none focus:outline-none p-2.5 text-xs font-mono placeholder:text-faint text-text"
+                    placeholder="Search operations, devices, tabs… (Type / for commands)"
                 />
+                <kbd className="mono text-[10px] text-faint ml-auto bg-raised border border-line px-1.5 py-0.5 rounded-[4px]">ESC</kbd>
             </div>
 
-            <Command.List className="max-h-[300px] overflow-y-auto p-2 scroll-py-2">
-                <Command.Empty className="p-4 text-center text-sm text-muted-foreground">No results found.</Command.Empty>
+            <Command.List className="max-h-[300px] overflow-y-auto p-1.5 scroll-py-1">
+                <Command.Empty className="p-4 text-center text-xs font-mono text-muted">No telemetry or commands found.</Command.Empty>
 
-                <Command.Group heading="Navigation" className="text-xs text-muted-foreground font-medium mb-2 px-2">
+                <Command.Group heading="Navigation Views" className="text-[10px] uppercase font-mono tracking-wider text-faint mb-1 px-2.5 pt-2">
                     <Command.Item
                         onSelect={() => { changeTab('dashboard'); setOpen(false); }}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-lg aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer transition-colors"
+                        className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono text-text rounded-[5px] aria-selected:bg-raised aria-selected:text-accent cursor-pointer transition-colors"
                     >
-                        <LayoutDashboard className="w-4 h-4" />
-                        <span>Dashboard</span>
+                        <LayoutDashboard className="w-3.5 h-3.5 text-accent" />
+                        <span>Overview</span>
                     </Command.Item>
                     <Command.Item
                         onSelect={() => { changeTab('devices'); setOpen(false); }}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-lg aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer transition-colors"
+                        className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono text-text rounded-[5px] aria-selected:bg-raised aria-selected:text-accent cursor-pointer transition-colors"
                     >
-                        <Server className="w-4 h-4" />
-                        <span>Devices</span>
+                        <Server className="w-3.5 h-3.5 text-accent" />
+                        <span>Devices & Interfaces</span>
                     </Command.Item>
                     <Command.Item
                         onSelect={() => { changeTab('network'); setOpen(false); }}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-lg aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer transition-colors"
+                        className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono text-text rounded-[5px] aria-selected:bg-raised aria-selected:text-accent cursor-pointer transition-colors"
                     >
-                        <Network className="w-4 h-4" />
+                        <Network className="w-3.5 h-3.5 text-accent" />
                         <span>Network Map</span>
                     </Command.Item>
                     <Command.Item
                         onSelect={() => { changeTab('security'); setOpen(false); }}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-lg aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer transition-colors"
+                        className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono text-text rounded-[5px] aria-selected:bg-raised aria-selected:text-accent cursor-pointer transition-colors"
                     >
-                        <Shield className="w-4 h-4" />
-                        <span>Security</span>
+                        <Shield className="w-3.5 h-3.5 text-accent" />
+                        <span>Security Audits</span>
                     </Command.Item>
                     <Command.Item
                         onSelect={() => { changeTab('settings'); setOpen(false); }}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-lg aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer transition-colors"
+                        className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono text-text rounded-[5px] aria-selected:bg-raised aria-selected:text-accent cursor-pointer transition-colors"
                     >
-                        <Settings className="w-4 h-4" />
-                        <span>Settings</span>
+                        <Settings className="w-3.5 h-3.5 text-accent" />
+                        <span>Console Settings</span>
                     </Command.Item>
                 </Command.Group>
 
-                <Command.Group heading="Actions" className="text-xs text-muted-foreground font-medium mb-2 px-2 mt-2">
+                <Command.Group heading="Active Commands" className="text-[10px] uppercase font-mono tracking-wider text-faint mb-1 px-2.5 pt-2">
                     <Command.Item
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-lg aria-selected:bg-accent aria-selected:text-accent-foreground cursor-pointer transition-colors"
+                        className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono text-text rounded-[5px] aria-selected:bg-raised aria-selected:text-accent cursor-pointer transition-colors"
                         onSelect={async () => {
                             setOpen(false);
                             try {
@@ -88,8 +89,8 @@ export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, se
                             }
                         }}
                     >
-                        <Activity className="w-4 h-4" />
-                        <span>Run Speedtest</span>
+                        <Activity className="w-3.5 h-3.5 text-upload" />
+                        <span>Trigger WAN Latency / Speed Test</span>
                     </Command.Item>
                 </Command.Group>
             </Command.List>

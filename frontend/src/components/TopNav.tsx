@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
-    Search,
     Bell,
-    Menu,
     LogOut,
     User as UserIcon
 } from 'lucide-react';
@@ -17,10 +15,11 @@ interface TopNavProps {
     setActiveTab: (tab: string) => void;
     setCommandOpen: (open: boolean) => void;
     onMenuClick?: () => void;
+    timeRange?: string;
+    setTimeRange?: (range: string) => void;
 }
 
-export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMenuClick }) => {
-
+export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, timeRange = '1h', setTimeRange }) => {
     const { unreadCount, isSynthetic, isConnected } = useWebSocket();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -32,99 +31,97 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
     };
 
     return (
-        <div className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-16 items-center justify-between px-4 lg:px-6">
+        <header className="topbar">
+            {/* Brand */}
+            <div className="brand cursor-pointer" tabIndex={0} role="button" aria-label="StatSea overview">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M2 9c3-4 6-4 10 0s7 4 10 0" />
+                    <path d="M2 16c3-4 6-4 10 0s7 4 10 0" opacity=".5" />
+                </svg>
+                <span>StatSea</span>
+            </div>
 
-                {/* Left Side: Page Title / Breadcrumbs */}
-                <div className="flex items-center gap-4">
-                    <button
-                        type="button"
-                        onClick={onMenuClick}
-                        className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-lg focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none transition-colors"
-                        aria-label="Toggle menu"
-                    >
-                        <Menu className="h-6 w-6" />
-                    </button>
+            {/* Active Section Label */}
+            {activeTab && (
+                <span className="text-xs text-muted font-mono capitalize hidden lg:inline border-l border-line pl-3 py-1">
+                    {activeTab}
+                </span>
+            )}
 
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-lg font-semibold text-foreground capitalize tracking-tight">
-                            {activeTab}
-                        </h2>
-                        {isConnected && (
-                            isSynthetic ? (
-                                <span
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm"
-                                    title="Npcap packet driver absent: running in autonomous simulation mode"
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                                    SIMULATION MODE
-                                </span>
-                            ) : (
-                                <span
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm"
-                                    title="Capturing live network packets"
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                    LIVE SNIFFING
-                                </span>
-                            )
-                        )}
-                    </div>
+            {/* Network Interface Selector */}
+            <button className="select" type="button" aria-label="Choose network">
+                <span>Home lab</span>
+                <span aria-hidden="true">&#9662;</span>
+            </button>
+
+            {/* Real-time Sniffer Mode */}
+            {isConnected && (
+                <span className={`status text-[11px] font-semibold uppercase tracking-wider hidden sm:inline-flex ${isSynthetic ? 'warn' : 'live'}`}>
+                    {isSynthetic ? 'SIMULATION MODE' : 'LIVE SNIFFING'}
+                </span>
+            )}
+
+            {/* Spacer */}
+            <div className="spacer">
+                {/* Search */}
+                <button
+                    type="button"
+                    onClick={() => setCommandOpen(true)}
+                    className="search cursor-pointer text-left"
+                    aria-label="Search devices, IPs, domains"
+                >
+                    <span aria-hidden="true">&#8981;</span>
+                    <span className="text-faint truncate text-[12px] flex-1">Search devices, IPs, domains…</span>
+                    <kbd className="mono text-[10px] text-muted ml-auto hidden sm:inline-block">⌘&nbsp;K</kbd>
+                </button>
+
+                {/* Range pills */}
+                <div className="range hidden md:flex" role="group" aria-label="Time range">
+                    {['15m', '1h', '6h', '24h'].map(r => (
+                        <button
+                            key={r}
+                            type="button"
+                            aria-pressed={timeRange === r}
+                            onClick={() => setTimeRange && setTimeRange(r)}
+                        >
+                            {r}
+                        </button>
+                    ))}
                 </div>
 
-                {/* Right Side: Actions */}
-                <div className="flex items-center gap-3">
-                    <ThemeToggle />
+                {/* Theme Toggle */}
+                <ThemeToggle />
 
-                    {/* Search Trigger */}
-                    <button
-                        type="button"
-                        onClick={() => setCommandOpen(true)}
-                        className="group flex items-center gap-2 rounded-full border border-border bg-accent/50 px-3 py-1.5 text-sm text-muted-foreground hover:border-accent hover:bg-accent hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
-                        aria-label="Search"
-                    >
-                        <Search className="h-4 w-4" />
-                        <span className="hidden sm:inline">Search…</span>
-                        <kbd className="hidden lg:inline-flex h-5 items-center gap-1 rounded border border-border bg-accent/50 px-1.5 font-mono text-[10px] text-muted-foreground">
-                            ⌘&nbsp;K
-                        </kbd>
-                    </button>
+                {/* Notifications */}
+                <button
+                    type="button"
+                    onClick={() => setIsNotificationOpen(true)}
+                    className="p-1.5 rounded-[7px] text-muted hover:text-text hover:bg-raised relative transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="Notifications"
+                >
+                    <Bell className="w-4 h-4" />
+                    {unreadCount > 0 && (
+                        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger" />
+                    )}
+                </button>
 
-                    <div className="h-6 w-px bg-border mx-2" />
-
-                    <button
-                        type="button"
-                        onClick={() => setIsNotificationOpen(true)}
-                        className="relative rounded-full p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
-                        aria-label="Notifications"
-                    >
-                        <Bell className="h-5 w-5" />
-                        {unreadCount > 0 && (
-                            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />
-                        )}
-                    </button>
-
-                    <div className="h-6 w-px bg-border mx-2" />
-
-                    <div className="flex items-center gap-3 pl-2">
-                        <div className="hidden lg:flex flex-col items-end">
-                            <span className="text-xs font-medium text-foreground">{user?.full_name || user?.username}</span>
-                            <span className="text-[10px] text-muted-foreground">{user?.is_admin ? 'Administrator' : 'User'}</span>
-                        </div>
-                        <div className="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                            <UserIcon className="h-4 w-4" />
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:outline-none"
-                            title="Sign Out"
-                            aria-label="Sign out"
-                        >
-                            <LogOut className="h-5 w-5" />
-                        </button>
+                {/* User Info & Logout */}
+                <div className="flex items-center gap-2 pl-2 border-l border-line">
+                    <span className="text-xs text-text-soft hidden lg:inline font-medium">
+                        {user?.full_name || user?.username}
+                    </span>
+                    <div className="w-6 h-6 rounded-full bg-raised border border-line flex items-center justify-center text-accent text-xs">
+                        <UserIcon className="w-3.5 h-3.5" />
                     </div>
+                    <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="p-1.5 text-muted hover:text-danger hover:bg-raised rounded-[7px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
+                        title="Sign out"
+                        aria-label="Sign out"
+                    >
+                        <LogOut className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
 
@@ -132,6 +129,6 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
                 isOpen={isNotificationOpen}
                 onClose={() => setIsNotificationOpen(false)}
             />
-        </div>
+        </header>
     );
 };

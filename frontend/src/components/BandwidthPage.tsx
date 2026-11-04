@@ -14,9 +14,7 @@ import {
     useBandwidthYearly, useBandwidthTop
 } from '../hooks/useBandwidth';
 import { formatBytes, cn } from '../lib/utils';
-import { PremiumCard } from './ui/PremiumCard';
 import { CustomSelect } from './ui/CustomSelect';
-import { motion } from 'framer-motion';
 
 // ─── Constants ───
 const COLORS = ['#84cc16', '#3f3f46', '#10b981', '#0ea5e9', '#ef4444', '#f59e0b', '#06b6d4'];
@@ -42,55 +40,37 @@ const parseMonth = (m: string) => {
     return new Date(parseInt(y), parseInt(mo) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
 };
 
-// ─── Summary Card (Premium style) ───
-const SummaryCard = ({ title, data, icon: Icon, color, delay }: any) => (
-    <PremiumCard
-        delay={delay}
-        className="p-6 flex flex-col gap-4 group min-h-[160px] relative overflow-hidden"
-    >
-        <div className="flex items-center justify-between relative z-10">
-            <span className="text-[10px] font-black text-muted-foreground/70 uppercase tracking-[0.2em]">{title}</span>
-            <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center bg-secondary/80 border border-border group-hover:scale-110 transition-all duration-500"
-                style={{ boxShadow: `0 0 20px ${color}20` }}
-            >
-                <Icon className="h-5 w-5" style={{ color }} />
+// ─── Summary Card (Console style) ───
+const SummaryCard = ({ title, data, icon: Icon, color }: any) => (
+    <div className="panel p-3 rounded-[7px] border border-line bg-panel flex flex-col justify-between hover:border-line-strong transition-colors">
+        <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-faint">{title}</span>
+            <div className="w-5 h-5 rounded-[4px] flex items-center justify-center bg-raised border border-line">
+                <Icon className="h-3 w-3" style={{ color }} />
             </div>
         </div>
 
-        <div className="flex flex-col gap-1 relative z-10">
-            <span className="text-3xl font-black text-foreground tracking-tighter tabular-nums">
+        <div className="mt-2">
+            <div className="text-lg font-semibold text-text font-mono num leading-none">
                 {formatBytes(data?.total || 0).split(' ')[0]}
-                <span className="text-lg text-muted-foreground ml-1 font-medium">{formatBytes(data?.total || 0).split(' ')[1]}</span>
-            </span>
+                <span className="text-xs text-text-soft ml-1 font-normal">{formatBytes(data?.total || 0).split(' ')[1]}</span>
+            </div>
 
-            <div className="flex items-center gap-4 mt-3">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                    <span className="text-[11px] font-bold text-foreground/80 tracking-tight tabular-nums">{formatBytes(data?.rx || 0)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-                    <span className="text-[11px] font-bold text-foreground/80 tracking-tight tabular-nums">{formatBytes(data?.tx || 0)}</span>
-                </div>
+            <div className="flex items-center gap-3 mt-2 font-mono text-[10px]">
+                <span className="text-ok">↓ {formatBytes(data?.rx || 0)}</span>
+                <span className="text-upload">↑ {formatBytes(data?.tx || 0)}</span>
             </div>
         </div>
-
-        {/* Decorative background glow */}
-        <div
-            className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full blur-[40px] opacity-10 group-hover:opacity-20 transition-opacity duration-700 pointer-events-none"
-            style={{ backgroundColor: color }}
-        />
-    </PremiumCard>
+    </div>
 );
 
-// ─── Rate Bar (vnStat green progress bar style) ───
+// ─── Rate Bar (Console progress bar style) ───
 const RateBar = ({ bps, maxBps }: { bps: number; maxBps: number }) => {
     const pct = maxBps > 0 ? Math.min((bps / maxBps) * 100, 100) : 0;
     return (
-        <div className="flex items-center gap-2">
-            <div className="w-16 h-2 bg-secondary/50 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+        <div className="meter w-16 inline-block">
+            <div className="track">
+                <div className="fill bg-ok" style={{ width: `${pct}%` }} />
             </div>
         </div>
     );
@@ -98,89 +78,81 @@ const RateBar = ({ bps, maxBps }: { bps: number; maxBps: number }) => {
 
 // ─── Table Components ───
 const TableHeader = ({ columns }: { columns: string[] }) => (
-    <thead className="border-b border-border/50 bg-muted/20">
-        <tr className="text-muted-foreground/70 text-[10px] font-black uppercase tracking-[0.15em]">
+    <thead className="border-b border-line bg-raised/50 font-mono text-[10px] text-faint uppercase">
+        <tr>
             {columns.map((c, i) => (
-                <th key={i} className={cn("px-4 py-4 font-black", i === 0 ? 'text-left' : 'text-right')}>{c}</th>
+                <th key={i} className={cn("px-3 py-2 font-medium tracking-wider", i === 0 ? 'text-left' : 'text-right')}>{c}</th>
             ))}
         </tr>
     </thead>
 );
 
 const EmptyRow = ({ cols, msg }: { cols: number; msg: string }) => (
-    <tr><td colSpan={cols} className="px-4 py-12 text-center text-muted-foreground/50 text-xs font-bold uppercase tracking-widest">{msg}</td></tr>
+    <tr><td colSpan={cols} className="px-4 py-8 text-center text-text-soft font-mono text-xs">{msg}</td></tr>
 );
 
 const LoadingRow = ({ cols }: { cols: number }) => (
-    <tr><td colSpan={cols} className="px-3 py-6 text-center text-muted-foreground text-sm animate-pulse">Loading…</td></tr>
+    <tr><td colSpan={cols} className="px-3 py-6 text-center text-text-soft font-mono text-xs animate-pulse">Loading…</td></tr>
 );
 
-// ─── Section Card (Premium style) ───
+// ─── Section Card (Console style) ───
 const SectionCard = ({ title, icon: Icon, iconColor, children, className }: any) => (
-    <PremiumCard className={cn("p-0 flex flex-col border-border/70 bg-card/75 backdrop-blur-2xl overflow-hidden", className)}>
-        <div className="px-6 py-5 border-b border-border/50 flex items-center justify-between bg-muted/10">
-            <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-secondary/80 border border-border">
-                    <Icon className="w-4.5 h-4.5" style={{ color: iconColor }} />
-                </div>
-                <h2 className="text-[13px] font-black text-foreground uppercase tracking-widest">{title}</h2>
+    <div className={cn("panel p-0 overflow-hidden", className)}>
+        <div className="panel-head border-b border-line px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <Icon className="w-3.5 h-3.5" style={{ color: iconColor }} />
+                <span className="font-mono text-xs uppercase tracking-wider text-text font-medium">{title}</span>
             </div>
             <button
                 aria-label="Section info"
                 title="Section info"
-                className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+                className="p-1 hover:bg-raised rounded text-faint hover:text-text transition-colors"
             >
-                <Info className="w-4 h-4" />
+                <Info className="w-3.5 h-3.5" />
             </button>
         </div>
-        <div className="flex-1 p-6">
+        <div className="p-3">
             {children}
         </div>
-    </PremiumCard>
+    </div>
 );
 
 // ─── Per-Interface Summary Panel (for "All Interfaces" view) ───
 const InterfaceSummaryPanel = ({ iface, data }: { iface: string; data: any }) => (
-    <PremiumCard className="p-5">
-        <div className="flex items-center justify-between mb-5">
-            <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
-                    <Server className="w-4 h-4 text-cyan-400" />
+    <div className="panel p-3">
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-line">
+            <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-[4px] bg-raised border border-line flex items-center justify-center text-accent">
+                    <Server className="w-3.5 h-3.5" />
                 </div>
-                {iface}
-            </h3>
+                <span className="font-mono text-xs font-semibold text-text">{iface}</span>
+            </div>
             {data?.estimated && data.estimated.total > 0 && (
-                <div className="px-3 py-1 rounded-full bg-secondary/60 border border-border text-[10px] font-bold text-muted-foreground">
+                <span className="status ok text-[10px] font-mono px-2 py-0.5">
                     Est. {formatBytes(data.estimated.total)} / mo
-                </div>
+                </span>
             )}
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
             <MiniStat label="today" data={data?.today} />
             <MiniStat label="yesterday" data={data?.yesterday} />
             <MiniStat label="this month" data={data?.month} />
             <MiniStat label="all time" data={data?.all_time} />
         </div>
-    </PremiumCard>
+    </div>
 );
 
 const MiniStat = ({ label, data }: { label: string; data: any }) => (
-    <div className="flex flex-col gap-2 p-5 rounded-2xl bg-card border border-border/60 hover:border-border transition-all hover:scale-[1.02] group">
-        <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] group-hover:text-muted-foreground transition-colors">{label}</span>
-        <span className="text-xl font-black text-foreground leading-none tracking-tighter tabular-nums">
+    <div className="p-2.5 rounded-[5px] bg-raised border border-line font-mono flex flex-col justify-between">
+        <span className="text-[10px] text-faint uppercase">{label}</span>
+        <div className="text-sm font-semibold text-text num my-1">
             {formatBytes(data?.total || 0).split(' ')[0]}
-            <span className="text-xs text-muted-foreground ml-1 font-medium">{formatBytes(data?.total || 0).split(' ')[1]}</span>
-        </span>
-        <div className="flex gap-4 mt-2">
-            <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
-                <span className="text-[10px] font-bold text-muted-foreground tracking-tight tabular-nums">{formatBytes(data?.rx || 0)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500/80 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
-                <span className="text-[10px] font-bold text-muted-foreground tracking-tight tabular-nums">{formatBytes(data?.tx || 0)}</span>
-            </div>
+            <span className="text-[10px] text-text-soft ml-1 font-normal">{formatBytes(data?.total || 0).split(' ')[1]}</span>
+        </div>
+        <div className="flex gap-2 text-[10px]">
+            <span className="text-ok">↓ {formatBytes(data?.rx || 0)}</span>
+            <span className="text-upload">↑ {formatBytes(data?.tx || 0)}</span>
         </div>
     </div>
 );
@@ -230,42 +202,42 @@ export default function BandwidthPage() {
     }, [summaryData]);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             {/* ── Header ── */}
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center gap-3 mb-2"
-                    >
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-600/20 flex items-center justify-center border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
-                            <Activity className="w-6 h-6 text-emerald-500" />
+            <div className="panel p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-[7px] bg-raised border border-line-strong flex items-center justify-center text-accent">
+                        <Activity className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-base font-semibold text-text tracking-tight">Traffic Flux</h1>
+                            <span className="status ok text-[10px] uppercase font-mono px-2 py-0.5">
+                                {isAllView ? 'ALL INTERFACES' : activeInterface}
+                            </span>
                         </div>
-                        <h1 className="text-3xl font-bold text-foreground tracking-tight">Traffic <span className="text-emerald-500">Flux</span></h1>
-                    </motion.div>
-                    <p className="text-muted-foreground font-medium text-sm ml-15">Real-time throughput analysis and network data distribution</p>
+                        <p className="text-xs text-text-soft font-mono mt-0.5">
+                            Real-time throughput analysis and bandwidth telemetry
+                        </p>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                     {interfaces.length > 0 && (
-                        <div className="flex items-center bg-card rounded-2xl border border-border p-1">
-                            <CustomSelect
-                                options={[
-                                    { value: '', label: 'Global View' },
-                                    ...interfaces.map(iface => ({ value: iface, label: iface }))
-                                ]}
-                                value={selectedInterface}
-                                onChange={(val) => setSelectedInterface(val)}
-                                className="border-none bg-transparent"
-                            />
-                        </div>
+                        <CustomSelect
+                            options={[
+                                { value: '', label: 'Global View' },
+                                ...interfaces.map(iface => ({ value: iface, label: iface }))
+                            ]}
+                            value={selectedInterface}
+                            onChange={(val) => setSelectedInterface(val)}
+                        />
                     )}
-                    <button className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-bold transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none">
-                        Full Report
+                    <button className="px-3.5 py-1.5 bg-accent hover:opacity-90 text-[#0f1115] rounded-[7px] text-xs font-semibold font-mono transition-opacity">
+                        FULL REPORT
                     </button>
                 </div>
-            </header>
+            </div>
 
             {/* ── All Interfaces View ── */}
             {isAllView && summaryData && (

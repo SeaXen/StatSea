@@ -26,16 +26,11 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
             animate={animate ? { opacity: 1, y: 0 } : undefined}
             transition={{ duration: 0.5, delay, ease: [0.23, 1, 0.32, 1] }}
             className={cn(
-                "glass-panel rounded-3xl p-6 relative overflow-hidden",
-                hover && "transition-transform duration-300 hover:translate-y-[-4px]",
+                "panel p-5 relative overflow-hidden transition-colors border border-line bg-panel rounded-[10px]",
+                hover && "hover:border-line-strong",
                 className
             )}
         >
-            {/* Subtle top-left highlight */}
-            <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden rounded-3xl">
-                <div className="absolute top-[-150%] left-[-150%] w-[300%] h-[300%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_50%)]" />
-            </div>
-
             {children}
         </motion.div>
     );

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, User, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Lock, User, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import axiosInstance from '../config/axiosInstance';
 import { toast } from 'sonner';
 
@@ -45,35 +45,42 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Background Glows */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-500/10 blur-[120px] rounded-full" />
-
+        <div className="min-h-screen bg-bg text-text flex items-center justify-center p-4 selection:bg-accent/20">
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-md"
+                transition={{ duration: 0.2 }}
+                className="w-full max-w-sm"
             >
-                <div className="bg-card/50 backdrop-blur-xl border border-border rounded-3xl p-8 shadow-2xl overflow-hidden relative">
-                    {/* Header */}
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500/10 rounded-2xl mb-4 border border-blue-500/20">
-                            <Shield className="w-8 h-8 text-blue-500" />
+                <div className="panel p-6 border border-line-strong bg-panel rounded-[9px] shadow-2xl relative">
+                    {/* Console Header */}
+                    <div className="flex items-center justify-between border-b border-line pb-4 mb-5">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-[7px] bg-raised border border-line flex items-center justify-center text-accent">
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                                    <path d="M2 9c3-4 6-4 10 0s7 4 10 0" />
+                                    <path d="M2 16c3-4 6-4 10 0s7 4 10 0" opacity=".5" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div className="font-semibold text-sm tracking-tight text-text">StatSea Console</div>
+                                <div className="text-[10px] font-mono text-faint">OPERATOR AUTHENTICATION</div>
+                            </div>
                         </div>
-                        <h1 className="text-3xl font-bold text-foreground mb-2">StatSea</h1>
-                        <p className="text-muted-foreground">Secure Network Intelligence Dashboard</p>
+                        <span className="status ok text-[9px] uppercase font-mono px-1.5 py-0.5">READY</span>
                     </div>
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-3 font-mono text-xs">
                             {/* Username */}
-                            <div className="space-y-2">
-                                <label htmlFor="username" className="text-sm font-medium text-foreground/80 ml-1">Username</label>
-                                <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <User className="w-5 h-5 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
+                            <div className="space-y-1">
+                                <label htmlFor="username" className="text-[11px] font-medium text-text-soft">
+                                    Operator ID / Username
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
+                                        <User className="w-3.5 h-3.5" />
                                     </div>
                                     <input
                                         id="username"
@@ -81,7 +88,7 @@ const LoginPage: React.FC = () => {
                                         type="text"
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full bg-background/50 border border-border rounded-xl py-3.5 pl-12 pr-4 text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors"
+                                        className="w-full bg-raised border border-line-strong rounded-[7px] py-2 pl-9 pr-3 text-xs text-text placeholder-faint focus:outline-none focus:border-accent transition-colors"
                                         placeholder="Enter your username"
                                         autoComplete="username"
                                         spellCheck={false}
@@ -92,11 +99,13 @@ const LoginPage: React.FC = () => {
                             </div>
 
                             {/* Password */}
-                            <div className="space-y-2">
-                                <label htmlFor="password" className="text-sm font-medium text-foreground/80 ml-1">Password</label>
-                                <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Lock className="w-5 h-5 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
+                            <div className="space-y-1">
+                                <label htmlFor="password" className="text-[11px] font-medium text-text-soft">
+                                    Access Key / Password
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
+                                        <Lock className="w-3.5 h-3.5" />
                                     </div>
                                     <input
                                         id="password"
@@ -104,7 +113,7 @@ const LoginPage: React.FC = () => {
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-background/50 border border-border rounded-xl py-3.5 pl-12 pr-4 text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors"
+                                        className="w-full bg-raised border border-line-strong rounded-[7px] py-2 pl-9 pr-3 text-xs text-text placeholder-faint focus:outline-none focus:border-accent transition-colors"
                                         placeholder="••••••••"
                                         autoComplete="current-password"
                                         required
@@ -114,30 +123,24 @@ const LoginPage: React.FC = () => {
                         </div>
 
                         {/* Remember Me */}
-                        <div className="flex items-center justify-between">
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <div className="relative">
-                                    <input
-                                        type="checkbox"
-                                        name="remember_me"
-                                        checked={rememberMe}
-                                        onChange={(e) => setRememberMe(e.target.checked)}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-5 h-5 bg-background/50 border border-border rounded-md peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-colors" />
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-opacity">
-                                        <Shield className="w-3 h-3 text-white" />
-                                    </div>
-                                </div>
-                                <span className="text-sm text-muted-foreground group-hover:text-foreground/80 transition-colors">Remember me</span>
+                        <div className="flex items-center justify-between font-mono text-[11px] pt-1">
+                            <label className="flex items-center gap-2 cursor-pointer text-muted hover:text-text transition-colors">
+                                <input
+                                    type="checkbox"
+                                    name="remember_me"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    className="rounded-[3px] bg-raised border-line text-accent focus:ring-0 focus:ring-offset-0"
+                                />
+                                <span>Remember key</span>
                             </label>
 
                             <button
                                 type="button"
-                                className="text-sm text-blue-500 hover:text-blue-400 transition-colors font-medium"
-                                onClick={() => toast.info("Please contact your administrator to reset password.")}
+                                className="text-accent hover:underline transition-colors"
+                                onClick={() => toast.info("Please contact system administrator to reset password.")}
                             >
-                                Forgot Password?
+                                Forgot password?
                             </button>
                         </div>
 
@@ -150,9 +153,9 @@ const LoginPage: React.FC = () => {
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-center gap-3 text-red-500 text-sm"
+                                    className="p-2.5 bg-danger/10 border border-danger/30 rounded-[7px] flex items-center gap-2 text-danger text-[11px] font-mono"
                                 >
-                                    <AlertCircle className="w-4 h-4 shrink-0" />
+                                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                                     <span>{error}</span>
                                 </motion.div>
                             )}
@@ -162,24 +165,23 @@ const LoginPage: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
+                            className="w-full bg-accent hover:opacity-90 disabled:opacity-50 text-[#0f1115] font-mono font-semibold text-xs tracking-wider uppercase py-2.5 rounded-[7px] flex items-center justify-center gap-2 transition-opacity"
                         >
                             {isLoading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <Loader2 className="w-4 h-4 animate-spin text-[#0f1115]" />
                             ) : (
                                 <>
-                                    Sign In
-                                    <ArrowRight className="w-5 h-5" />
+                                    AUTHENTICATE SESSION
+                                    <ArrowRight className="w-3.5 h-3.5" />
                                 </>
                             )}
                         </button>
                     </form>
 
-                    {/* Footer */}
-                    <div className="mt-8 pt-6 border-t border-border/50 text-center">
-                        <p className="text-muted-foreground/70 text-xs">
-                            Access restricted to authorized personnel only.
-                            <br />All activity is being monitored and logged.
+                    {/* Console Footer */}
+                    <div className="mt-5 pt-3 border-t border-line text-center">
+                        <p className="text-[10px] font-mono text-faint">
+                            StatSea Core Engine • v1.0 • Port 8001
                         </p>
                     </div>
                 </div>

@@ -21,6 +21,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { cn } from '../lib/utils';
 import {
     AreaChart,
     Area,
@@ -488,98 +489,104 @@ export const SystemManager = () => {
     if (!token) return null;
 
     return (
-        <div className="space-y-6">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
-                        <Shield className="w-8 h-8 text-blue-500" />
-                        System Management
-                    </h1>
-                    <p className="text-muted-foreground mt-1 text-sm">Monitor host resources, backups, and external service health.</p>
+        <div className="space-y-4">
+            {/* Header */}
+            <div className="panel p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-[7px] bg-raised border border-line-strong flex items-center justify-center text-accent">
+                        <Shield className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-base font-semibold text-text tracking-tight">System Operations</h1>
+                            <span className="status ok text-[10px] uppercase font-mono px-2 py-0.5">
+                                HOST TELEMETRY
+                            </span>
+                        </div>
+                        <p className="text-xs text-text-soft font-mono mt-0.5">Host kernel metrics, automated snapshots, and service probes</p>
+                    </div>
                 </div>
-            </header>
 
-            {/* Tabs */}
-            <div className="flex items-center gap-1 p-1 bg-secondary/50 rounded-xl border border-border w-fit">
-                {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
-                        className={`
-                            flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
-                            ${activeTab === tab.id
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                            }
-                        `}
-                    >
-                        <tab.icon className="w-4 h-4" />
-                        {tab.label}
-                    </button>
-                ))}
+                {/* Sub-tabs */}
+                <div className="flex items-center bg-panel rounded-[7px] border border-line-strong p-0.5 font-mono text-xs">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] transition-colors",
+                                activeTab === tab.id
+                                    ? "bg-accent/20 text-accent font-medium"
+                                    : "text-text-soft hover:text-text hover:bg-raised"
+                            )}
+                        >
+                            <tab.icon className="w-3.5 h-3.5" />
+                            {tab.label.toUpperCase()}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2 }}
-            >
+            <div>
                 {activeTab === 'metrics' && <MetricsTab token={token} />}
                 {activeTab === 'backups' && <BackupsTab token={token} />}
                 {activeTab === 'health' && <HealthChecksTab token={token} />}
-            </motion.div>
+            </div>
         </div>
     );
 };
 
 // --- Helpers ---
 const MetricCard = ({ title, value, total, percent, icon: Icon, color, subtext }: any) => (
-    <div className="glass-card p-5 rounded-xl border border-white/10 bg-black/20 relative overflow-hidden group">
-        <div className="flex justify-between items-start mb-4">
+    <div className="panel p-3 rounded-[7px] border border-line bg-panel flex flex-col justify-between hover:border-line-strong transition-colors">
+        <div className="flex justify-between items-start mb-2">
             <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{title}</p>
-                <h4 className="text-2xl font-bold text-white">{value}</h4>
+                <p className="text-[10px] font-mono uppercase tracking-wider text-faint mb-1">{title}</p>
+                <div className="text-xl font-semibold text-text font-mono num">{value}</div>
             </div>
-            <div className={`p-2.5 rounded-xl bg-white/5 ${color} group-hover:scale-110 transition-transform`}>
-                <Icon className="w-5 h-5" />
+            <div className={`p-1.5 rounded-[4px] bg-raised border border-line ${color}`}>
+                <Icon className="w-4 h-4" />
             </div>
         </div>
         {total && (
-            <div className="space-y-2">
-                <div className="flex justify-between text-[10px] text-muted-foreground">
+            <div className="space-y-1.5 font-mono text-[10px]">
+                <div className="flex justify-between text-text-soft">
                     <span>Used</span>
                     <span>Total {total}</span>
                 </div>
-                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                    <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${percent}%` }}
-                        className={`h-full ${color.replace('text-', 'bg-')}`}
-                    />
+                <div className="meter w-full">
+                    <div className="track">
+                        <div
+                            className={`fill ${percent > 85 ? 'bg-danger' : percent > 65 ? 'bg-warn' : 'bg-ok'}`}
+                            style={{ width: `${percent}%` }}
+                        />
+                    </div>
                 </div>
             </div>
         )}
-        {subtext && <p className="text-[10px] text-muted-foreground mt-2">{subtext}</p>}
+        {subtext && <p className="text-[10px] font-mono text-faint mt-2">{subtext}</p>}
     </div>
 );
 
-const ForecastCard = ({ title, days, trend, color }: any) => (
-    <div className="p-4 rounded-xl border border-border bg-card flex items-center justify-between">
+const ForecastCard = ({ title, days, trend }: any) => (
+    <div className="panel p-3 flex items-center justify-between font-mono text-xs">
         <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg bg-${color}-500/10 text-${color}-400`}>
-                {trend === 'worsening' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+            <div className={`p-1.5 rounded-[4px] bg-raised border border-line ${trend === 'worsening' ? 'text-danger' : 'text-ok'}`}>
+                {trend === 'worsening' ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
             </div>
             <div>
-                <p className="text-xs text-muted-foreground font-medium">{title} Forecast</p>
-                <h5 className="text-lg font-bold">
+                <p className="text-[10px] text-faint uppercase">{title} Forecast</p>
+                <div className="text-sm font-semibold text-text num">
                     {days ? `Exhaustion in ${days} days` : 'Trend: Stable'}
-                </h5>
+                </div>
             </div>
         </div>
-        <div className={`text-xs font-bold uppercase tracking-widest ${trend === 'worsening' ? 'text-red-400' : 'text-emerald-400'}`}>
+        <span className={cn(
+            "status text-[9px] uppercase px-1.5 py-0.5",
+            trend === 'worsening' ? "danger" : "ok"
+        )}>
             {trend}
-        </div>
+        </span>
     </div>
 );
 

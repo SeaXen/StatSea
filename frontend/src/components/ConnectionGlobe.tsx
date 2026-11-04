@@ -92,7 +92,7 @@ export const ConnectionGlobe = () => {
         startLon: homeLocation.lon,
         endLat: conn.lat,
         endLon: conn.lon,
-        color: ['#3b82f6', '#10b981'],
+        color: ['#7c8cff', '#4fd1e8'],
         name: `${conn.city}, ${conn.country} (${conn.ip})`
     }));
 
@@ -120,23 +120,26 @@ export const ConnectionGlobe = () => {
     }, [] as { country: string, count: number, bytes: number }[]).sort((a, b) => b.bytes - a.bytes).slice(0, 5);
 
     return (
-        <div className="glass-card relative overflow-hidden bg-card border border-border backdrop-blur-xl h-[640px] rounded-2xl flex text-foreground/80 shadow-xl">
+        <div className="panel p-0 relative overflow-hidden bg-bg border border-line h-[calc(100vh-140px)] min-h-[580px] rounded-[9px] flex text-text">
             {/* Left: Globe Area */}
-            <div ref={containerRef} className="flex-1 relative h-full bg-background/20">
-                <div className="absolute top-4 left-4 z-10 flex items-center gap-2 pointer-events-none">
-                    <div className="p-2 bg-blue-500/20 rounded-lg backdrop-blur-md">
-                        <GlobeIcon className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div>
-                        <h3 className="text-sm font-semibold text-foreground">Global Connection Map</h3>
-                        <p className="text-xs text-muted-foreground">Live external traffic visualization</p>
+            <div ref={containerRef} className="flex-1 relative h-full bg-bg">
+                <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
+                    <div className="p-2 bg-bar border border-line rounded-[7px] flex items-center gap-2.5">
+                        <GlobeIcon className="w-4 h-4 text-accent" />
+                        <div>
+                            <div className="text-xs font-semibold text-text tracking-tight flex items-center gap-2">
+                                <span>Global Ingress / Egress Map</span>
+                                <span className="status live text-[9px] font-mono px-1.5 py-0.2">REALTIME</span>
+                            </div>
+                            <p className="text-[10px] font-mono text-faint">3D GeoIP connection routing vectors</p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 pointer-events-none">
-                    <div className="px-3 py-1 bg-secondary/80 rounded-full border border-border flex items-center gap-2 backdrop-blur-md">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                        <span className="text-xs text-foreground/80 font-medium">
+                <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 pointer-events-none">
+                    <div className="px-2.5 py-1 bg-bar border border-line rounded-[7px] flex items-center gap-2 font-mono text-xs">
+                        <div className="w-1.5 h-1.5 bg-ok rounded-full animate-pulse" />
+                        <span className="text-text-soft num">
                             {displayConnections.length} Active Nodes
                         </span>
                     </div>
@@ -187,42 +190,43 @@ export const ConnectionGlobe = () => {
                     labelText={(d: object) => (d as PointData) === homeLocation ? (d as PointData).label : ''}
                     labelSize={1.5}
                     labelDotRadius={0.5}
-                    labelColor={() => '#3b82f6'}
+                    labelColor={() => '#7c8cff'}
                     labelResolution={2}
-                    atmosphereColor="#3b82f6"
+                    atmosphereColor="#7c8cff"
                     atmosphereAltitude={0.15}
                 />
 
                 {/* Connection Details Overlay */}
                 {selectedPoint && selectedPoint !== homeLocation && (
-                    <div className="absolute bottom-4 left-4 right-4 p-4 bg-card/95 border border-border rounded-xl backdrop-blur-xl z-20 animate-in slide-in-from-bottom-5 shadow-2xl">
-                        <div className="flex justify-between items-start">
+                    <div className="absolute bottom-4 left-4 z-20 p-4 bg-panel border border-line-strong rounded-[7px] shadow-2xl max-w-sm w-full font-mono text-xs">
+                        <div className="flex justify-between items-start gap-4">
                             <div>
-                                <h4 className="font-semibold text-foreground flex items-center gap-2">
+                                <h4 className="font-semibold text-text flex items-center gap-2 text-xs">
                                     {getCountryFlag(selectedPoint.country_code || 'US')} {selectedPoint.city}, {selectedPoint.country}
                                 </h4>
-                                <div className="text-xs text-muted-foreground font-mono mt-1 mb-2">{selectedPoint.ip}</div>
+                                <div className="text-[11px] text-accent mt-0.5 mb-2">{selectedPoint.ip}</div>
 
                                 {loadingIp ? (
-                                    <div className="text-xs text-blue-400 animate-pulse">Running IP Intelligence Scan...</div>
+                                    <div className="text-[11px] text-upload animate-pulse">Running IP Intelligence Scan…</div>
                                 ) : ipInfo ? (
-                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-foreground/80 mt-2 border-t border-border pt-2">
-                                        <div><span className="text-muted-foreground">ASN:</span> {ipInfo.asn}</div>
-                                        <div><span className="text-muted-foreground">Org:</span> {ipInfo.org}</div>
-                                        <div className="col-span-2"><span className="text-muted-foreground">Abuse:</span> {ipInfo.abuse_contact}</div>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-text-soft mt-2 border-t border-line pt-2">
+                                        <div><span className="text-faint">ASN:</span> {ipInfo.asn}</div>
+                                        <div><span className="text-faint">Org:</span> {ipInfo.org}</div>
+                                        <div className="col-span-2"><span className="text-faint">Abuse:</span> {ipInfo.abuse_contact}</div>
                                     </div>
                                 ) : (
-                                    <div className="text-xs text-red-400">Failed to load IP details</div>
+                                    <div className="text-[11px] text-danger">Failed to load IP details</div>
                                 )}
                             </div>
                             <div className="text-right">
-                                <div className="text-xs text-muted-foreground uppercase font-bold">Traffic</div>
-                                <div className="text-sm text-blue-400 font-mono">{selectedPoint.bytes ? (selectedPoint.bytes / 1024).toFixed(2) : '0.00'} KB</div>
+                                <div className="text-[10px] text-faint uppercase">Traffic</div>
+                                <div className="text-xs text-upload font-mono num">{selectedPoint.bytes ? (selectedPoint.bytes / 1024).toFixed(2) : '0.00'} KB</div>
                             </div>
                         </div>
                         <button
-                            className="absolute -top-2 -right-2 bg-secondary rounded-full p-1 border border-border hover:bg-secondary/80 transition-colors"
+                            className="absolute top-2 right-2 p-1 text-muted hover:text-text hover:bg-raised rounded-[4px] transition-colors"
                             onClick={(e) => { e.stopPropagation(); setSelectedPoint(null); setIpInfo(null); }}
+                            aria-label="Close"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                         </button>
@@ -231,27 +235,27 @@ export const ConnectionGlobe = () => {
             </div>
 
             {/* Right: Top Countries Sidebar */}
-            <div className="w-64 border-l border-border bg-card/40 backdrop-blur-xl p-4 flex flex-col gap-4 overflow-y-auto hidden md:flex">
+            <div className="w-72 border-l border-line bg-panel p-4 flex flex-col gap-4 overflow-y-auto hidden md:flex font-mono text-xs">
                 <div>
-                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Top Locations</h4>
-                    <div className="space-y-3">
+                    <h4 className="text-[10px] font-semibold text-faint uppercase tracking-wider mb-3">Top Telemetry Locations</h4>
+                    <div className="space-y-2">
                         {topCountries.map((country, idx) => (
-                            <div key={idx} className="flex items-center justify-between group">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-lg">
+                            <div key={idx} className="flex items-center justify-between p-2 rounded-[5px] bg-raised/50 border border-line hover:border-line-strong transition-colors">
+                                <div className="flex items-center gap-2.5">
+                                    <span className="text-base">
                                         {getCountryFlag(country.country.slice(0, 2) || 'US')}
                                     </span>
                                     <div className="flex flex-col">
-                                        <span className="text-sm text-foreground/80 font-medium group-hover:text-foreground transition-colors">
+                                        <span className="text-xs text-text font-medium truncate max-w-[110px]">
                                             {country.country}
                                         </span>
-                                        <span className="text-[10px] text-muted-foreground">
-                                            {country.count} connections
+                                        <span className="text-[10px] text-faint num">
+                                            {country.count} sockets
                                         </span>
                                     </div>
                                 </div>
-                                <div className="text-xs font-mono text-muted-foreground">
-                                    {Math.round(country.bytes / 1024)}K
+                                <div className="text-xs font-mono text-accent num">
+                                    {Math.round(country.bytes / 1024)} KB
                                 </div>
                             </div>
                         ))}
@@ -259,13 +263,13 @@ export const ConnectionGlobe = () => {
                 </div>
 
                 <div className="mt-auto">
-                    <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="w-2 h-2 rounded-full bg-green-500 box-shadow-green" />
-                            <span className="text-xs font-medium text-blue-200">Network Healthy</span>
+                    <div className="p-3 rounded-[7px] bg-raised border border-line">
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <span className="status ok text-[9px] uppercase px-1.5 py-0.2">INGRESS OK</span>
+                            <span className="text-xs font-medium text-text">Routing Normal</span>
                         </div>
-                        <p className="text-[10px] text-blue-300/70 leading-relaxed">
-                            Global traffic distribution is normal. No anomalous geo-locations detected.
+                        <p className="text-[10px] text-faint leading-relaxed font-mono">
+                            Zero rogue geo-locations detected across active transport streams.
                         </p>
                     </div>
                 </div>

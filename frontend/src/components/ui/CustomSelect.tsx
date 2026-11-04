@@ -39,23 +39,23 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className={cn(
-                        "w-full px-4 py-2 rounded-xl flex items-center justify-between transition-all duration-200",
-                        "bg-card border border-border hover:border-foreground/20 active:scale-[0.98]",
-                        isOpen && "border-primary/50 shadow-sm"
+                        "w-full px-3 py-1.5 rounded-[7px] flex items-center justify-between transition-colors",
+                        "bg-panel border border-line-strong hover:bg-raised active:bg-raised text-xs font-mono",
+                        isOpen && "border-accent"
                     )}
                 >
-                    <span className="text-sm font-medium text-foreground">{selectedOption?.label}</span>
-                    <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} />
+                    <span className="text-xs font-medium text-text">{selectedOption?.label}</span>
+                    <ChevronDown className={cn("w-3.5 h-3.5 text-text-soft transition-transform duration-200", isOpen && "rotate-180")} />
                 </button>
 
                 <AnimatePresence>
                     {isOpen && (
                         <motion.div
-                            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                            initial={{ opacity: 0, y: 4, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
-                            className="absolute top-full left-0 right-0 mt-2 z-50 p-1 rounded-xl bg-card border border-border shadow-2xl"
+                            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                            transition={{ duration: 0.12, ease: "easeOut" }}
+                            className="absolute top-full left-0 right-0 mt-1 z-50 p-1 rounded-[7px] bg-panel border border-line-strong shadow-lg"
                         >
                             {options.map((option) => (
                                 <button
@@ -65,10 +65,10 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({ options, value, onCh
                                         setIsOpen(false);
                                     }}
                                     className={cn(
-                                        "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+                                        "w-full text-left px-2.5 py-1.5 rounded-[5px] text-xs font-mono transition-colors",
                                         option.value === value
-                                            ? "bg-primary/10 text-primary font-medium"
-                                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                            ? "bg-accent/15 text-accent font-medium"
+                                            : "text-text-soft hover:bg-raised hover:text-text"
                                     )}
                                 >
                                     {option.label}

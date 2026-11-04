@@ -2,12 +2,8 @@ import React, { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Box,
-    Layers,
-    Container,
-    Search,
     Activity,
     Clock,
-    ChevronRight,
     ArrowLeft,
     RotateCw,
     Terminal,
@@ -111,103 +107,105 @@ interface ContainerListProps {
 
 const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, setSearchQuery, onSelect, onPrune, loading }) => {
     const safeContainers = Array.isArray(containers) ? containers : [];
-    const filteredContainers = useMemo(() =>
-        safeContainers.filter(c =>
+
+    const filteredContainers = useMemo(() => {
+        return safeContainers.filter(c =>
             c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             c.image.toLowerCase().includes(searchQuery.toLowerCase())
-        ), [safeContainers, searchQuery]
-    );
+        );
+    }, [safeContainers, searchQuery]);
 
     return (
-        <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-3"
-        >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-                        <Box className="w-6 h-6 text-blue-500" />
-                        Docker Manager
-                    </h1>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-[0.15em] font-bold">Manage system containers</p>
+        <section className="panel" aria-labelledby="ct-full">
+            <div className="panel-head">
+                <div className="flex items-center gap-2">
+                    <h2 id="ct-full">Containers</h2>
+                    <span className="meta">{filteredContainers.length} containers running</span>
                 </div>
-
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <button
+                        type="button"
                         onClick={onPrune}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-xs font-bold transition-all"
+                        className="px-2.5 py-1 bg-panel hover:bg-raised text-danger border border-line-strong rounded-[7px] text-xs font-medium transition-colors flex items-center gap-1.5"
                         title="Prune stopped containers"
                     >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Prune</span>
+                        <Trash2 className="w-3 h-3" />
+                        <span>Prune</span>
                     </button>
-                    <div className="relative group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
+                    <div className="search">
+                        <span aria-hidden="true">&#8981;</span>
                         <input
-                            type="text"
-                            placeholder="Search containers..."
+                            type="search"
+                            placeholder="Search containers…"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-card/50 border border-border rounded-lg py-1.5 pl-9 pr-4 text-xs text-foreground/90 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all w-full md:w-48 placeholder:text-muted-foreground"
+                            aria-label="Search containers"
                         />
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
-                {filteredContainers.map((container) => (
-                    <div
-                        key={container.id}
-                        onClick={() => onSelect(container.id)}
-                        className="group relative bg-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-4 cursor-pointer hover:border-blue-500/30 hover:bg-card/60 transition-all"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className={`p-2.5 rounded-xl border ${getStatusColor(container.status)} shadow-lg shrink-0`}>
-                                <Container className="w-4.5 h-4.5" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                    <h3 className="text-base font-bold text-foreground truncate group-hover:text-blue-400 transition-colors uppercase tracking-tight">
-                                        {container.name}
-                                    </h3>
-                                    {container.update_available && (
-                                        <span className="text-[9px] px-1.5 py-0.5 rounded-full border border-blue-400/30 font-black uppercase text-blue-400 bg-blue-400/10 tracking-widest" title="Update Available">
-                                            Update
+            <div className="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Image</th>
+                            <th>CPU</th>
+                            <th className="right">Memory</th>
+                            <th className="right">Network</th>
+                            <th>State</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredContainers.map((container) => {
+                            const cpuVal = Math.round(container.cpu_pct || 0);
+                            const isHot = cpuVal > 80;
+                            return (
+                                <tr
+                                    key={container.id}
+                                    onClick={() => onSelect(container.id)}
+                                    className="cursor-pointer"
+                                >
+                                    <td className="font-medium text-text">
+                                        <div className="flex items-center gap-2">
+                                            <span>{container.name}</span>
+                                            {container.update_available && (
+                                                <span className="text-[10px] px-1 py-0.2 rounded bg-accent/15 text-accent border border-accent/30 font-medium">
+                                                    Update
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="mono faint max-w-[200px] truncate">{container.image}</td>
+                                    <td>
+                                        <div className={`meter ${isHot ? 'hot' : ''}`}>
+                                            <div className="track">
+                                                <i style={{ width: `${Math.min(100, cpuVal)}%` }}></i>
+                                            </div>
+                                            <span className="num">{cpuVal}%</span>
+                                        </div>
+                                    </td>
+                                    <td className="right num">{container.mem_usage || 0} MB</td>
+                                    <td className="right num">{container.net_rx ? formatBytes(container.net_rx) : '0 B'}</td>
+                                    <td>
+                                        <span className={`status ${container.status?.toLowerCase().includes('up') ? '' : 'idle'}`}>
+                                            {container.status}
                                         </span>
-                                    )}
-                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full border border-current font-black uppercase tracking-[0.1em] ${getStatusColor(container.status)}`}>
-                                        {container.status}
-                                    </span>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground font-mono truncate opacity-60">
-                                    {container.image.split('/').pop()}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-8 shrink-0">
-                                <div className="hidden sm:flex flex-col items-end">
-                                    <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest leading-none mb-1">CPU</span>
-                                    <span className="font-mono text-xs text-blue-400 font-bold">{(container.cpu_pct || 0).toFixed(1)}%</span>
-                                </div>
-                                <div className="hidden sm:flex flex-col items-end">
-                                    <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest leading-none mb-1">MEM</span>
-                                    <span className="font-mono text-xs text-cyan-400 font-bold">{container.mem_usage || 0}MB</span>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                            </div>
-                        </div>
-                    </div>
-                ))}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
 
             {filteredContainers.length === 0 && !loading && (
-                <div className="py-20 text-center text-muted-foreground border border-dashed border-border rounded-3xl">
-                    <Layers className="w-12 h-12 mx-auto mb-4 opacity-10" />
-                    <p className="font-bold">No containers found</p>
+                <div className="py-16 text-center text-muted">
+                    <p className="font-medium">No containers found</p>
                 </div>
             )}
-        </motion.div>
+        </section>
     );
 };
 

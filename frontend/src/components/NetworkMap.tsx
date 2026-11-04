@@ -3,7 +3,6 @@ import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { Network, Router, Monitor, Smartphone, Laptop, Tablet, Box, ShieldCheck, Activity } from 'lucide-react';
 import { cn } from '../lib/utils';
 import axiosInstance from '../config/axiosInstance';
-import { PremiumCard } from './ui/PremiumCard';
 
 interface Node {
     id: string;
@@ -124,14 +123,25 @@ export function NetworkMap() {
     return (
         <div
             ref={containerRef}
-            className="relative w-full h-[calc(100vh-120px)] overflow-hidden bg-card/90 rounded-[28px] border border-border/80 shadow-2xl"
+            className="panel p-0 relative w-full h-[calc(100vh-140px)] min-h-[580px] overflow-hidden bg-bg border border-line rounded-[9px]"
         >
-            {/* Background Effects */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.06)_0%,transparent_70%)] pointer-events-none" />
+            {/* Topbar Info Pill */}
+            <div className="absolute top-3 left-3 z-30 flex items-center gap-2 pointer-events-none">
+                <div className="p-2 bg-bar border border-line rounded-[7px] flex items-center gap-2.5">
+                    <Network className="w-4 h-4 text-accent" />
+                    <div>
+                        <div className="text-xs font-semibold text-text tracking-tight flex items-center gap-2">
+                            <span>Local Network Topology</span>
+                            <span className="status ok text-[9px] font-mono px-1.5 py-0.2">MAP ACTIVE</span>
+                        </div>
+                        <p className="text-[10px] font-mono text-faint">Drag nodes to re-orient telemetry layout</p>
+                    </div>
+                </div>
+            </div>
 
-            {/* Decorative background orbits */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] h-[440px] border border-border/40 rounded-full pointer-events-none shadow-[inset_0_0_20px_rgba(255,255,255,0.01)]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[760px] h-[760px] border border-border/30 rounded-full pointer-events-none" />
+            {/* Decorative Subdued Orbits */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-line/40 rounded-full pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[720px] border border-line/20 rounded-full pointer-events-none" />
 
             {/* Topology Canvas */}
             <div className="relative w-full h-full flex items-center justify-center">
@@ -140,16 +150,9 @@ export function NetworkMap() {
                 <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
                     <defs>
                         <linearGradient id="lineGradient" gradientUnits="userSpaceOnUse" x1="50%" y1="50%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.1" />
-                            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.4" />
+                            <stop offset="0%" stopColor="#7c8cff" stopOpacity="0.25" />
+                            <stop offset="100%" stopColor="#4fd1e8" stopOpacity="0.5" />
                         </linearGradient>
-                        <filter id="glow">
-                            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                            <feMerge>
-                                <feMergeNode in="coloredBlur" />
-                                <feMergeNode in="SourceGraphic" />
-                            </feMerge>
-                        </filter>
                     </defs>
 
                     {deviceNodes.map((node) => {
@@ -164,7 +167,7 @@ export function NetworkMap() {
                                     x2={`calc(50% + ${pos.x}px)`}
                                     y2={`calc(50% + ${pos.y}px)`}
                                     stroke="url(#lineGradient)"
-                                    strokeWidth="1.5"
+                                    strokeWidth="1.2"
                                     initial={{ pathLength: 0, opacity: 0 }}
                                     animate={{ pathLength: 1, opacity: 1 }}
                                     transition={{ duration: 1 }}
@@ -175,7 +178,7 @@ export function NetworkMap() {
                                         x: [0, pos.x],
                                         y: [0, pos.y],
                                         opacity: [0, 1, 0],
-                                        scale: [1, 1.4, 1]
+                                        scale: [1, 1.2, 1]
                                     }}
                                     transition={{
                                         duration: 2.5 + ((node.id.charCodeAt(0) || 0) % 3) * 0.5,
@@ -187,9 +190,8 @@ export function NetworkMap() {
                                     <circle
                                         cx="50%"
                                         cy="50%"
-                                        r="2.5"
-                                        fill="#6366f1"
-                                        filter="url(#glow)"
+                                        r="2"
+                                        fill="#7c8cff"
                                     />
                                 </motion.g>
                             </React.Fragment>
@@ -197,31 +199,17 @@ export function NetworkMap() {
                     })}
                 </svg>
 
-                {/* Router (Center) */}
+                {/* Router (Center Gateway Node) */}
                 <motion.div
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     className="relative z-20"
                 >
-                    <div className="w-40 h-40 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 p-[1px] shadow-[0_0_80px_rgba(6,182,212,0.2)] group">
-                        <div className="w-full h-full rounded-full bg-card flex flex-col items-center justify-center border border-border overflow-hidden relative">
-                            {/* Scanning Pulse Effect */}
-                            <motion.div
-                                animate={{ scale: [1, 1.5], opacity: [0.3, 0] }}
-                                transition={{ duration: 3, repeat: Infinity, ease: "easeOut" }}
-                                className="absolute inset-0 bg-primary/20 rounded-full"
-                            />
-                            <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
-                            <Router className="w-12 h-12 text-primary mb-2 relative z-10" />
-                            <span className="text-[10px] uppercase font-black tracking-[0.2em] text-primary/80 relative z-10">Gateway</span>
-
-                            {/* Spinning border fragment */}
-                            <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                                className="absolute inset-0 border-t border-primary/40 rounded-full pointer-events-none"
-                            />
-                        </div>
+                    <div className="w-28 h-28 rounded-[9px] bg-bar border border-line-strong flex flex-col items-center justify-center relative shadow-2xl">
+                        <Router className="w-7 h-7 text-accent mb-1 relative z-10" />
+                        <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-text relative z-10">Gateway</span>
+                        <span className="text-[9px] font-mono text-faint">192.168.1.1</span>
+                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-ok" />
                     </div>
                 </motion.div>
 
@@ -247,26 +235,26 @@ export function NetworkMap() {
                             )}
                         >
                             <div className={cn(
-                                "w-20 h-20 rounded-[2rem] flex items-center justify-center transition-all duration-500 relative",
-                                "bg-card/70 backdrop-blur-2xl border border-border group-hover:border-primary/40 group-hover:shadow-lg",
-                                selectedNode?.id === node.id && "border-primary/60 bg-primary/10 shadow-xl"
+                                "w-14 h-14 rounded-[7px] flex items-center justify-center transition-colors relative",
+                                "bg-panel border border-line group-hover:border-line-strong",
+                                selectedNode?.id === node.id && "border-accent bg-raised text-accent"
                             )}>
                                 <div className={cn(
-                                    "transition-colors duration-500",
-                                    selectedNode?.id === node.id ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                                    "transition-colors",
+                                    selectedNode?.id === node.id ? "text-accent" : "text-muted group-hover:text-text"
                                 )}>
                                     {getIcon(node.type)}
                                 </div>
-                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-background shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-ok" />
                             </div>
-                            <div className="mt-4 flex flex-col items-center">
+                            <div className="mt-1 flex flex-col items-center font-mono">
                                 <span className={cn(
-                                    "text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-500",
-                                    selectedNode?.id === node.id ? "text-white" : "text-white/30 group-hover:text-white/70"
+                                    "text-[10px] font-medium tracking-tight transition-colors truncate max-w-[90px]",
+                                    selectedNode?.id === node.id ? "text-accent" : "text-text-soft group-hover:text-text"
                                 )}>
                                     {node.label}
                                 </span>
-                                <span className="text-[9px] font-bold text-white/5 uppercase tracking-widest mt-1 group-hover:text-white/10 transition-colors">
+                                <span className="text-[9px] text-faint">
                                     {node.ip}
                                 </span>
                             </div>
@@ -279,91 +267,68 @@ export function NetworkMap() {
             <AnimatePresence>
                 {selectedNode && (
                     <motion.div
-                        initial={{ opacity: 0, x: -30 }}
+                        initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -30 }}
-                        className="absolute bottom-10 left-10 z-50 w-[380px]"
+                        exit={{ opacity: 0, x: -20 }}
+                        className="absolute bottom-4 left-4 z-50 w-[340px]"
                     >
-                        <PremiumCard className="p-8 border-border bg-card/90 backdrop-blur-3xl shadow-2xl">
-                            <div className="flex items-center gap-5 mb-8">
-                                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm">
+                        <div className="panel p-4 bg-panel border border-line-strong rounded-[7px] shadow-2xl font-mono text-xs">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 rounded-[5px] bg-raised border border-line flex items-center justify-center text-accent">
                                     {getIcon(selectedNode.type)}
                                 </div>
-                                <div>
-                                    <h3 className="text-foreground text-xl font-black tracking-tight">{selectedNode.label}</h3>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        <p className="text-primary/90 text-[11px] font-black uppercase tracking-widest leading-none tabular-nums">{selectedNode.ip}</p>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-text font-semibold text-xs tracking-tight truncate">{selectedNode.label}</h3>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="status ok text-[9px] px-1 py-0.2">ONLINE</span>
+                                        <p className="text-accent text-[11px] font-mono tabular-nums">{selectedNode.ip}</p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => setSelectedNode(null)}
                                     aria-label="Close detail modal"
-                                    className="ml-auto w-10 h-10 flex items-center justify-center rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-all shadow-sm group/close"
+                                    className="p-1 rounded-[5px] text-muted hover:text-text hover:bg-raised transition-colors"
                                 >
-                                    <ShieldCheck className="w-5 h-5 group-hover/close:scale-110 transition-transform" />
+                                    <ShieldCheck className="w-4 h-4 text-ok" />
                                 </button>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="p-5 rounded-3xl bg-secondary/40 border border-border group hover:bg-secondary/60 transition-all">
-                                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest block mb-2.5">Data Transmission</span>
-                                    <div className="flex items-center gap-2">
-                                        <Activity className="w-4 h-4 text-emerald-500" />
-                                        <span className="text-[13px] font-black text-foreground tabular-nums">2.4 MB/s</span>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="p-2.5 rounded-[5px] bg-raised border border-line">
+                                    <span className="text-[10px] uppercase font-mono text-faint block mb-1">Throughput</span>
+                                    <div className="flex items-center gap-1.5 text-text num font-semibold">
+                                        <Activity className="w-3.5 h-3.5 text-ok" />
+                                        <span>2.4 MB/s</span>
                                     </div>
                                 </div>
-                                <div className="p-5 rounded-3xl bg-secondary/40 border border-border group hover:bg-secondary/60 transition-all">
-                                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest block mb-2.5">Latency</span>
-                                    <div className="flex items-center gap-2">
-                                        <Activity className="w-4 h-4 text-primary rotate-90" />
-                                        <span className="text-[13px] font-black text-foreground tabular-nums">14 ms</span>
+                                <div className="p-2.5 rounded-[5px] bg-raised border border-line">
+                                    <span className="text-[10px] uppercase font-mono text-faint block mb-1">Latency</span>
+                                    <div className="flex items-center gap-1.5 text-text num font-semibold">
+                                        <Activity className="w-3.5 h-3.5 text-accent rotate-90" />
+                                        <span>14 ms</span>
                                     </div>
                                 </div>
-                                <div className="p-5 rounded-3xl bg-secondary/40 border border-border group hover:bg-secondary/60 transition-all col-span-2">
-                                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest block mb-3">Recent Security Activity</span>
+                                <div className="p-2.5 rounded-[5px] bg-raised border border-line col-span-2">
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <ShieldCheck className="w-4 h-4 text-primary" />
-                                            <span className="text-[11px] font-bold text-muted-foreground">No threats detected</span>
+                                        <div className="flex items-center gap-1.5 text-text-soft">
+                                            <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+                                            <span>Security Status</span>
                                         </div>
-                                        <span className="text-[10px] font-black text-emerald-500 uppercase">Secured</span>
+                                        <span className="text-ok text-[10px] uppercase font-semibold">Clean / Verified</span>
                                     </div>
                                 </div>
                             </div>
-
-                            <button className="w-full mt-6 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-2xl text-[11px] font-black uppercase tracking-[0.25em] text-primary hover:text-foreground transition-all shadow-sm">
-                                Detailed Traffic Analysis
-                            </button>
-                        </PremiumCard>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
             {/* Legend / Stats Floating */}
-            <div className="absolute top-10 right-10 flex flex-col gap-4">
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="px-6 py-4 rounded-[2rem] bg-card/80 backdrop-blur-3xl border border-border flex items-center gap-4 shadow-xl"
-                >
-                    <div className="flex -space-x-2">
-                        {[Router, Monitor, Smartphone].map((Icon, i) => (
-                            <div key={i} className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center">
-                                <Icon className="w-3.5 h-3.5 text-primary" />
-                            </div>
-                        ))}
-                    </div>
-                    <div className="w-[1px] h-6 bg-border mx-1" />
-                    <div className="flex flex-col">
-                        <span className="text-[14px] font-black text-foreground tabular-nums leading-none">
-                            {deviceNodes.length + 1}
-                        </span>
-                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.15em] mt-1">
-                            Active Entities
-                        </span>
-                    </div>
-                </motion.div>
+            <div className="absolute top-3 right-3 flex flex-col gap-2">
+                <div className="px-3 py-1.5 bg-bar border border-line rounded-[7px] flex items-center gap-3 font-mono text-xs">
+                    <span className="text-faint uppercase text-[10px]">Active Nodes</span>
+                    <span className="num font-bold text-accent">{deviceNodes.length + 1}</span>
+                </div>
             </div>
         </div>
     );

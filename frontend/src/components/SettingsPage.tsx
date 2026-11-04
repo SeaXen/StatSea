@@ -12,6 +12,7 @@ import AuditLogTab from './AuditLogTab';
 import ReportSettings from './ReportSettings';
 import NotificationSettings from './NotificationSettings';
 import { CertMonitor } from './CertMonitor';
+import { cn } from '../lib/utils';
 
 export default function Settings() {
     const { data: fetchedSettings = {} } = useSettingsQuery();
@@ -128,51 +129,55 @@ export default function Settings() {
     const SidebarItem = ({ id, icon: Icon, label }: { id: string, icon: React.ElementType, label: string }) => (
         <button
             onClick={() => setActiveSection(id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden ${activeSection === id
-                ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(var(--primary),0.1)]'
-                : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-[5px] font-mono text-xs transition-colors ${activeSection === id
+                ? 'bg-accent/20 text-accent font-medium'
+                : 'text-text-soft hover:bg-raised hover:text-text'
                 }`}
         >
-            {activeSection === id && (
-                <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-primary/5 rounded-xl"
-                    initial={false}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-            )}
-            <Icon className={`w-5 h-5 relative z-10 transition-transform group-hover:scale-110 ${activeSection === id ? 'text-primary' : ''}`} />
-            <span className="font-medium relative z-10">{label}</span>
+            <Icon className="w-3.5 h-3.5" />
+            <span>{label}</span>
         </button>
     );
 
     return (
-        <div className="space-y-6">
-            <header className="mb-8 flex justify-between items-end">
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground tracking-tight">
-                        Settings
-                    </h1>
-                    <p className="text-muted-foreground mt-1 text-sm">
-                        Manage your preferences and system configuration
-                    </p>
+        <div className="space-y-4">
+            {/* Header */}
+            <div className="panel p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-[7px] bg-raised border border-line-strong flex items-center justify-center text-accent">
+                        <Terminal className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-base font-semibold text-text tracking-tight">System Settings</h1>
+                            <span className="status ok text-[10px] uppercase font-mono px-2 py-0.5">
+                                PREFERENCES
+                            </span>
+                        </div>
+                        <p className="text-xs text-text-soft font-mono mt-0.5">
+                            Manage runtime configurations, visual themes, telemetry limits, and security
+                        </p>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border/50 backdrop-blur-sm">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mode</span>
+
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-[7px] bg-panel border border-line-strong font-mono text-xs">
+                    <span className="text-faint text-[10px] uppercase">Engine</span>
                     <button
                         onClick={toggleDevMode}
-                        className={`w-10 h-5 rounded-full relative transition-colors duration-300 ${devMode ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+                        className={cn(
+                            "status text-[9px] uppercase px-2 py-0.5 transition-colors",
+                            devMode ? "ok" : "warn"
+                        )}
                     >
-                        <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-300 ${devMode ? 'left-6' : 'left-1'}`} />
+                        {devMode ? 'DEV MODE' : 'PROD MODE'}
                     </button>
-                    <span className={`text-xs font-bold ${devMode ? 'text-primary' : 'text-muted-foreground'}`}>DEV</span>
                 </div>
-            </header>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* Sidebar Navigation */}
-                <nav className="space-y-2 sticky top-24 self-start">
-                    <div className="md:hidden flex overflow-x-auto pb-4 gap-2 mb-4 scrollbar-hide">
+                <nav className="panel p-2 space-y-1 self-start">
+                    <div className="md:hidden flex overflow-x-auto pb-2 gap-1 scrollbar-hide">
                         {/* Mobile Horizontal Scroll */}
                         <SidebarItem id="account" icon={User} label="Account" />
                         <SidebarItem id="appearance" icon={Sun} label="Appearance" />
@@ -184,7 +189,7 @@ export default function Settings() {
                         {user?.is_admin && <SidebarItem id="audit" icon={ClipboardList} label="Audit Log" />}
                     </div>
 
-                    <div className="hidden md:block space-y-2">
+                    <div className="hidden md:block space-y-1">
                         <SidebarItem id="account" icon={User} label="Account" />
                         <SidebarItem id="appearance" icon={Sun} label="Appearance" />
                         <SidebarItem id="monitoring" icon={Activity} label="Monitoring" />
@@ -195,16 +200,12 @@ export default function Settings() {
                         {user?.is_admin && <SidebarItem id="audit" icon={ClipboardList} label="Audit Log" />}
 
                         {devMode && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                className="pt-4 mt-4 border-t border-border/10 space-y-2"
-                            >
-                                <div className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                            <div className="pt-2 mt-2 border-t border-line space-y-1">
+                                <div className="px-3 text-[10px] font-mono text-faint uppercase tracking-wider mb-1">
                                     Developer
                                 </div>
-                                <SidebarItem id="developer" icon={Terminal} label="System Internals" />
-                            </motion.div>
+                                <SidebarItem id="developer" icon={Terminal} label="Internals" />
+                            </div>
                         )}
                     </div>
                 </nav>
