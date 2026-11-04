@@ -1,14 +1,13 @@
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.auth_jwt import get_current_admin_user
 from app.db.database import get_db
 from app.models import models
 from app.schemas import defaults as schemas
-from app.core.auth_jwt import get_current_admin_user
 
 logger = logging.getLogger(__name__)
 

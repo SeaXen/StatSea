@@ -1,8 +1,9 @@
-import pytest
-from unittest.mock import patch, MagicMock
-from app.services.notification_service import NotificationService
-from app.models.models import NotificationChannel, Organization, User, OrganizationMember
 import json
+from unittest.mock import MagicMock, patch
+
+from app.models.models import NotificationChannel, Organization
+from app.services.notification_service import NotificationService
+
 
 def test_create_notification_channel(db_session, auth_client):
     """Test creating a new notification channel through the API."""

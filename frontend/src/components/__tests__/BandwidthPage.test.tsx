@@ -85,11 +85,11 @@ describe('BandwidthPage', () => {
     it('renders active interface summary cards', () => {
         render(<BandwidthPage />);
 
-        expect(screen.getByText('Current Day')).toBeInTheDocument();
-        expect(screen.getByText('Prior Day')).toBeInTheDocument();
-        expect(screen.getByText('Monthly Usage')).toBeInTheDocument();
-        expect(screen.getByText('Historical Total')).toBeInTheDocument();
-        expect(screen.getByText('Projected')).toBeInTheDocument();
+        expect(screen.getByText(/today/i)).toBeInTheDocument();
+        expect(screen.getByText(/yesterday/i)).toBeInTheDocument();
+        expect(screen.getByText(/this month/i)).toBeInTheDocument();
+        expect(screen.getByText(/all time/i)).toBeInTheDocument();
+        expect(screen.getByText(/Est\./i)).toBeInTheDocument();
     });
 
     it('renders formatted byte amounts in tabular figures', () => {

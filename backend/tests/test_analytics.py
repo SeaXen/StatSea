@@ -2,7 +2,6 @@
 Tests for analytics endpoints (network history, topology, dns logs, device logs).
 All sync — uses TestClient from conftest.
 """
-import pytest
 
 
 def test_network_history(auth_client):

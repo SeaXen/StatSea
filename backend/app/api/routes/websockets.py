@@ -1,12 +1,12 @@
-import logging
 import asyncio
+import logging
 import time
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from jose import jwt, JWTError
-from typing import Dict, Set
 
-from ...core.config import settings
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from jose import JWTError, jwt
+
 from ...core.collector import global_collector
+from ...core.config import settings
 from ...db.database import SessionLocal
 from ...models import models
 
@@ -19,7 +19,7 @@ _event_loop: asyncio.AbstractEventLoop | None = None
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[str, Set[WebSocket]] = {
+        self.active_connections: dict[str, set[WebSocket]] = {
             "events": set(),
         }
 
@@ -93,6 +93,7 @@ async def websocket_live(websocket: WebSocket, token: str = Query(None)):
                 "u": stats["u"],
                 "d": stats["d"],
                 "active_devices": stats["active_device_count"],
+                "is_synthetic": stats.get("is_synthetic", False),
             }
             await websocket.send_json(data)
 
@@ -134,8 +135,8 @@ async def speedtest_websocket(websocket: WebSocket, provider: str = "ookla", tok
 
     await websocket.accept()
     try:
-        from ...core.speedtest_service import speedtest_service
         from ...api.deps import get_db
+        from ...core.speedtest_service import speedtest_service
         
         queue = asyncio.Queue()
         main_loop = asyncio.get_running_loop()
@@ -183,5 +184,5 @@ async def speedtest_websocket(websocket: WebSocket, provider: str = "ookla", tok
         logger.error(f"Speedtest WebSocket error: {e}")
         try:
             await websocket.close(code=1011)
-        except Exception:
-            pass
+        except Exception as close_err:
+            logger.debug("Websocket close ignored: %s", close_err)

@@ -1,6 +1,8 @@
 import json
 import logging
-from pywebpush import webpush, WebPushException
+
+from pywebpush import WebPushException, webpush
+
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)

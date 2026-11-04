@@ -41,7 +41,7 @@ def create_refresh_token(user_id: int, expires_delta: timedelta | None = None):
     return token, expire
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -58,7 +58,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 
-async def get_current_admin_user(current_user: models.User = Depends(get_current_user)):
+def get_current_admin_user(current_user: models.User = Depends(get_current_user)):
     if not current_user.is_admin:
         raise PermissionDeniedException()
     return current_user

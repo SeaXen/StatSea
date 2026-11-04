@@ -1,14 +1,15 @@
 import logging
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
 from datetime import datetime
 
-from app.db.database import get_db
-from app.schemas import defaults as schemas
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
 from app.core.auth_jwt import get_current_admin_user
-from app.services.user_service import UserService
-from app.services.audit_service import AuditService
+from app.db.database import get_db
 from app.models import models
+from app.schemas import defaults as schemas
+from app.services.audit_service import AuditService
+from app.services.user_service import UserService
 
 logger = logging.getLogger(__name__)
 

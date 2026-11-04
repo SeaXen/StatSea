@@ -1,12 +1,12 @@
 import logging
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.db.database import get_db
-from app.api.deps import get_current_org_id
 from app.core.auth_jwt import get_current_user
-from app.models import models
 from app.core.speedtest_service import speedtest_service
+from app.db.database import get_db
+from app.models import models
 
 logger = logging.getLogger(__name__)
 

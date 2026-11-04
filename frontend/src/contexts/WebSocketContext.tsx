@@ -15,6 +15,7 @@ export interface Notification {
 interface WebSocketContextType {
     wsData: Record<string, unknown>[];
     isConnected: boolean;
+    isSynthetic: boolean;
     notifications: Notification[];
     unreadCount: number;
     markAsRead: (id: string) => void;
@@ -27,6 +28,7 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(undefin
 export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     const [wsData, setWsData] = useState<Record<string, unknown>[]>([]);
     const [isConnected, setIsConnected] = useState(false);
+    const [isSynthetic, setIsSynthetic] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const unreadCount = notifications.filter(n => !n.read).length;
@@ -98,6 +100,10 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
                     // Handle heartbeat ping from server
                     if (data.type === 'ping') return;
 
+                    if (typeof data.is_synthetic === 'boolean') {
+                        setIsSynthetic(data.is_synthetic);
+                    }
+
                     setWsData(prev => {
                         const newData = [...prev, {
                             time: new Date(data.timestamp * 1000).toLocaleTimeString(),
@@ -162,6 +168,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         <WebSocketContext.Provider value={{
             wsData,
             isConnected,
+            isSynthetic,
             notifications,
             unreadCount,
             markAsRead,

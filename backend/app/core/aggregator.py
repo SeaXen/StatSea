@@ -179,7 +179,13 @@ def aggregate_device_monthly(db_session=None):
     """Rolls up DeviceDailySummary into DeviceMonthlySummary."""
     db = db_session or SessionLocal()
     try:
-        month_str = date.today().strftime("%Y-%m")
+        today = date.today()
+        month_str = today.strftime("%Y-%m")
+        first_of_month = today.replace(day=1)
+        if today.month == 12:
+            first_of_next_month = date(today.year + 1, 1, 1)
+        else:
+            first_of_next_month = date(today.year, today.month + 1, 1)
         devices = db.query(Device).all()
         for dev in devices:
             stats = (

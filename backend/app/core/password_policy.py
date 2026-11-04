@@ -1,6 +1,9 @@
 import re
+
 from fastapi import HTTPException
+
 from .config import settings
+
 
 def validate_password_complexity(password: str):
     """

@@ -1,9 +1,11 @@
 import logging
-import psutil
 from datetime import datetime, timezone
+
+import psutil
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from app.db.database import get_db
 
 logger = logging.getLogger(__name__)

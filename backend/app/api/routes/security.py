@@ -1,13 +1,13 @@
 import logging
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from typing import List
+from datetime import datetime
 
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel, ConfigDict
+from sqlalchemy.orm import Session
+
+from app.core.auth_jwt import get_current_user
 from app.db.database import get_db
 from app.models import models
-from app.core.auth_jwt import get_current_user
-from pydantic import BaseModel
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +22,11 @@ class SecurityEvent(BaseModel):
     source_ip: str
     resolved: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 @router.get(
     "/events",
-    response_model=List[SecurityEvent],
+    response_model=list[SecurityEvent],
     summary="Get security events",
 )
 def get_security_events(

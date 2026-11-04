@@ -2,9 +2,10 @@ import json
 import logging
 import smtplib
 from email.mime.text import MIMEText
-from typing import List, Optional, Dict, Any
+
 import httpx
 from sqlalchemy.orm import Session
+
 from app.models import models
 from app.services.webpush_service import webpush_service
 
@@ -18,7 +19,7 @@ class NotificationService:
         name: str, 
         type: str, 
         config: dict, 
-        events: List[str] = None
+        events: list[str] = None
     ) -> models.NotificationChannel:
         """Creates a new notification channel."""
         channel = models.NotificationChannel(
@@ -35,7 +36,7 @@ class NotificationService:
         return channel
 
     @staticmethod
-    def list_channels(db: Session, organization_id: int) -> List[models.NotificationChannel]:
+    def list_channels(db: Session, organization_id: int) -> list[models.NotificationChannel]:
         """Lists all notification channels for an organization."""
         return db.query(models.NotificationChannel).filter(
             models.NotificationChannel.organization_id == organization_id
@@ -45,10 +46,10 @@ class NotificationService:
     def update_channel(
         db: Session,
         channel_id: int,
-        name: Optional[str] = None,
-        config: Optional[dict] = None,
-        events: Optional[List[str]] = None,
-        is_enabled: Optional[bool] = None
+        name: str | None = None,
+        config: dict | None = None,
+        events: list[str] | None = None,
+        is_enabled: bool | None = None
     ) -> models.NotificationChannel:
         """Updates an existing notification channel."""
         channel = db.query(models.NotificationChannel).filter(models.NotificationChannel.id == channel_id).first()

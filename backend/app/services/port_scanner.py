@@ -1,11 +1,12 @@
-import socket
 import concurrent.futures
+import socket
 from datetime import datetime, timezone
-import logging
+
 from sqlalchemy.orm import Session
+
+from ..core.logging import get_logger
 from ..db.database import SessionLocal
 from ..models import models
-from ..core.logging import get_logger
 
 logger = get_logger("PortScanner")
 
@@ -48,8 +49,8 @@ def scan_port(ip, port, timeout=1.0):
             result = s.connect_ex((ip, port))
             if result == 0:
                 return port, True
-    except Exception:
-        pass
+    except OSError as err:
+        logger.debug("Port check %s:%d failed: %s", ip, port, err)
     return port, False
 
 def scan_device(ip):

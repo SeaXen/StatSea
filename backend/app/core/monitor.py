@@ -1,16 +1,17 @@
 import asyncio
 import platform
-import time
 import socket
+import time
+
 import psutil
 import sqlalchemy.exc
 from sqlalchemy.orm import Session
 
 from ..db import database
 from ..models import models
+from .config import settings
 from .logging import get_logger
 from .security import security_engine
-from .config import settings
 
 logger = get_logger("NetworkMonitor")
 

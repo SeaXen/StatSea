@@ -3,8 +3,8 @@ import logging
 import psutil
 from sqlalchemy.orm import Session
 
-from ..services.notification_service import NotificationService
 from ..models import models
+from ..services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
 

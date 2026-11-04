@@ -66,17 +66,22 @@ const LoginPage: React.FC = () => {
                         <div className="space-y-4">
                             {/* Username */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground/80 ml-1">Username</label>
+                                <label htmlFor="username" className="text-sm font-medium text-foreground/80 ml-1">Username</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <User className="w-5 h-5 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
                                     </div>
                                     <input
+                                        id="username"
+                                        name="username"
                                         type="text"
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full bg-background/50 border border-border rounded-xl py-3.5 pl-12 pr-4 text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                                        className="w-full bg-background/50 border border-border rounded-xl py-3.5 pl-12 pr-4 text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors"
                                         placeholder="Enter your username"
+                                        autoComplete="username"
+                                        spellCheck={false}
+                                        autoCapitalize="none"
                                         required
                                     />
                                 </div>
@@ -84,17 +89,20 @@ const LoginPage: React.FC = () => {
 
                             {/* Password */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground/80 ml-1">Password</label>
+                                <label htmlFor="password" className="text-sm font-medium text-foreground/80 ml-1">Password</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <Lock className="w-5 h-5 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
                                     </div>
                                     <input
+                                        id="password"
+                                        name="password"
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-background/50 border border-border rounded-xl py-3.5 pl-12 pr-4 text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                                        className="w-full bg-background/50 border border-border rounded-xl py-3.5 pl-12 pr-4 text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors"
                                         placeholder="••••••••"
+                                        autoComplete="current-password"
                                         required
                                     />
                                 </div>
@@ -107,11 +115,12 @@ const LoginPage: React.FC = () => {
                                 <div className="relative">
                                     <input
                                         type="checkbox"
+                                        name="remember_me"
                                         checked={rememberMe}
                                         onChange={(e) => setRememberMe(e.target.checked)}
                                         className="sr-only peer"
                                     />
-                                    <div className="w-5 h-5 bg-background/50 border border-border rounded-md peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all" />
+                                    <div className="w-5 h-5 bg-background/50 border border-border rounded-md peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-colors" />
                                     <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-opacity">
                                         <Shield className="w-3 h-3 text-white" />
                                     </div>
@@ -132,6 +141,8 @@ const LoginPage: React.FC = () => {
                         <AnimatePresence>
                             {error && (
                                 <motion.div
+                                    role="alert"
+                                    aria-live="polite"
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
@@ -147,7 +158,7 @@ const LoginPage: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
                         >
                             {isLoading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />

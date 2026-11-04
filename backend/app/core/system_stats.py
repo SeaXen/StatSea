@@ -4,6 +4,10 @@ import time
 
 import psutil
 
+from app.core.logging import get_logger
+
+logger = get_logger("SystemStats")
+
 
 class SystemStats:
     @staticmethod
@@ -57,12 +61,12 @@ class SystemStats:
                             break
                 # Fallback to first available if no specific cpu match
                 if temperature is None:
-                    for name, entries in temps.items():
+                    for entries in temps.values():
                         if entries:
                             temperature = entries[0].current
                             break
-        except Exception:
-            pass
+        except Exception as err:
+            logger.debug("Could not read temperature sensors: %s", err)
 
         return {
             "hostname": platform.node(),

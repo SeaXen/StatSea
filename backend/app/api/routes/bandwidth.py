@@ -1,15 +1,15 @@
 import logging
-from datetime import datetime, timedelta, date
-from typing import List, Dict, Any
 from calendar import monthrange
+from datetime import date, datetime, timedelta
+from typing import Any
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
 
+from app.core.auth_jwt import get_current_user
 from app.db.database import get_db
 from app.models import models
-from app.core.auth_jwt import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def _calc_rate_bps(total_bytes: int, seconds: int) -> float:
 @router.get(
     "/interfaces",
     summary="List all known interfaces",
-    response_model=List[str],
+    response_model=list[str],
 )
 def get_interfaces(
     db: Session = Depends(get_db),
@@ -53,7 +53,7 @@ def get_interfaces(
 @router.get(
     "/summary",
     summary="Get interface summaries (vnStat-style)",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
 )
 def get_bandwidth_summary(
     db: Session = Depends(get_db),
@@ -75,9 +75,9 @@ def get_bandwidth_summary(
         if i[0]
     ]
 
-    summary: Dict[str, Any] = {}
+    summary: dict[str, Any] = {}
     for interface in interfaces:
-        iface_data: Dict[str, Any] = {
+        iface_data: dict[str, Any] = {
             "today": {"rx": 0, "tx": 0, "total": 0, "avg_rate": "0 bit/s", "avg_rate_bps": 0},
             "yesterday": {"rx": 0, "tx": 0, "total": 0, "avg_rate": "0 bit/s", "avg_rate_bps": 0},
             "month": {"rx": 0, "tx": 0, "total": 0, "avg_rate": "0 bit/s", "avg_rate_bps": 0},
@@ -191,7 +191,7 @@ def get_bandwidth_summary(
 @router.get(
     "/fiveminute",
     summary="Get 5-minute traffic buckets",
-    response_model=List[Dict[str, Any]],
+    response_model=list[dict[str, Any]],
 )
 def get_fiveminute(
     interface: str,
@@ -217,7 +217,7 @@ def get_fiveminute(
     )
 
     # Bucket into 5-minute intervals
-    buckets: Dict[str, Dict[str, int]] = {}
+    buckets: dict[str, dict[str, int]] = {}
     for s in stats:
         ts = s.timestamp
         # Round down to nearest 5-minute mark
@@ -244,7 +244,7 @@ def get_fiveminute(
 @router.get(
     "/hourly",
     summary="Get hourly breakdown",
-    response_model=List[Dict[str, Any]],
+    response_model=list[dict[str, Any]],
 )
 def get_hourly(
     interface: str,
@@ -255,7 +255,7 @@ def get_hourly(
     try:
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format, use YYYY-MM-DD")
+        raise HTTPException(status_code=400, detail="Invalid date format, use YYYY-MM-DD") from None
 
     stats = (
         db.query(
@@ -284,7 +284,7 @@ def get_hourly(
 @router.get(
     "/daily",
     summary="Get daily breakdown with avg rate",
-    response_model=List[Dict[str, Any]],
+    response_model=list[dict[str, Any]],
 )
 def get_daily(
     interface: str,
@@ -326,7 +326,7 @@ def get_daily(
 @router.get(
     "/monthly",
     summary="Get monthly aggregates with avg rate and estimated",
-    response_model=List[Dict[str, Any]],
+    response_model=list[dict[str, Any]],
 )
 def get_monthly(
     interface: str,
@@ -361,7 +361,7 @@ def get_monthly(
         total_days_in_month = monthrange(year, month)[1]
         elapsed_seconds = total_days_in_month * 86400
 
-        entry: Dict[str, Any] = {
+        entry: dict[str, Any] = {
             "month": stat.month,
             "rx": rx,
             "tx": tx,
@@ -384,7 +384,7 @@ def get_monthly(
 @router.get(
     "/yearly",
     summary="Get yearly aggregates",
-    response_model=List[Dict[str, Any]],
+    response_model=list[dict[str, Any]],
 )
 def get_yearly(
     interface: str,
@@ -402,7 +402,7 @@ def get_yearly(
         .all()
     )
 
-    yearly: Dict[str, Dict[str, int]] = {}
+    yearly: dict[str, dict[str, int]] = {}
     for stat in stats:
         year = stat.month.split("-")[0]
         if year not in yearly:
@@ -423,7 +423,7 @@ def get_yearly(
         year_days = days_in_year if year == current_year else 365
         elapsed = year_days * 86400
 
-        entry: Dict[str, Any] = {
+        entry: dict[str, Any] = {
             "year": year,
             "rx": rx,
             "tx": tx,
@@ -446,7 +446,7 @@ def get_yearly(
 @router.get(
     "/top",
     summary="Get top traffic days with full details",
-    response_model=List[Dict[str, Any]],
+    response_model=list[dict[str, Any]],
 )
 def get_top_days(
     interface: str,

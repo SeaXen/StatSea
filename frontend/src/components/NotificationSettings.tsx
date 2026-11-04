@@ -209,24 +209,32 @@ export default function NotificationSettings() {
     );
 }
 
+const DEFAULT_CONFIG_TEMPLATES: Record<NotificationChannelType, string> = {
+    telegram: '{\n  "token": "your_bot_token",\n  "chat_id": "your_chat_id"\n}',
+    discord: '{\n  "webhook_url": "https://discord.com/api/webhooks/..."\n}',
+    slack: '{\n  "webhook_url": "https://hooks.slack.com/services/..."\n}',
+    email: '{\n  "to": "admin@example.com",\n  "subject_prefix": "[StatSea Alert] "\n}',
+    ntfy: '{\n  "topic": "mytopic",\n  "server": "https://ntfy.sh"\n}',
+    push: '{}',
+};
+
 function ChannelModal({ isOpen, onClose, existingChannel, onSave }: { isOpen: boolean, onClose: () => void, existingChannel: NotificationChannel | null, onSave: (data: any) => void }) {
+    const initialType: NotificationChannelType = existingChannel ? existingChannel.type : 'telegram';
     const [name, setName] = useState(existingChannel?.name || '');
-    const [type, setType] = useState<NotificationChannelType>(existingChannel?.type || 'telegram');
-    const [configStr, setConfigStr] = useState(existingChannel ? JSON.stringify(existingChannel.config, null, 2) : '{\n  "token": "",\n  "chat_id": ""\n}');
+    const [type, setType] = useState<NotificationChannelType>(initialType);
+    const [configStr, setConfigStr] = useState(
+        existingChannel
+            ? JSON.stringify(existingChannel.config, null, 2)
+            : DEFAULT_CONFIG_TEMPLATES[initialType]
+    );
     const [events, setEvents] = useState<string[]>(existingChannel?.events || ['*']);
 
-    // Auto-update templates
-    useEffect(() => {
+    const handleTypeChange = (newType: NotificationChannelType) => {
+        setType(newType);
         if (!existingChannel) {
-            switch (type) {
-                case 'telegram': setConfigStr('{\n  "token": "your_bot_token",\n  "chat_id": "your_chat_id"\n}'); break;
-                case 'discord': setConfigStr('{\n  "webhook_url": "https://discord.com/api/webhooks/..."\n}'); break;
-                case 'slack': setConfigStr('{\n  "webhook_url": "https://hooks.slack.com/services/..."\n}'); break;
-                case 'email': setConfigStr('{\n  "to": "admin@example.com",\n  "subject_prefix": "[StatSea Alert] "\n}'); break;
-                case 'ntfy': setConfigStr('{\n  "topic": "mytopic",\n  "server": "https://ntfy.sh"\n}'); break;
-            }
+            setConfigStr(DEFAULT_CONFIG_TEMPLATES[newType] || '{}');
         }
-    }, [type, existingChannel]);
+    };
 
     if (!isOpen) return null;
 
@@ -240,7 +248,7 @@ function ChannelModal({ isOpen, onClose, existingChannel, onSave }: { isOpen: bo
                 events,
                 is_enabled: true
             });
-        } catch (e) {
+        } catch {
             toast.error("Invalid JSON configuration");
         }
     };
@@ -266,7 +274,7 @@ function ChannelModal({ isOpen, onClose, existingChannel, onSave }: { isOpen: bo
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Type</label>
                         <select
-                            value={type} onChange={e => setType(e.target.value as NotificationChannelType)}
+                            value={type} onChange={e => handleTypeChange(e.target.value as NotificationChannelType)}
                             disabled={!!existingChannel}
                             className="w-full bg-black/40 border border-border/50 rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/50 appearance-none"
                         >

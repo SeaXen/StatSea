@@ -1,22 +1,25 @@
+import asyncio
+
 import sqlalchemy.exc
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy.orm import Session
 
 from ..db.database import SessionLocal
 from ..models import models
+from ..services import (
+    backup_service as backup_service_lib,
+    health_checker as health_service,
+    system_metrics as system_service,
+)
+from ..services.certificate_service import CertificateMonitor
+from ..services.notification_service import NotificationService
+from ..services.port_scanner import run_port_scan_job
 from .aggregator import run_aggregation_job
 from .cleanup import run_cleanup_job
 from .logging import get_logger
-from ..services.notification_service import NotificationService
 from .quotas import check_quotas
 from .speedtest_service import speedtest_service
 from .uptime import check_device_availability
-from ..services.port_scanner import run_port_scan_job
-from ..services import system_metrics as system_service
-from ..services import backup_service as backup_service_lib
-from ..services import health_checker as health_service
-from ..services.certificate_service import CertificateMonitor
-import asyncio
 
 logger = get_logger("Scheduler")
 
@@ -133,19 +136,6 @@ class SchedulerService:
 
             provider = settings_map.get("speedtest_provider", "ookla")
             server_id = int(settings_map.get("speedtest_server_id", 0)) or None
-
-            # Get notification config
-            notify_config = {
-                "telegram_token": settings_map.get("telegram_bot_token"),
-                "telegram_chat_id": settings_map.get("telegram_chat_id"),
-                "discord_webhook_url": settings_map.get("discord_webhook_url"),
-            }
-
-            # Run the test (we need an async wrapper or run sync? speedtest_service methods are sync except run_speedtest wrapper)
-            # speedtest_service.run_speedtest is async.
-            # we should use the synchronous methods inside run_speedtest or call it synchronously.
-            # But run_speedtest in endpoint is async. The service methods `run_ookla_speedtest` are sync (blocking).
-            # We should probably run it in a thread executor if it was an API call, but here we are in a background job.
 
             # Run test (Synchronous calls)
             result_data = None

@@ -4,13 +4,27 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "B", "I", "U", "N", "S", "T20"]
-ignore = ["E501", "B008"] # Line length handled by formatter, B008 for FastAPI Depends
+ignore = ["E501", "B008", "E712", "S311", "N806"] # Line length handled by formatter, B008 for FastAPI Depends, E712 for SQLAlchemy queries, S311 for synthetic telemetry, N806 for ML matrices
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106", "S107", "T201", "E402", "F841"]
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning"
+]

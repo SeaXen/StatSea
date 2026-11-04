@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
-from app.db.database import get_db
-from app.models import models
 from app.api.deps import get_current_org_id
 from app.core.auth_jwt import get_current_user
+from app.db.database import get_db
+from app.models import models
 from app.services.billing_service import BillingService
 
 router = APIRouter()
@@ -36,7 +36,7 @@ def subscribe_to_plan(
         org = BillingService.subscribe_org(db, organization_id, req.plan)
         return {"status": "success", "plan": org.plan_tier}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 @router.get("/portal")
 def get_billing_portal(

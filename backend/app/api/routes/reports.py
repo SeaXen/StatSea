@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, Response, Query
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
 from sqlalchemy.orm import Session
-from app.db.database import get_db
+
 from app.api import deps
+from app.db.database import get_db
 from app.models import models
 from app.services.report_service import report_service
-from datetime import datetime
 
 router = APIRouter(prefix="/reports", tags=["Reports & Export"])
 
@@ -61,4 +63,4 @@ def get_pdf_report(
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}") from e

@@ -1,3 +1,4 @@
+import ipaddress
 import logging
 
 from cachetools import TTLCache
@@ -8,8 +9,6 @@ cache = TTLCache(maxsize=1000, ttl=86400)
 
 logger = logging.getLogger("statsea.ip_intel")
 
-
-import ipaddress
 
 def get_ip_info(ip_address: str):
     """

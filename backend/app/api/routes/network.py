@@ -1,14 +1,15 @@
 import logging
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.db.database import get_db
-from app.models import models
-from app.api.deps import get_current_org_id, get_cache_header
+from app.api.deps import get_cache_header, get_current_org_id
 from app.core.auth_jwt import get_current_user
-from app.services.analytics_service import AnalyticsService
 from app.core.collector import global_collector
 from app.core.ip_intel import get_ip_info
+from app.db.database import get_db
+from app.models import models
+from app.services.analytics_service import AnalyticsService
 
 logger = logging.getLogger(__name__)
 

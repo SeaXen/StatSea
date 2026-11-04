@@ -2,7 +2,6 @@
 Tests for Docker container endpoints.
 All sync — uses TestClient from conftest.
 """
-import pytest
 
 
 def test_list_containers(auth_client):

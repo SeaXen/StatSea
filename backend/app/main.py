@@ -10,28 +10,43 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
+# Import routers (settings module is safe now — no naming clash)
+from .api import api_keys, audit, billing, saas_extras
+from .api.routes import (
+    admin,
+    agents,
+    alerts,
+    analytics,
+    auth,
+    bandwidth,
+    devices,
+    docker,
+    export,
+    groups,
+    health,
+    metrics,
+    network,
+    reports,
+    security,
+    settings as settings_router,
+    speedtests,
+    system,
+    websockets,
+)
+from .core.collector import global_collector
+
 # Import config FIRST, aliased to avoid collision with the settings router
 from .core.config import settings as app_settings
 from .core.docker_monitor import docker_monitor
 from .core.limiter import limiter
 from .core.logging import get_logger, set_request_id, setup_logging
+from .core.metrics import metrics_manager
 from .core.monitor import monitor
 from .core.scheduler import scheduler
 from .core.system_monitor import system_monitor
-from .core.collector import global_collector
-from .core.metrics import metrics_manager
-from .services.docker_update_service import docker_update_service
 from .db.database import Base, SessionLocal, engine
 from .models import models
-
-# Import routers (settings module is safe now — no naming clash)
-from .api import audit, billing, api_keys, saas_extras
-from .api.routes import (
-    devices, analytics, docker, system, auth, network,
-    admin, groups, settings as settings_router, websockets,
-    speedtests, alerts, health, reports, metrics, export, bandwidth, agents,
-    security
-)
+from .services.docker_update_service import docker_update_service
 
 # Initialize structured logging
 setup_logging(level=logging.DEBUG if app_settings.ENVIRONMENT == "development" else logging.INFO)
@@ -92,7 +107,7 @@ async def lifespan(app: FastAPI):
     seed_initial_data()
     
     # Security check: Warn or fail if using default JWT secret
-    is_default_secret = app_settings.JWT_SECRET_KEY == "statsea-jwt-secret-key-change-me-at-least-thirty-two-chars"
+    is_default_secret = app_settings.JWT_SECRET_KEY == "statsea-jwt-secret-key-change-me-at-least-thirty-two-chars"  # noqa: S105
     if is_default_secret:
         if app_settings.ENVIRONMENT != "development":
             logger.critical("SECURITY BREACH PREVENTION: Cannot start in production with default JWT_SECRET_KEY.")
@@ -161,16 +176,16 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# CORS setup with safe wildcard/LAN support in development
-valid_origins = app_settings.CORS_ORIGINS
-if app_settings.ENVIRONMENT != "development" and "*" in valid_origins:
+# CORS setup: strict origins in production, localhost/loopback origins in development
+valid_origins = [o for o in app_settings.CORS_ORIGINS if o != "*"]
+if app_settings.ENVIRONMENT != "development" and "*" in app_settings.CORS_ORIGINS:
     logger.critical("SECURITY BREACH PREVENTION: Wildcard CORS origin (*) is not allowed in production.")
     raise RuntimeError("Wildcard CORS origin (*) is not allowed in production.")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[] if "*" in valid_origins or app_settings.ENVIRONMENT == "development" else valid_origins,
-    allow_origin_regex=".*" if ("*" in valid_origins or app_settings.ENVIRONMENT == "development") else None,
+    allow_origins=valid_origins,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$" if app_settings.ENVIRONMENT == "development" else None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -220,4 +235,7 @@ def read_root():
 
 
 if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8001, reload=True)
+    import os
+    host = os.getenv("HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", "8001"))
+    uvicorn.run("app.main:app", host=host, port=port, reload=True)

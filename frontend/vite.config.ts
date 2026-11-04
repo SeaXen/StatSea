@@ -45,16 +45,22 @@ export default defineConfig({
     build: {
         rollupOptions: {
             output: {
-                manualChunks: {
-                    'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-                    'vendor-charts': ['recharts', 'd3-geo', 'd3-scale', 'react-simple-maps'],
-                    'vendor-3d': ['three', 'react-globe.gl', 'react-force-graph-2d'],
-                    'vendor-motion': ['framer-motion'],
-                    'vendor-ui': ['lucide-react', 'sonner', 'cmdk', 'clsx', 'tailwind-merge'],
+                manualChunks(id) {
+                    if (id.includes('node_modules')) {
+                        if (id.includes('framer-motion')) {
+                            return 'vendor-motion';
+                        }
+                        if (id.includes('lucide-react') || id.includes('sonner') || id.includes('cmdk') || id.includes('tailwind-merge') || id.includes('clsx')) {
+                            return 'vendor-ui';
+                        }
+                        if (id.includes('@tanstack/react-query')) {
+                            return 'vendor-query';
+                        }
+                    }
                 },
             },
         },
-        chunkSizeWarningLimit: 800,
+        chunkSizeWarningLimit: 1200,
     },
     server: {
         host: true,

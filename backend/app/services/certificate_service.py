@@ -1,12 +1,14 @@
-import ssl
-import socket
 import datetime
+import socket
+import ssl
+
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from sqlalchemy.orm import Session
+
+from app.core.logging import get_logger
 from app.models import models
 from app.services.notification_service import NotificationService
-from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -43,7 +45,7 @@ class CertificateMonitor:
             return {"error": f"SSL Error: {str(e)}"}
         except socket.gaierror as e:
             return {"error": f"DNS Resolution Failed: {str(e)}"}
-        except socket.timeout:
+        except TimeoutError:
             return {"error": "Connection Timed Out"}
         except Exception as e:
             return {"error": str(e)}

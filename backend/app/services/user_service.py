@@ -1,11 +1,11 @@
 import sqlalchemy.exc
 from sqlalchemy.orm import Session
 
-from ..schemas import defaults as schemas
 from ..core import sanitization
 from ..core.exceptions import UserNotFoundException, ValidationException
 from ..core.logging import get_logger
 from ..models import models
+from ..schemas import defaults as schemas
 from .audit_service import AuditService
 
 logger = get_logger("UserService")

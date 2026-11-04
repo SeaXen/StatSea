@@ -27,7 +27,7 @@ const TopStatsRow = () => {
     const cards = [
         {
             title: 'Total Download',
-            value: stats ? formatBytes(stats.network.recv) : '...',
+            value: stats ? formatBytes(stats.network.recv) : '…',
             icon: ArrowDown,
             color: 'text-blue-400',
             bg: 'bg-blue-500/10',
@@ -37,7 +37,7 @@ const TopStatsRow = () => {
         },
         {
             title: 'Total Upload',
-            value: stats ? formatBytes(stats.network.sent) : '...',
+            value: stats ? formatBytes(stats.network.sent) : '…',
             icon: ArrowUp,
             color: 'text-emerald-400',
             bg: 'bg-emerald-500/10',
@@ -47,7 +47,7 @@ const TopStatsRow = () => {
         },
         {
             title: 'Active Devices',
-            value: stats ? stats.active_devices.toString() : '...',
+            value: stats ? stats.active_devices.toString() : '…',
             icon: Laptop,
             color: 'text-cyan-400',
             bg: 'bg-cyan-500/10',
@@ -94,7 +94,7 @@ const TopStatsRow = () => {
                                 {card.title}
                             </p>
                             <div className="flex items-baseline gap-2">
-                                <h4 className="text-white font-bold text-xl">{card.value}</h4>
+                                <h4 className="text-white font-bold text-xl tabular-nums">{card.value}</h4>
                                 {card.subValue && (
                                     <span className={`text-[10px] font-medium ${card.color}`}>
                                         {card.subValue}
@@ -103,7 +103,7 @@ const TopStatsRow = () => {
                             </div>
                         </div>
                         <div className={`w-10 h-10 rounded-xl ${card.bg} flex items-center justify-center border ${card.border}`}>
-                            <card.icon className={`w-5 h-5 ${card.color}`} />
+                            <card.icon className={`w-5 h-5 ${card.color}`} aria-hidden="true" />
                         </div>
                     </div>
 

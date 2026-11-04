@@ -3,8 +3,9 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import Any
 from logging.handlers import RotatingFileHandler
+from typing import Any
+
 from .config import settings
 
 # Context variable to store the request ID

@@ -1,8 +1,9 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-import httpx
-from unittest.mock import AsyncMock, patch, MagicMock
+
 from app.services.docker_update_service import DockerUpdateService
-import asyncio
+
 
 @pytest.fixture
 def update_service():

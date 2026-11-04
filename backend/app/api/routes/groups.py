@@ -1,12 +1,13 @@
 import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core import sanitization
+from app.core.auth_jwt import get_current_admin_user, get_current_user
 from app.db.database import get_db
 from app.models import models
 from app.schemas import defaults as schemas
-from app.core.auth_jwt import get_current_admin_user, get_current_user
-from app.core import sanitization
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ def create_group(
         return db_group
     except Exception:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Group already exists")
+        raise HTTPException(status_code=400, detail="Group already exists") from None
 
 @router.put(
     "/{group_id}",

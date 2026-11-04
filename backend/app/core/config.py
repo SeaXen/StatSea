@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     PASSWORD_MIN_LENGTH: int = 8
 
     # Security
-    JWT_SECRET_KEY: str = "statsea-jwt-secret-key-change-me-at-least-thirty-two-chars"
+    JWT_SECRET_KEY: str = "statsea-jwt-secret-key-change-me-at-least-thirty-two-chars"  # noqa: S105
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -39,9 +39,7 @@ class Settings(BaseSettings):
     VAPID_PRIVATE_KEY: str | None = None
     VAPID_ADMIN_EMAIL: str = "admin@statsea.dev"
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 
 settings = Settings()

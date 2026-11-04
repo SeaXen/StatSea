@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Settings, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuota, useSaveQuota } from '../hooks/useQuotas';
@@ -13,16 +13,27 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
     const { data: quotaData, isLoading: loading } = useQuota(deviceId);
     const saveQuotaMutation = useSaveQuota();
 
-    const [dailyLimit, setDailyLimit] = useState<number | null>(null);
-    const [monthlyLimit, setMonthlyLimit] = useState<number | null>(null);
+    // Track user input overrides; fallback to server quotaData when not modified
+    const [userDailyInput, setUserDailyInput] = useState<string | null>(null);
+    const [userMonthlyInput, setUserMonthlyInput] = useState<string | null>(null);
 
-    // Sync fetched quota into local state
-    useEffect(() => {
-        if (quotaData) {
-            setDailyLimit(quotaData.daily_limit_bytes);
-            setMonthlyLimit(quotaData.monthly_limit_bytes);
-        }
-    }, [quotaData]);
+    const serverDailyGB = quotaData?.daily_limit_bytes != null
+        ? (quotaData.daily_limit_bytes / (1024 * 1024 * 1024)).toString()
+        : "";
+    const serverMonthlyGB = quotaData?.monthly_limit_bytes != null
+        ? (quotaData.monthly_limit_bytes / (1024 * 1024 * 1024)).toString()
+        : "";
+
+    const dailyInput = userDailyInput !== null ? userDailyInput : serverDailyGB;
+    const monthlyInput = userMonthlyInput !== null ? userMonthlyInput : serverMonthlyGB;
+
+    const parseBytes = (input: string) => {
+        const floatVal = parseFloat(input);
+        return isNaN(floatVal) || floatVal <= 0 ? null : Math.floor(floatVal * 1024 * 1024 * 1024);
+    };
+
+    const dailyLimit = parseBytes(dailyInput);
+    const monthlyLimit = parseBytes(monthlyInput);
 
     const handleSave = async () => {
         saveQuotaMutation.mutate({
@@ -39,25 +50,12 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
     const toGB = (bytes: number) => (bytes / (1024 * 1024 * 1024)).toFixed(2);
     const toMB = (bytes: number) => (bytes / (1024 * 1024)).toFixed(2);
 
-    // Helpers for input (editing in GB)
-    const [dailyInput, setDailyInput] = useState<string>("");
-    const [monthlyInput, setMonthlyInput] = useState<string>("");
-
-    useEffect(() => {
-        if (dailyLimit !== null) setDailyInput((dailyLimit / (1024 * 1024 * 1024)).toString());
-        if (monthlyLimit !== null) setMonthlyInput((monthlyLimit / (1024 * 1024 * 1024)).toString());
-    }, [dailyLimit, monthlyLimit]);
-
     const handleDailyChange = (val: string) => {
-        setDailyInput(val);
-        const floatVal = parseFloat(val);
-        setDailyLimit(isNaN(floatVal) || floatVal === 0 ? null : Math.floor(floatVal * 1024 * 1024 * 1024));
+        setUserDailyInput(val);
     };
 
     const handleMonthlyChange = (val: string) => {
-        setMonthlyInput(val);
-        const floatVal = parseFloat(val);
-        setMonthlyLimit(isNaN(floatVal) || floatVal === 0 ? null : Math.floor(floatVal * 1024 * 1024 * 1024));
+        setUserMonthlyInput(val);
     };
 
     if (loading) return <div className="animate-pulse h-20 bg-white/5 rounded-xl"></div>;

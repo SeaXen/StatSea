@@ -90,7 +90,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
                 {/* Logo Area */}
                 <div className={`flex h-16 items-center ${isCollapsed ? 'justify-center' : 'justify-between px-6'} border-b border-border`}>
-                    <div className="flex items-center gap-3 overflow-hidden" onClick={() => setActiveTab('dashboard')}>
+                    <div
+                        className="flex items-center gap-3 overflow-hidden cursor-pointer"
+                        onClick={() => setActiveTab('dashboard')}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('dashboard'); }}
+                        aria-label="Go to Dashboard overview"
+                    >
                         <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/20">
                             <Activity className="h-5 w-5 text-blue-400" />
                             <div className="absolute inset-0 animate-pulse rounded-xl bg-blue-500/20 ring-1 ring-inset ring-blue-500/40" />
@@ -111,8 +118,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {/* Collapse Toggle (Desktop only) */}
                     {!isCollapsed && (
                         <button
+                            type="button"
                             onClick={() => setIsCollapsed(true)}
                             className="hidden md:flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                            aria-label="Collapse sidebar"
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </button>
@@ -120,18 +129,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 {/* Navigation Items */}
-                <div className="flex flex-col gap-1.5 p-3 mt-4 h-[calc(100vh-140px)] overflow-y-auto custom-scrollbar">
+                <div className="flex flex-col gap-1.5 p-3 mt-4 h-[calc(100vh-140px)] overflow-y-auto overscroll-contain custom-scrollbar">
                     {navItems.map((item) => {
                         const isActive = activeTab === item.id;
                         return (
                             <button
+                                type="button"
                                 key={item.id}
                                 onClick={() => {
                                     setActiveTab(item.id);
                                     if (window.innerWidth < 768) setIsMobileOpen(false);
                                 }}
                                 className={`
-                                    group relative flex h-10 items-center rounded-lg transition-all duration-200
+                                    group relative flex h-10 items-center rounded-lg transition-colors duration-200
                                     ${isCollapsed ? 'justify-center px-0' : 'px-4'}
                                     ${isActive
                                         ? 'bg-primary/10 text-primary'

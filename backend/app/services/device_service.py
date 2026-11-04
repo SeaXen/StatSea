@@ -1,11 +1,11 @@
 import sqlalchemy.exc
 from sqlalchemy.orm import Session, selectinload
 
-from ..schemas import defaults as schemas
 from ..core.exceptions import DeviceNotFoundException, StatSeaException
 from ..core.logging import get_logger
 from ..core.monitor import wake_device
 from ..models import models
+from ..schemas import defaults as schemas
 from .audit_service import AuditService
 
 logger = get_logger("DeviceService")

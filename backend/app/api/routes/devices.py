@@ -1,12 +1,14 @@
 import logging
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.db.database import get_db
-from app.schemas import defaults as schemas
-from app.services.device_service import DeviceService
+
 from app.api.deps import get_current_org_id
 from app.core.auth_jwt import get_current_user
+from app.db.database import get_db
 from app.models import models
+from app.schemas import defaults as schemas
+from app.services.device_service import DeviceService
 
 logger = logging.getLogger(__name__)
 

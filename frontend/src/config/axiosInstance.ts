@@ -34,7 +34,9 @@ axiosInstance.interceptors.response.use(
 
             if (refreshToken) {
                 try {
-                    const response = await axios.post(`${axiosInstance.defaults.baseURL}/auth/refresh?refresh_token=${refreshToken}`);
+                    const response = await axios.post(`${axiosInstance.defaults.baseURL}/auth/refresh`, {
+                        refresh_token: refreshToken
+                    });
                     const { access_token, refresh_token: newRefreshToken } = response.data;
 
                     localStorage.setItem('statsea_token', access_token);

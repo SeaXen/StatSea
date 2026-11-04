@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from app.models.models import SpeedtestResult
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -115,8 +114,8 @@ class SpeedtestService:
                 try:
                     resp = requests.post("https://speed.cloudflare.com/__up", data=chunk_data, timeout=30)
                     resp.raise_for_status()
-                except Exception:
-                    pass  # Continue even if individual chunk fails
+                except requests.RequestException as err:
+                    logger.debug("Cloudflare speedtest upload chunk failed: %s", err)
                 total_uploaded += chunk_size
                 if progress_callback:
                     chunk_progress = ((i + 1) / num_chunks) * 100

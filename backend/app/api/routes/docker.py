@@ -1,19 +1,20 @@
 import logging
+
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
-from app.db.database import get_db
-from app.models import models
 from app.core.auth_jwt import get_current_admin_user, get_current_user
 from app.core.docker_monitor import docker_monitor
 from app.core.limiter import limiter
+from app.db.database import get_db
+from app.models import models
 from app.services.analytics_service import AnalyticsService
+from app.services.docker_update_service import docker_update_service
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/docker", tags=["Docker"])
 
-from app.services.docker_update_service import docker_update_service
 
 @router.get(
     "/containers",

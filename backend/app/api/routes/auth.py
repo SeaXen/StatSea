@@ -1,18 +1,17 @@
 import logging
 
-from fastapi import APIRouter, Depends, Form, Query, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+
+from app.core.auth_jwt import get_current_user
+from app.core.limiter import limiter
 from app.db.database import get_db
+from app.models import models
 from app.schemas import defaults as schemas
 from app.services.auth_service import AuthService
-from app.api.deps import get_current_org_id, check_admin
-from app.core.auth_jwt import get_current_user
-from app.models import models
 
 logger = logging.getLogger(__name__)
-
-from app.core.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -41,11 +40,17 @@ def login(
     response_model=schemas.Token,
     summary="Refresh Token",
 )
+@limiter.limit("10/minute")
 def refresh_token(
-    refresh_token: str = Query(...),
+    request: Request,
+    payload: schemas.RefreshTokenRequest | None = None,
+    refresh_token: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    return AuthService.refresh_session(db, refresh_token)
+    token = payload.refresh_token if (payload and payload.refresh_token) else refresh_token
+    if not token:
+        raise HTTPException(status_code=400, detail="refresh_token is required")
+    return AuthService.refresh_session(db, token)
 
 
 @router.post(

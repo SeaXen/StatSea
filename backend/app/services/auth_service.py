@@ -239,4 +239,4 @@ class AuthService:
         except sqlalchemy.exc.SQLAlchemyError:
             db.rollback()
             logger.exception(f"Failed to revoke other sessions for user {user_id}")
-            raise AuthenticationException("Could not revoke other sessions")
+            raise AuthenticationException("Could not revoke other sessions") from None

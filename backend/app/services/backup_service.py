@@ -1,10 +1,14 @@
+import gzip
 import os
 import shutil
-import gzip
 from datetime import datetime
+
 from sqlalchemy.orm import Session
+
+from ..core.logging import get_logger
 from ..models import models
-from ..core.config import settings
+
+logger = get_logger("BackupService")
 
 BACKUP_DIR = "./data/backups"
 DB_FILE = "./data/statsea_saas.db"
@@ -57,8 +61,8 @@ def cleanup_old_backups(db: Session, keep_count: int = 7):
             try:
                 if os.path.exists(record.file_path):
                     os.remove(record.file_path)
-            except Exception:
-                pass # Already gone or permission error
+            except OSError as err:
+                logger.warning("Could not remove old backup file %s: %s", record.file_path, err)
             db.delete(record)
         db.commit()
 

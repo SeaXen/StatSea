@@ -1,16 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from typing import Optional
 
-from app.db.database import get_db
-from app.models import models
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
 from app.api.deps import get_current_org_id
 from app.core.auth_jwt import get_current_user
+from app.db.database import get_db
+from app.models import models
+from app.schemas.defaults import CertificateCreate, CertificateResponse, CertificateUpdate
+from app.schemas.notification_schemas import ChannelCreate, ChannelUpdate
+from app.services.certificate_service import CertificateMonitor
 from app.services.notification_service import NotificationService
 from app.services.status_page_service import StatusPageService
-
-from app.schemas.notification_schemas import ChannelCreate, ChannelUpdate
 
 # Notifications Router
 notifications_router = APIRouter(tags=["Notifications"])
@@ -66,7 +69,7 @@ def update_channel(
         )
         return {"id": channel.id, "status": "updated"}
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 @notifications_router.delete("/channels/{channel_id}")
 def delete_channel(
@@ -89,9 +92,9 @@ def test_channel(
         NotificationService.test_channel(db, channel_id)
         return {"status": "test_sent"}
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to send test: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to send test: {str(e)}") from e
 
 class PushSubscriptionCreate(BaseModel):
     endpoint: str
@@ -132,10 +135,10 @@ def subscribe_push(
 status_page_router = APIRouter()
 
 class StatusPageUpdate(BaseModel):
-    title: Optional[str] = None
-    slug: Optional[str] = None
-    is_public: Optional[bool] = None
-    description: Optional[str] = None
+    title: str | None = None
+    slug: str | None = None
+    is_public: bool | None = None
+    description: str | None = None
 
 @status_page_router.get("/settings")
 def get_status_page_settings(
@@ -165,7 +168,7 @@ def update_status_page(
         )
         return {"status": "updated", "slug": updated.slug}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 # Public Status Page Router (No Auth)
 public_status_router = APIRouter()
@@ -180,9 +183,6 @@ def get_public_status_page(
         raise HTTPException(status_code=404, detail="Status page not found")
     return data
 
-from app.schemas.defaults import CertificateCreate, CertificateUpdate, CertificateResponse
-from app.services.certificate_service import CertificateMonitor
-from datetime import datetime, timezone
 
 certificates_router = APIRouter(tags=["Certificates"])
 

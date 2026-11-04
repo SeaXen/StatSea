@@ -1,6 +1,7 @@
 import time
-from typing import Dict
+
 from pydantic import BaseModel
+
 
 class MetricsState(BaseModel):
     # API Requests
@@ -42,7 +43,7 @@ class MetricsManager:
     def increment_alert(self):
         self._state.alerts_generated += 1
 
-    def get_metrics(self) -> Dict[str, float]:
+    def get_metrics(self) -> dict[str, float]:
         uptime = time.time() - self._state.start_time
         return {
             "uptime_seconds": uptime,

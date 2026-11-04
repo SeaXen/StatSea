@@ -1,7 +1,10 @@
-from datetime import datetime, timezone
-from sqlalchemy.orm import Session
-from app.models import models
 import secrets
+from datetime import datetime, timezone
+
+from sqlalchemy.orm import Session
+
+from app.models import models
+
 
 class StatusPageService:
     @staticmethod

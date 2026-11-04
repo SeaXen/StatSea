@@ -1,17 +1,18 @@
 import logging
 from datetime import date, timedelta
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_cache_header
+from app.core.ai_predictor import ai_predictor
+from app.core.auth_jwt import get_current_user
+from app.core.collector import global_collector
 from app.db.database import get_db
 from app.models import models
 from app.schemas import defaults as schemas
-from app.core.auth_jwt import get_current_user
-from app.core.collector import global_collector
-from app.core.ai_predictor import ai_predictor
 from app.services.log_service import LogService
-from app.api.deps import get_cache_header
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,9 @@
-import logging
 import asyncio
-import httpx
+import logging
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Any
+
+import httpx
 
 from app.core.docker_monitor import docker_monitor
 
@@ -14,7 +15,7 @@ class DockerUpdateService:
     """
 
     def __init__(self):
-        self.updates: Dict[str, Dict[str, Any]] = {}  # container_id -> update info
+        self.updates: dict[str, dict[str, Any]] = {}  # container_id -> update info
         self.last_check = None
         self._task = None
 
@@ -129,7 +130,7 @@ class DockerUpdateService:
                 
         self.last_check = datetime.now(timezone.utc)
 
-    def get_update_status(self, container_id: str) -> Dict[str, Any]:
+    def get_update_status(self, container_id: str) -> dict[str, Any]:
         return self.updates.get(container_id, {"update_available": False})
 
 

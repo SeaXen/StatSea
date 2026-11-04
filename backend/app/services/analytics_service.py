@@ -2,13 +2,12 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import sqlalchemy.exc
+from cachetools import TTLCache
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..core.logging import get_logger
 from ..models import models
-
-from cachetools import TTLCache
 
 logger = get_logger("AnalyticsService")
 

@@ -1,4 +1,3 @@
-import pytest
 
 
 API_PREFIX = "/api"

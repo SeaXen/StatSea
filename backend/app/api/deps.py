@@ -1,8 +1,9 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Response
 from sqlalchemy.orm import Session
+
+from app.core.auth_jwt import get_current_user
 from app.db.database import get_db
 from app.models import models
-from app.core.auth_jwt import get_current_user
 
 # Alias for compatibility with routes expecting get_current_active_user
 get_current_active_user = get_current_user
@@ -24,7 +25,6 @@ def get_current_org_id(
         raise HTTPException(status_code=403, detail="User is not a member of any organization")
     return member.organization_id
 
-from fastapi import Response
 
 def get_cache_header(max_age: int = 60):
     """

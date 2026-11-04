@@ -19,8 +19,6 @@
 
 **StatSea** is a state-of-the-art network monitoring dashboard precision-engineered for home-lab enthusiasts, sysadmins, and developers. Built with a stunning modern glassmorphism UI, it provides deep packet inspection, real-time bandwidth metrics, device discovery, and Docker container network tracking all in one place.
 
-> **📸 Note to developer:** Take a screenshot of your beautiful dashboard and place it in the repository (e.g., `docs/screenshot.png`), then add `![StatSea Dashboard](docs/screenshot.png)` here!
-
 ## ✨ Key Features
 
 - **🚀 Real-time Telemetry:** Stream live network data via WebSockets with zero latency.

@@ -1,14 +1,14 @@
-import uuid
 import hashlib
 import secrets
-from fastapi import APIRouter, Depends, HTTPException, Header, status
-from sqlalchemy.orm import Session
-from typing import List
+import uuid
 
+from fastapi import APIRouter, Depends, Header, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user
 from app.db.database import get_db
 from app.models import models
 from app.schemas import agent as schemas
-from app.api.deps import get_current_user
 
 router = APIRouter(prefix="/agents", tags=["Agents"])
 
@@ -28,7 +28,7 @@ def get_current_agent(
         )
     return agent
 
-@router.get("/", response_model=List[schemas.AgentResponse])
+@router.get("/", response_model=list[schemas.AgentResponse])
 def get_agents(
     skip: int = 0,
     limit: int = 100,

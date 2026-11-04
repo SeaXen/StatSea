@@ -1,5 +1,6 @@
 import bcrypt
 from sqlalchemy import (
+    JSON,
     BigInteger,
     Boolean,
     Column,
@@ -9,14 +10,12 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
-    JSON,
     UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from ..db.database import Base
-
 
 
 class Organization(Base):

@@ -1,25 +1,116 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List
 import os
+import socket
+import sys
+import time
 
+import psutil
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from ...core.auth_jwt import get_current_user
 from ...db.database import get_db
 from ...models import models
 from ...schemas import defaults
-from ...services import system_metrics as metrics_service
-from ...services import backup_service as backup_service_lib
-from ...services import health_checker as health_service
-from ..deps import get_current_active_user, check_admin
+from ...services import (
+    backup_service as backup_service_lib,
+    health_checker as health_service,
+    system_metrics as metrics_service,
+)
+from ..deps import check_admin
 
 router = APIRouter(prefix="/system", tags=["System & Self-Hosting"])
 
-# --- System Metrics ---
+# --- System Overview & Metrics ---
+
+@router.get("/info")
+def get_system_info(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Returns overview system stats required by dashboard widget and top row."""
+    try:
+        cpu_pct = psutil.cpu_percent(interval=None)
+    except Exception:
+        cpu_pct = 0.0
+
+    try:
+        cpu_load = psutil.getloadavg()[0] if hasattr(psutil, "getloadavg") else cpu_pct
+    except Exception:
+        cpu_load = cpu_pct
+
+    try:
+        ram = psutil.virtual_memory()
+        ram_data = {
+            "total": ram.total,
+            "used": ram.used,
+            "percent": ram.percent,
+        }
+    except Exception:
+        ram_data = {"total": 0, "used": 0, "percent": 0.0}
+
+    try:
+        root_path = os.path.splitdrive(os.path.abspath('.'))[0] + '\\' if sys.platform.startswith('win') else '/'
+        disk = psutil.disk_usage(root_path)
+        disk_data = {
+            "total": disk.total,
+            "used": disk.used,
+            "percent": disk.percent,
+        }
+    except Exception:
+        disk_data = {"total": 0, "used": 0, "percent": 0.0}
+
+    try:
+        net = psutil.net_io_counters()
+        net_data = {
+            "sent": net.bytes_sent,
+            "recv": net.bytes_recv,
+        }
+    except Exception:
+        net_data = {"sent": 0, "recv": 0}
+
+    try:
+        device_count = db.query(models.Device).filter(models.Device.is_online == True).count()
+        if device_count == 0:
+            device_count = db.query(models.Device).count()
+    except Exception:
+        device_count = 0
+
+    try:
+        uptime_sec = int(time.time() - psutil.boot_time())
+        days = uptime_sec // 86400
+        hours = (uptime_sec % 86400) // 3600
+        minutes = (uptime_sec % 3600) // 60
+        uptime_str = f"{days}d {hours}h {minutes}m" if days > 0 else f"{hours}h {minutes}m"
+    except Exception:
+        uptime_str = "1h 0m"
+
+    return {
+        "hostname": socket.gethostname(),
+        "uptime": uptime_str,
+        "temperature": None,
+        "cpu_pct": cpu_pct,
+        "cpu_load": round(cpu_load, 2),
+        "ram": ram_data,
+        "disk": disk_data,
+        "network": net_data,
+        "active_devices": device_count,
+    }
+
+
+@router.get("/processes")
+def get_system_processes(
+    limit: int = 10,
+    current_user: models.User = Depends(get_current_user)
+):
+    """Get top processes by CPU usage."""
+    return metrics_service.get_active_processes(limit=limit)
+
 
 @router.get("/metrics/live")
 def get_live_metrics(current_user: models.User = Depends(check_admin)):
     return metrics_service.get_live_metrics()
 
-@router.get("/metrics/history", response_model=List[defaults.OSMetricHistory])
+@router.get("/metrics/history", response_model=list[defaults.OSMetricHistory])
 def get_metrics_history(
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -36,7 +127,7 @@ def get_system_forecast(
 
 # --- Backups ---
 
-@router.get("/backups", response_model=List[defaults.BackupRecord])
+@router.get("/backups", response_model=list[defaults.BackupRecord])
 def list_backups(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(check_admin)
@@ -63,7 +154,7 @@ def delete_backup(
 
 # --- Health Checks ---
 
-@router.get("/health", response_model=List[defaults.HealthCheck])
+@router.get("/health", response_model=list[defaults.HealthCheck])
 def list_health_checks(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(check_admin)
@@ -115,7 +206,7 @@ def delete_health_check(
     db.commit()
     return {"status": "success"}
 
-@router.get("/health/{check_id}/logs", response_model=List[defaults.HealthCheckLog])
+@router.get("/health/{check_id}/logs", response_model=list[defaults.HealthCheckLog])
 def get_health_check_logs(
     check_id: int,
     limit: int = 50,

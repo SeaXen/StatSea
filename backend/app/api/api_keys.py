@@ -1,12 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from typing import List
 
-from app.db.database import get_db
-from app.models import models
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
 from app.api.deps import get_current_org_id
 from app.core.auth_jwt import get_current_user
+from app.db.database import get_db
+from app.models import models
 from app.services.api_key_service import ApiKeyService
 
 router = APIRouter()
@@ -35,7 +35,7 @@ def create_api_key(
         "created_at": api_key.created_at
     }
 
-@router.get("/", response_model=List[dict])
+@router.get("/", response_model=list[dict])
 def list_api_keys(
     organization_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db),

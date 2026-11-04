@@ -21,7 +21,7 @@ interface TopNavProps {
 
 export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMenuClick }) => {
 
-    const { unreadCount } = useWebSocket();
+    const { unreadCount, isSynthetic, isConnected } = useWebSocket();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -38,17 +38,37 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
                 {/* Left Side: Page Title / Breadcrumbs */}
                 <div className="flex items-center gap-4">
                     <button
+                        type="button"
                         onClick={onMenuClick}
-                        className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground"
+                        className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-lg focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none transition-colors"
                         aria-label="Toggle menu"
                     >
                         <Menu className="h-6 w-6" />
                     </button>
 
-                    <div>
+                    <div className="flex items-center gap-3">
                         <h2 className="text-lg font-semibold text-foreground capitalize tracking-tight">
                             {activeTab}
                         </h2>
+                        {isConnected && (
+                            isSynthetic ? (
+                                <span
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm"
+                                    title="Npcap packet driver absent: running in autonomous simulation mode"
+                                >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                                    SIMULATION MODE
+                                </span>
+                            ) : (
+                                <span
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm"
+                                    title="Capturing live network packets"
+                                >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                    LIVE SNIFFING
+                                </span>
+                            )
+                        )}
                     </div>
                 </div>
 
@@ -58,8 +78,9 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
 
                     {/* Search Trigger */}
                     <button
+                        type="button"
                         onClick={() => setCommandOpen(true)}
-                        className="group flex items-center gap-2 rounded-full border border-border bg-accent/50 px-3 py-1.5 text-sm text-muted-foreground hover:border-accent hover:bg-accent hover:text-foreground transition-all focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+                        className="group flex items-center gap-2 rounded-full border border-border bg-accent/50 px-3 py-1.5 text-sm text-muted-foreground hover:border-accent hover:bg-accent hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
                         aria-label="Search"
                     >
                         <Search className="h-4 w-4" />
@@ -72,6 +93,7 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
                     <div className="h-6 w-px bg-border mx-2" />
 
                     <button
+                        type="button"
                         onClick={() => setIsNotificationOpen(true)}
                         className="relative rounded-full p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
                         aria-label="Notifications"
@@ -94,8 +116,9 @@ export const TopNav: React.FC<TopNavProps> = ({ activeTab, setCommandOpen, onMen
                         </div>
 
                         <button
+                            type="button"
                             onClick={handleLogout}
-                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:outline-none"
+                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:outline-none"
                             title="Sign Out"
                             aria-label="Sign out"
                         >

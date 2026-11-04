@@ -1,7 +1,4 @@
-import pytest
 from app.main import app
-from app.models import models
-from app.db.database import get_db
 
 # Use auth client fixture from conftest (if available) or create a new one
 # Assuming conftest exists and handles auth. 

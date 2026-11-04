@@ -1,9 +1,7 @@
 from datetime import datetime
+from typing import Generic, TypeVar
 
-from pydantic import BaseModel, field_validator
-
-
-from typing import Generic, TypeVar, Any
+from pydantic import BaseModel, ConfigDict, field_validator
 
 T = TypeVar('T')
 
@@ -54,6 +52,7 @@ class Device(DeviceBase):
     ports: list["DevicePort"] = []
 
     @field_validator("tags", mode="before")
+    @classmethod
     def parse_tags(cls, v):
         if isinstance(v, str):
             try:
@@ -64,8 +63,7 @@ class Device(DeviceBase):
                 return []
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SystemSettingBase(BaseModel):
@@ -76,8 +74,7 @@ class SystemSettingBase(BaseModel):
 
 
 class SystemSetting(SystemSettingBase):
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TrafficLogBase(BaseModel):
@@ -92,8 +89,7 @@ class TrafficLogBase(BaseModel):
 class TrafficLog(TrafficLogBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SecurityAlertBase(BaseModel):
@@ -108,8 +104,7 @@ class SecurityAlert(SecurityAlertBase):
     id: int
     timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SecurityRuleBase(BaseModel):
@@ -134,8 +129,7 @@ class SecurityRule(SecurityRuleBase):
     created_at: datetime
     organization_id: int | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BandwidthQuotaBase(BaseModel):
@@ -151,8 +145,7 @@ class BandwidthQuota(BandwidthQuotaBase):
     id: int
     device_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DeviceStatusLogBase(BaseModel):
@@ -164,8 +157,7 @@ class DeviceStatusLogBase(BaseModel):
 class DeviceStatusLog(DeviceStatusLogBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DevicePortBase(BaseModel):
@@ -180,8 +172,7 @@ class DevicePort(DevicePortBase):
     id: int
     device_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 
@@ -202,8 +193,7 @@ class DeviceGroupUpdate(BaseModel):
 class DeviceGroup(DeviceGroupBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DnsLogBase(BaseModel):
@@ -217,8 +207,7 @@ class DnsLogBase(BaseModel):
 class DnsLog(DnsLogBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserBase(BaseModel):
@@ -247,8 +236,7 @@ class User(UserBase):
     created_at: datetime
     last_login: datetime | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 
@@ -282,8 +270,7 @@ class SessionResponse(BaseModel):
     ip_address: str | None = None
     is_current: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AuditLogBase(BaseModel):
     action: str
@@ -297,8 +284,7 @@ class AuditLog(AuditLogBase):
     organization_id: int | None = None
     timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AuditLogResponse(AuditLog):
     actor: User | None = None
@@ -321,8 +307,7 @@ class OSMetricHistory(OSMetricHistoryBase):
     id: int
     timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class HealthCheckBase(BaseModel):
     name: str
@@ -348,8 +333,7 @@ class HealthCheck(HealthCheckBase):
     created_at: datetime
     organization_id: int | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class HealthCheckLogBase(BaseModel):
     check_id: int
@@ -362,8 +346,7 @@ class HealthCheckLog(HealthCheckLogBase):
     id: int
     timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class BackupRecordBase(BaseModel):
     filename: str
@@ -375,8 +358,7 @@ class BackupRecord(BackupRecordBase):
     id: int
     file_path: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SystemForecast(BaseModel):
     ram_days_remaining: float | None = None
@@ -396,8 +378,7 @@ class PushSubscription(PushSubscriptionBase):
     user_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CertificateBase(BaseModel):
@@ -423,5 +404,4 @@ class CertificateResponse(CertificateBase):
     created_at: datetime
     organization_id: int | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

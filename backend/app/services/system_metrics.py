@@ -1,13 +1,14 @@
-import psutil
 import time
-from datetime import datetime, timezone, timedelta
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+from datetime import datetime, timedelta, timezone
+
 import numpy as np
+import psutil
 from sklearn.linear_model import LinearRegression
+from sqlalchemy.orm import Session
 
 from ..models import models
 from ..schemas import defaults
+
 
 def get_active_processes(limit=5):
     """Get a list of top processes by CPU usage."""

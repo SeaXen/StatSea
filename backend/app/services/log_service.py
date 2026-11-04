@@ -1,10 +1,11 @@
 from sqlalchemy.orm import Session
-from ..models import models
+
 from ..core.logging import get_logger
+from ..models import models
+from ..schemas import defaults as schemas
 
 logger = get_logger("LogService")
 
-from ..schemas import defaults as schemas
 
 class LogService:
     @staticmethod

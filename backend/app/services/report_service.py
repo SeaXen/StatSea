@@ -1,13 +1,16 @@
 import io
-import pandas as pd
 from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+
+import pandas as pd
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from app.models import models
+
 
 class ReportService:
     def export_to_csv(self, db: Session, resource: str):

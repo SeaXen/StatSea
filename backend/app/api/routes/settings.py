@@ -1,12 +1,13 @@
 import logging
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.auth_jwt import get_current_admin_user, get_current_user
+from app.core.scheduler import scheduler
 from app.db.database import get_db
 from app.models import models
 from app.schemas import defaults as schemas
-from app.core.auth_jwt import get_current_admin_user, get_current_user
-from app.core.scheduler import scheduler
 
 logger = logging.getLogger(__name__)
 

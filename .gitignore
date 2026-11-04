@@ -53,3 +53,8 @@ lint_errors.txt
 lint_output.txt
 pytest_error.txt
 ruff_errors*.txt
+*.txt
+lint_out*.json
+scratch/
+.playwright/
+test-results/

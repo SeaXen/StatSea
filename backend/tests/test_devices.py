@@ -2,7 +2,6 @@
 Tests for device and group endpoints.
 All sync — uses TestClient from conftest.
 """
-import pytest
 from app.models.models import Device
 
 

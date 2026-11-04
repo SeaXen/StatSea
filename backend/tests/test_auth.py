@@ -2,9 +2,7 @@
 Tests for authentication endpoints: login, me, change-password, logout.
 All sync — uses TestClient from conftest.
 """
-import pytest
-from app.models.models import User, Organization, OrganizationMember
-from app.core.auth_jwt import create_access_token
+from app.models.models import Organization, OrganizationMember, User
 
 
 def _create_user(db_session, username="testuser", password="testpassword", is_admin=False):

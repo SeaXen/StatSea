@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
 from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
 
 class AgentCreate(BaseModel):
     name: str
@@ -8,18 +10,17 @@ class AgentCreate(BaseModel):
 class AgentResponse(BaseModel):
     id: str
     name: str
-    ip_address: Optional[str] = None
+    ip_address: str | None = None
     status: str
-    last_seen: Optional[datetime] = None
-    system_info: Optional[Dict[str, Any]] = None
-    organization_id: Optional[int] = None
+    last_seen: datetime | None = None
+    system_info: dict[str, Any] | None = None
+    organization_id: int | None = None
     created_at: datetime
     
     # Only returned during creation
-    api_key: Optional[str] = None
+    api_key: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AgentMetricSubmit(BaseModel):
     cpu_pct: float

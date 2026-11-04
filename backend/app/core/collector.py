@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timezone
 
 try:
-    from scapy.all import DNS, IP, TCP, UDP, sniff, Raw
+    from scapy.all import DNS, IP, TCP, UDP, Raw, sniff
 
     SCAPY_AVAILABLE = True
 except ImportError:
@@ -14,6 +14,7 @@ except ImportError:
 
 import requests
 import sqlalchemy.exc
+from mac_vendor_lookup import MacLookup
 
 from ..core.logging import get_logger
 from ..db.database import SessionLocal
@@ -22,12 +23,11 @@ from ..models.models import (
     Device,
     DeviceDailySummary,
     DeviceStatusLog,
-    DnsLog,
+    Organization,
     SecurityAlert,
     TrafficLog,
 )
 from ..services.notification_service import NotificationService
-from mac_vendor_lookup import MacLookup
 
 # Initialize MacLookup (this loads the local OUI list)
 mac_lookup = MacLookup()
@@ -60,8 +60,8 @@ def extract_sni(payload: bytes) -> str | None:
                 name_len = int.from_bytes(payload[pos+3:pos+5], 'big')
                 return payload[pos+5:pos+5+name_len].decode('utf-8', errors='ignore')
             pos += ext_len
-    except Exception:
-        pass
+    except (IndexError, ValueError) as err:
+        logger.debug("SNI extraction skipped: %s", err)
     return None
 
 APP_CATEGORY_MAP = [
@@ -108,6 +108,7 @@ class PacketCollector:
         self.geoip_cache: dict[str, dict] = {}
         self.stats_lock = threading.Lock()
         self.running = False
+        self.is_synthetic = False
         self.interface = None
         self.upload_acc = 0
         self.download_acc = 0
@@ -270,8 +271,8 @@ class PacketCollector:
                                         "record_type": record_type,
                                     }
                                 )
-                    except Exception:
-                        pass  # Scapy might fail on malformed packets
+                    except Exception as err:
+                        logger.debug("Malformed DNS packet skipped: %s", err)
             elif packet[IP].proto == 1:
                 proto = "ICMP"
 
@@ -423,8 +424,8 @@ class PacketCollector:
 
     def _run_synthetic_loop(self):
         """Generates realistic telemetry when packet capture drivers are unavailable."""
-        logger.info("Autonomous telemetry generator active: streaming live network traffic.")
-        import random
+        self.is_synthetic = True
+        logger.info("Autonomous telemetry generator active: streaming simulated network traffic.")
         sample_protocols = ["TCP", "UDP", "TLS", "HTTP", "DNS", "HTTPS"]
         sample_ips = [
             "192.168.1.10", "192.168.1.15", "192.168.1.22", "192.168.1.45",
@@ -472,6 +473,7 @@ class PacketCollector:
                 "u": self.upload_acc,
                 "d": self.download_acc,
                 "active_device_count": len(self.active_devices),
+                "is_synthetic": self.is_synthetic,
             }
             self.upload_acc = 0
             self.download_acc = 0
@@ -486,7 +488,6 @@ class PacketCollector:
                 # In production you might want a separate schedule, but this is fine for now
                 self._persist_daily_stats()
                 self._flush_app_traffic()
-                self._flush_dns_logs()
             except sqlalchemy.exc.SQLAlchemyError:
                 logger.exception("Database error in persistence loop")
             except Exception:
@@ -687,7 +688,7 @@ class PacketCollector:
                 # Resolve org_id 
                 # Device is already related to the organization in some models, 
                 # but here we'll default to first org if not explicit.
-                org = db.query(models.Organization).first()
+                org = db.query(Organization).first()
                 org_id = org.id if org else 1
                 
                 NotificationService.send_alert(

@@ -193,12 +193,6 @@ export default function BandwidthPage() {
     const { data: interfaces = [] } = useInterfaces();
     const [selectedInterface, setSelectedInterface] = useState<string>('');
 
-    useMemo(() => {
-        if (interfaces.length > 0 && !selectedInterface) {
-            setSelectedInterface(interfaces[0]);
-        }
-    }, [interfaces, selectedInterface]);
-
     const activeInterface = selectedInterface || (interfaces.length > 0 ? interfaces[0] : '');
     const isAllView = !selectedInterface || selectedInterface === '';
     const todayStr = new Date().toISOString().split('T')[0];

@@ -1,5 +1,5 @@
 import sys
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 # Mock scapy before it's imported anywhere
 sys.modules["scapy"] = MagicMock()
@@ -13,14 +13,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.collector import global_collector
+from app.core.docker_monitor import docker_monitor
+from app.core.monitor import monitor
+from app.core.scheduler import scheduler
+from app.core.system_monitor import system_monitor
+from app.db.database import Base, get_db
+
 # Now imports are safe
 from app.main import app
-from app.db.database import Base, get_db
-from app.core.collector import global_collector
-from app.core.monitor import monitor
-from app.core.system_monitor import system_monitor
-from app.core.docker_monitor import docker_monitor
-from app.core.scheduler import scheduler
 
 # Use in-memory SQLite for testing
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -87,8 +88,8 @@ def client(db_session):
 
 @pytest.fixture(scope="function")
 def auth_client(client, db_session):
-    from app.models.models import User, Organization, OrganizationMember
     from app.core.auth_jwt import create_access_token
+    from app.models.models import Organization, OrganizationMember, User
 
     # 1. Create Organization
     org = Organization(name="Test Org", plan_tier="pro", default_language="en")
