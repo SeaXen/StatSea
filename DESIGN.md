@@ -1,87 +1,82 @@
 ---
 name: StatSea
-description: Enterprise real-time network surveillance, telemetry visualization, and bandwidth monitoring design system.
+description: Enterprise real-time network surveillance, telemetry visualization, and bandwidth monitoring console design system.
 colors:
-  background: "#020617"
-  foreground: "#f8fafc"
-  primary: "#3b82f6"
-  primary-hover: "#2563eb"
-  primary-foreground: "#ffffff"
-  secondary: "#1e293b"
-  secondary-foreground: "#f8fafc"
-  accent: "#06b6d4"
-  accent-foreground: "#ffffff"
-  muted: "#1e293b"
-  muted-foreground: "#94a3b8"
-  border: "#1e293b"
-  card: "#020617"
-  card-foreground: "#f8fafc"
-  success: "#10b981"
-  warning: "#f59e0b"
-  destructive: "#ef4444"
+  bg: "#0f1115"
+  bar: "#12151a"
+  panel: "#15181e"
+  raised: "#1a1e26"
+  line: "#242933"
+  line-soft: "#1e232c"
+  line-strong: "#2b3140"
+  text: "#e7e9ee"
+  text-soft: "#b6bcc9"
+  muted: "#8b93a3"
+  faint: "#5d6574"
+  accent: "#7c8cff"
+  accent-soft: "rgba(124, 140, 255, 0.10)"
+  upload: "#4fd1e8"
+  ok: "#3dd68c"
+  warn: "#f5a524"
+  danger: "#f5604f"
 typography:
   display:
     fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
-    fontSize: "clamp(2rem, 4vw, 3rem)"
-    fontWeight: 700
+    fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)"
+    fontWeight: 600
     lineHeight: 1.15
     letterSpacing: "-0.025em"
   headline:
     fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
-    fontSize: "1.5rem"
+    fontSize: "1.25rem"
     fontWeight: 600
     lineHeight: 1.25
     letterSpacing: "-0.02em"
   title:
     fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
-    fontSize: "1.125rem"
+    fontSize: "1rem"
     fontWeight: 600
     lineHeight: 1.35
     letterSpacing: "-0.015em"
   body:
     fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
-    fontSize: "0.875rem"
+    fontSize: "0.8125rem"
     fontWeight: 400
     lineHeight: 1.5
     letterSpacing: "normal"
   mono:
-    fontFamily: "JetBrains Mono, Fira Code, Cascadia Code, monospace"
-    fontSize: "0.8125rem"
+    fontFamily: "JetBrains Mono, ui-monospace, SF Mono, Menlo, Consolas, monospace"
+    fontSize: "0.75rem"
     fontWeight: 500
     lineHeight: 1.4
     letterSpacing: "normal"
 rounded:
   sm: "4px"
-  md: "8px"
-  lg: "12px"
-  xl: "16px"
-  2xl: "24px"
+  control: "7px"
+  panel: "10px"
   full: "9999px"
 spacing:
   xs: "4px"
   sm: "8px"
+  gap: "12px"
   md: "16px"
-  lg: "24px"
+  lg: "20px"
   xl: "32px"
-  2xl: "48px"
 components:
   button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.primary-foreground}"
-    rounded: "{rounded.md}"
-    padding: "8px 16px"
-  button-primary-hover:
-    backgroundColor: "{colors.primary-hover}"
-    textColor: "{colors.primary-foreground}"
-  card-surface:
-    backgroundColor: "{colors.card}"
-    textColor: "{colors.card-foreground}"
-    rounded: "{rounded.xl}"
-    padding: "24px"
+    backgroundColor: "{colors.accent}"
+    textColor: "#0b0d11"
+    rounded: "{rounded.control}"
+    padding: "6px 14px"
+  panel-surface:
+    backgroundColor: "{colors.panel}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.panel}"
+    padding: "16px"
   badge-status:
-    textColor: "{colors.foreground}"
+    textColor: "{colors.text}"
     rounded: "{rounded.full}"
-    padding: "2px 10px"
+    padding: "2px 8px"
 ---
 
 # StatSea Design System
@@ -90,33 +85,46 @@ components:
 
 StatSea is an enterprise-grade real-time network intelligence, packet surveillance, and infrastructure monitoring platform. The visual world is precision-engineered for continuous operations (NOC / SecOps environments) where data density, visual scanability, tactile physical responsiveness, and zero telemetry jitter take precedence over casual decoration.
 
-The system is designed in accordance with **Impeccable** standards and the **Vercel Web Interface Guidelines**, delivering tactile active feedback, seamless light/dark dual-theming via HSL tokens, balanced typography, and tabular numeric alignment across all streaming metrics.
+The system is designed in accordance with **Impeccable** standards and Emil Kowalski design engineering principles:
+* **Tactile active feedback** with micro-press physics.
+* **100% full-surface theme synchronization** across 6 presets (`dark`, `light`, `cyberpunk`, `dracula`, `nord`, `midnight`).
+* **Zero AMOLED/pitch black traps** — using cohesive tonal elevation (`--bg`, `--panel`, `--raised`, `--bar`).
+* **Tabular numeric alignment** across all streaming metrics, byte counters, and historical records.
+* **Themed browser surfaces**: styled selection, caret colors, focus rings, and slim scrollbars.
 
 ---
 
 ## Colors
 
-StatSea uses a semantic, dual-tier token hierarchy powered by CSS custom properties and Tailwind tokens.
+StatSea uses a unified two-tier token hierarchy powered by CSS custom properties and Tailwind tokens.
 
-### Dark Mode (Primary NOC Atmosphere)
-* **Background (`--background`)**: `hsl(222.2, 84%, 4.9%)` (`#020617`) — Deepest obsidian slate, engineered to minimize eye strain in 24/7 operating environments.
-* **Surface Card (`--card`)**: `hsl(222.2, 84%, 4.9% / 85%)` with backdrop-filter blur (`16px`).
-* **Foreground (`--foreground`)**: `hsl(210, 40%, 98%)` (`#f8fafc`) — High-contrast off-white for crisp, readable data.
-* **Muted Foreground (`--muted-foreground`)**: `hsl(215, 20.2%, 65.1%)` (`#94a3b8`) — Neutral slate for secondary descriptions, timestamps, and column labels.
-* **Borders (`--border`)**: `hsl(217.2, 32.6%, 17.5%)` (`#1e293b`) — Delicate 1px structural boundaries.
+### Core Console Tokens (Dark Ops Default)
+* **Background (`--bg`)**: `#0f1115` — Soft dark obsidian canvas preventing eye fatigue in low-light environments.
+* **Top Bar (`--bar`)**: `#12151a` — Anchor header layer with 1px border separation.
+* **Panel Surface (`--panel`)**: `#15181e` — Primary card container providing clear contrast against the canvas.
+* **Raised Surface (`--raised`)**: `#1a1e26` — Elevated interactive controls, dropdowns, input backgrounds, and table headers.
+* **Structural Borders (`--line`)**: `#242933` — Subtle 1px structural boundaries.
+* **Dividers (`--line-soft`)**: `#1e232c` — Gentle intra-panel separators.
+* **Emphasis Borders (`--line-strong`)**: `#2b3140` — Input and active focus borders.
+* **Primary Text (`--text`)**: `#e7e9ee` — Crisp, high-contrast readable typography.
+* **Secondary Text (`--text-soft`)**: `#b6bcc9` — Clear sub-headings and active labels.
+* **Muted Text (`--muted`)**: `#8b93a3` — Column headers, units, and timestamps.
+* **Faint Text (`--faint`)**: `#5d6574` — Subtle hints, secondary labels, and inactive indicators.
 
-### Light Mode (Auditing & Daylight Mode)
-* **Background (`--background`)**: `hsl(0, 0%, 100%)` (`#ffffff`) — Pure white surface.
-* **Card (`--card`)**: `hsl(0, 0%, 100%)` with soft 1px border.
-* **Foreground (`--foreground`)**: `hsl(222.2, 84%, 4.9%)` (`#020617`) — Dark navy charcoal.
-* **Primary Accent (`--primary`)**: `hsl(221.2, 83.2%, 53.3%)` (`#2563eb`) — Vivid cobalt blue.
+### 6 Synchronized Theme Presets
+1. **Dark Ops (`dark`)**: Precision NOC console (`#0f1115` canvas / `#15181e` panel / `#7c8cff` periwinkle accent).
+2. **Daylight (`light`)**: Clean high-contrast audit mode (`#f5f6fa` canvas / `#ffffff` panel / `#4f5ce6` cobalt accent).
+3. **Cyberpunk (`cyberpunk`)**: Neon terminal theme (`#08080f` canvas / `#121224` panel / `#00ffcc` teal neon accent).
+4. **Dracula (`dracula`)**: Iconic gothic palette (`#282a36` canvas / `#343746` panel / `#bd93f9` purple accent).
+5. **Nord (`nord`)**: Arctic blue tones (`#2e3440` canvas / `#3b4252` panel / `#88c0d0` ice blue accent).
+6. **Midnight (`midnight`)**: Deep marine theme (`#060913` canvas / `#0e1424` panel / `#38bdf8` sky blue accent).
 
-### Semantic Status Palette
-* **Live / Online / Secure**: `hsl(142.1, 76.2%, 36.3%)` (`#10b981`) — Emerald green.
-* **Telemetry Streaming / Download**: `hsl(217.2, 91.2%, 59.8%)` (`#3b82f6`) — Cobalt blue.
-* **Upload / WAN**: `hsl(173.4, 80.4%, 40%)` (`#14b8a6`) — Teal cyan.
-* **Warning / Throttling**: `hsl(37.7, 92.1%, 50.2%)` (`#f59e0b`) — Amber warning.
-* **Critical Alert / Offline**: `hsl(0, 84.2%, 60.2%)` (`#ef4444`) — Crimson red.
+### Semantic Status Tokens
+* **Download / Telemetry**: `var(--accent)` (`#7c8cff`)
+* **Upload / WAN**: `var(--upload)` (`#4fd1e8`)
+* **Healthy / OK / Secure**: `var(--ok)` (`#3dd68c`)
+* **Warning / Throttling**: `var(--warn)` (`#f5a524`)
+* **Critical / Danger / Offline**: `var(--danger)` (`#f5604f`)
 
 ---
 
