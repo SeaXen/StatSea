@@ -24,9 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### UI, UX & Accessibility
 - **Accessible Toast Confirmations**: Eliminated all blocking native browser `window.confirm()` dialogs across User Management, Settings, Notifications, Groups, Docker, and Analytics rules in favor of non-blocking, accessible Sonner toast actions.
 - **Modal Focus Management**: Implemented `useModalA11y` hook with keyboard focus trap, Escape key dismiss, initial focus setting, and focus restoration to trigger elements (`RulesModal`, `GroupManager`, `SystemDetailOverlay`).
+- **Web Design Guidelines Polish**: Replaced native HTML `<select>` elements with fully keyboard-accessible custom `CustomSelect` dropdown components; enforced standardized typographical ellipsis (`…`) on all truncated UI text; set explicit dimensions (`width`, `height`) on all images to eliminate Cumulative Layout Shift (CLS); refined CSS transitions from unconstrained `transition-all` to GPU-accelerated `transition-colors` and `transition-transform`.
 - **WCAG AA Contrast Compliance**: Darkened Daylight theme `--faint` token from `#98a0b5` to `#68728d` (exceeding 4.6:1 contrast ratio against `#ffffff`).
 - **Mobile Touch Safeguards**: Enforced `16px` minimum font size on input elements on `<768px` viewports in `index.css` to prevent mobile Safari auto-zoom; responsive topbar wrapping on 390px screens.
 - **Semantic Token Refactoring**: Purged hardcoded `text-white` on `bg-panel`/`bg-raised` across `TopStatsRow`, `CertMonitor`, `ErrorBoundary`, and `OnboardingTour`.
+- **Playwright E2E Test Suite**: Added 11-phase automated browser test suite (`tests/test_statsea_e2e_playwright.py`) validating unauthenticated redirection, credential verification, telemetry sniffer badges, 12 navigation tabs, timeline horizons, theme presets, search filtering, and clean logout.
 
 ### Telemetry & Real Data Integrity
 - **Zero Mock Metrics Policy**: Replaced hardcoded fake 4-adapter NIC table (`eth0`, `wlan0`, `docker0`, `tun0`) with real dynamic interfaces from `useInterfaces()` / `useBandwidthSummary()`, with honest empty states when no metrics exist.

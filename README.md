@@ -8,8 +8,9 @@
 [![FastAPI: 0.115](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python: 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![Docker: Ready](https://img.shields.io/badge/Docker-Port%2021080-2496ED?logo=docker&logoColor=white)](./docker-compose.yml)
-[![Tests: 65/65 Passing](https://img.shields.io/badge/Pytest-65%2F65%20Passing-brightgreen?logo=pytest&logoColor=white)](./backend/tests)
-[![Playwright E2E: 11/11 Passing](https://img.shields.io/badge/Playwright%20E2E-11%2F11%20Verified-brightgreen?logo=playwright&logoColor=white)](./tests/test_statsea_e2e_playwright.py)
+[![Pytest: 65/65 Passing](https://img.shields.io/badge/Pytest-65%2F65%20Passing-brightgreen?logo=pytest&logoColor=white)](./backend/tests)
+[![Vitest: 30/30 Passing](https://img.shields.io/badge/Vitest-30%2F30%20Passing-brightgreen?logo=vitest&logoColor=white)](./frontend)
+[![Playwright E2E: 11/11 Verified](https://img.shields.io/badge/Playwright%20E2E-11%2F11%20Verified-brightgreen?logo=playwright&logoColor=white)](./tests/test_statsea_e2e_playwright.py)
 [![PWA: Offline Ready](https://img.shields.io/badge/PWA-Workbox%20v0.19-purple?logo=pwa&logoColor=white)](./frontend/src/sw.ts)
 [![Data Optimization: Gzip](https://img.shields.io/badge/API-GZip%20Compressed-success)](./backend/app/main.py)
 
@@ -201,31 +202,38 @@ Every release passes a strict multi-tier verification pipeline:
 
 ```powershell
 # 1. Run full backend unit and integration test suite
+cd backend
 python -m pytest
 
-# 2. Typecheck frontend code
-cd frontend && npx tsc --noEmit
+# 2. Run frontend component and unit test suite
+cd ../frontend
+npm test -- --run
 
-# 3. Lint frontend components
+# 3. Typecheck frontend code
+npx tsc --noEmit
+
+# 4. Lint frontend components
 npm run lint
 
-# 4. Compile optimized production PWA bundle
+# 5. Compile optimized production PWA bundle
 npm run build
 
-# 5. Execute 11-phase Playwright E2E browser test suite
+# 6. Execute 11-phase Playwright E2E browser test suite
+cd ..
 python tests/test_statsea_e2e_playwright.py
 ```
 
 ### Verified Benchmark Scorecard
 | Test Tier | Metric | Status | Result |
 | :--- | :--- | :--- | :--- |
-| **Pytest Unit & Integration** | 65 Test Cases | **PASS** | 65 passed in 12.61s (100%) |
+| **Pytest Unit & Integration** | 65 Test Cases | **PASS** | 65 passed in 14.81s (100%) |
+| **Vitest Component Tests** | 12 Suites (30 Tests) | **PASS** | 30 passed in 27.95s (100%) |
 | **TypeScript Typecheck** | Strict Mode | **PASS** | 0 errors |
 | **ESLint Quality Standard** | Unused directives reported | **PASS** | 0 errors / 0 warnings |
-| **Production Bundle** | Vite Build + Workbox PWA | **PASS** | Built in 11.59s (<130KB core bundle) |
-| **Playwright E2E Suite** | 11 Verification Phases | **PASS** | 11/11 phases verified |
+| **Production Bundle** | Vite Build + Workbox PWA | **PASS** | Built cleanly with 33 precache entries |
+| **Playwright E2E Suite** | 11 Verification Phases | **PASS** | 11/11 phases verified (full desktop screenshots captured) |
 | **API Compression** | Gzip Middleware | **ACTIVE** | Responses >1KB compressed |
-| **Security Integrity** | Production Mock Data | **CLEAN** | 0 mock/synthetic fallback in prod |
+| **Security Integrity** | Production Mock Data | **CLEAN** | 0 mock/synthetic fallback in prod; `token_version` session revocation |
 
 ---
 
