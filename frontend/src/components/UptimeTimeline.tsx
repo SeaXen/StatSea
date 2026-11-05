@@ -150,12 +150,15 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
                     </div>
                 </div>
 
-                <div className="flex bg-raised rounded-[7px] p-0.5 border border-line">
+                <div role="tablist" aria-label="Uptime time ranges" className="flex bg-raised rounded-[7px] p-0.5 border border-line">
                     {(['24h', '7d', '30d'] as TimeRange[]).map((r) => (
                         <button
                             key={r}
+                            type="button"
+                            role="tab"
+                            aria-selected={range === r}
                             onClick={() => setRange(r)}
-                            className={`px-2.5 py-1 text-xs font-bold rounded-[5px] transition-all uppercase tracking-wider ${range === r
+                            className={`px-2.5 py-1 text-xs font-bold rounded-[5px] transition-colors uppercase tracking-wider focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${range === r
                                 ? 'bg-panel text-accent shadow-sm'
                                 : 'text-faint hover:text-text'
                                 }`}
@@ -164,8 +167,10 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
                         </button>
                     ))}
                     <button
+                        type="button"
+                        aria-label="Refresh uptime logs"
                         onClick={() => fetchLogs()}
-                        className="ml-1 px-2 text-faint hover:text-text transition-colors"
+                        className="ml-1 px-2 text-faint hover:text-text transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded-[5px]"
                         disabled={loading}
                     >
                         <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
@@ -185,7 +190,7 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
                     return (
                         <div
                             key={i}
-                            className={`h-full border-r border-line/40 last:border-0 hover:brightness-110 transition-all cursor-help relative group ${seg.status === 'online' ? 'bg-emerald-500/80' : 'bg-red-500/80'
+                            className={`h-full border-r border-line/40 last:border-0 hover:brightness-110 transition-[filter] cursor-help relative group ${seg.status === 'online' ? 'bg-emerald-500/80' : 'bg-red-500/80'
                                 }`}
                             style={{ width: `${widthPercent}%` }}
                         >
@@ -196,9 +201,9 @@ export function UptimeTimeline({ deviceId }: UptimeTimelineProps) {
                                         {seg.status === 'online' ? 'Online' : 'Offline'}
                                     </div>
                                     <div className="text-muted-foreground">
-                                        {new Date(seg.start).toLocaleString(undefined, {
+                                        {new Intl.DateTimeFormat(undefined, {
                                             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                                        })}
+                                        }).format(new Date(seg.start))}
                                     </div>
                                     <div className="text-muted-foreground text-[10px] mt-1">
                                         Duration: {formatDuration(seg.end - seg.start)}

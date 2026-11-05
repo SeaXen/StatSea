@@ -32,12 +32,42 @@ export const CustomSelect = <T extends string | number = string | number>({ opti
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            setIsOpen(false);
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!isOpen) {
+                setIsOpen(true);
+            } else {
+                const currentIndex = options.findIndex(opt => opt.value === value);
+                const nextIndex = (currentIndex + 1) % options.length;
+                onChange(options[nextIndex].value);
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!isOpen) {
+                setIsOpen(true);
+            } else {
+                const currentIndex = options.findIndex(opt => opt.value === value);
+                const prevIndex = (currentIndex - 1 + options.length) % options.length;
+                onChange(options[prevIndex].value);
+            }
+        }
+    };
+
     return (
         <div className={cn("flex items-center gap-3", className)} ref={containerRef}>
             {label && <span className="text-sm font-medium text-muted-foreground">{label}</span>}
             <div className="relative min-w-[140px]">
                 <button
+                    type="button"
+                    role="combobox"
+                    aria-haspopup="listbox"
+                    aria-expanded={isOpen}
+                    aria-label={label || 'Select option'}
                     onClick={() => setIsOpen(!isOpen)}
+                    onKeyDown={handleKeyDown}
                     className={cn(
                         "w-full px-3 py-1.5 rounded-[7px] flex items-center justify-between transition-colors",
                         "bg-panel border border-line-strong hover:bg-raised active:bg-raised text-xs font-mono",
@@ -51,6 +81,8 @@ export const CustomSelect = <T extends string | number = string | number>({ opti
                 <AnimatePresence>
                     {isOpen && (
                         <motion.div
+                            role="listbox"
+                            aria-label={label || 'Options'}
                             initial={{ opacity: 0, y: 4, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 4, scale: 0.98 }}
@@ -60,6 +92,9 @@ export const CustomSelect = <T extends string | number = string | number>({ opti
                             {options.map((option) => (
                                 <button
                                     key={option.value}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={option.value === value}
                                     onClick={() => {
                                         onChange(option.value);
                                         setIsOpen(false);

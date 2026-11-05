@@ -52,42 +52,42 @@ export const CertMonitor: React.FC = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-medium text-white flex items-center gap-2">
-                        <Shield className="w-5 h-5 text-blue-400" />
+                    <h3 className="text-lg font-medium text-text flex items-center gap-2">
+                        <Shield className="w-5 h-5 text-accent" />
                         SSL/TLS Certificate Monitor
                     </h3>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-sm text-faint mt-1">
                         Monitor SSL certificates for expiration and issues. Get notified 14 days before expiry via your active channels.
                     </p>
                 </div>
             </div>
 
-            <form onSubmit={handleAdd} className="flex gap-4 items-end bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
+            <form onSubmit={handleAdd} className="flex gap-4 items-end bg-panel p-4 rounded-lg border border-line">
                 <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Domain</label>
+                    <label className="block text-sm font-medium text-faint mb-1">Domain</label>
                     <input
                         type="text"
                         value={newDomain}
                         onChange={(e) => setNewDomain(e.target.value)}
                         placeholder="example.com"
-                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                        className="w-full bg-raised border border-line rounded-lg px-4 py-2 text-text focus:outline-none focus:border-accent"
                         required
                     />
                 </div>
                 <div className="w-32">
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Port</label>
+                    <label className="block text-sm font-medium text-faint mb-1">Port</label>
                     <input
                         type="number"
                         value={newPort}
                         onChange={(e) => setNewPort(e.target.value)}
                         placeholder="443"
-                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                        className="w-full bg-raised border border-line rounded-lg px-4 py-2 text-text focus:outline-none focus:border-accent"
                     />
                 </div>
                 <button
                     type="submit"
                     disabled={createCert.isPending || !newDomain}
-                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-6 py-2 bg-accent hover:opacity-90 text-accent-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <Plus className="w-4 h-4" />
                     Add
@@ -136,8 +136,8 @@ export const CertMonitor: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-medium text-white">{cert.domain}</span>
-                                            <span className="text-xs text-gray-500">Port {cert.port}</span>
+                                            <span className="text-sm font-medium text-text">{cert.domain}</span>
+                                            <span className="text-xs text-faint">Port {cert.port}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">

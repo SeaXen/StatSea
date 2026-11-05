@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import DnsQueryLog from './DnsQueryLog';
 import NetworkComparison from './NetworkComparison';
 import {
@@ -10,6 +10,7 @@ import {
     Database, Radio, Layers, BarChart3, TrendingUp, Monitor, Network, Settings,
     Flag, FileSpreadsheet, FileText
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { API_CONFIG } from '../config/apiConfig';
 import axiosInstance from '../config/axiosInstance';
 import PredictionWidget from './PredictionWidget';
@@ -18,6 +19,7 @@ import TrafficCategoriesWidget from './TrafficCategoriesWidget';
 import { NetworkTopology } from './NetworkTopology';
 import { RulesModal } from './analytics/RulesModal';
 import { cn } from '../lib/utils';
+import { useInterfaces, useBandwidthSummary } from '../hooks/useBandwidth';
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 
 
@@ -176,12 +178,12 @@ const CircularGauge = ({ percentage, rate, label, color, dotColor }: {
                     <circle
                         cx="50" cy="50" r={radius} stroke={color} strokeWidth="6" fill="none"
                         strokeDasharray={circumference} strokeDashoffset={offset}
-                        strokeLinecap="round" className="transition-all duration-700"
+                        strokeLinecap="round" className="transition-[stroke-dashoffset] duration-700"
                     />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <div className="w-2 h-2 rounded-full mb-1" style={{ background: dotColor }} />
-                    <span className="text-lg font-bold text-white">{percentage}%</span>
+                    <span className="text-lg font-bold text-text">{percentage}%</span>
                     <span className="text-[10px] text-muted-foreground">{rate}</span>
                 </div>
             </div>
@@ -193,8 +195,12 @@ const CircularGauge = ({ percentage, rate, label, color, dotColor }: {
 // ─── Protocol Badge ───
 const ProtocolBadge = ({ proto, active, onClick }: { proto: string; active: boolean; onClick: () => void }) => (
     <button
+        type="button"
+        role="switch"
+        aria-checked={active}
+        aria-label={`Filter protocol ${proto}`}
         onClick={onClick}
-        className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 border ${active
+        className={`px-3 py-1 rounded-full text-xs font-bold transition-transform duration-200 border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${active
             ? 'scale-105 shadow-lg'
             : 'opacity-40 hover:opacity-70 border-transparent'
             }`}
@@ -242,6 +248,28 @@ const AnalyticsDashboard = () => {
     const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
     const [externalConnections, setExternalConnections] = useState<ExternalConnection[]>([]);
     const [heatmapData, setHeatmapData] = useState<HeatmapPoint[]>([]); // New state for heatmap
+    const { data: realInterfaces = [] } = useInterfaces();
+    const { data: bandwidthSummary } = useBandwidthSummary();
+
+    const heatmapLookup = useMemo(() => {
+        const map = new Map<string, number>();
+        if (Array.isArray(heatmapData)) {
+            for (const d of heatmapData) {
+                map.set(`${d.day}-${d.hour}`, d.value);
+            }
+        }
+        return map;
+    }, [heatmapData]);
+
+    const maxHeatmapVal = useMemo(() => {
+        if (!Array.isArray(heatmapData) || heatmapData.length === 0) return 1;
+        let max = 1;
+        for (const d of heatmapData) {
+            if (d.value > max) max = d.value;
+        }
+        return max;
+    }, [heatmapData]);
+
     const [showRulesModal, setShowRulesModal] = useState(false);
     const [rules, setRules] = useState<SecurityRule[]>([]);
     const [editingRule, setEditingRule] = useState<SecurityRule | null>(null);
@@ -267,11 +295,10 @@ const AnalyticsDashboard = () => {
             link.click();
             link.remove();
             window.URL.revokeObjectURL(url);
-
-            // toast might not be imported as toast, but sonner is often used as toast.
-            // I'll check if toast is imported. It seems sonner is not imported yet, but let me check.
+            toast.success('Report downloaded successfully');
         } catch (error) {
             console.error('Report generation failed:', error);
+            toast.error('Failed to generate report');
         } finally {
             setIsGeneratingReport(false);
         }
@@ -280,22 +307,39 @@ const AnalyticsDashboard = () => {
     const [activeProtocols, setActiveProtocols] = useState<Set<string>>(new Set(['TCP', 'UDP', 'HTTP', 'HTTPS', 'DNS', 'ICMP', 'SSH', 'FTP']));
     const [showSettings, setShowSettings] = useState(false);
     const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>(() => {
-        const saved = localStorage.getItem('dashboardConfig');
-        return saved ? JSON.parse(saved) : {
-            showStatsRow: true,
-            showLiveBandwidth: true,
-            showGauges: true,
-            showProtocolFilters: true,
-            showProtocolCharts: true,
-            showPacketCharts: true,
-            showTrafficCategories: true
-        };
+        try {
+            const saved = localStorage.getItem('dashboardConfig');
+            return saved ? JSON.parse(saved) : {
+                showStatsRow: true,
+                showLiveBandwidth: true,
+                showGauges: true,
+                showProtocolFilters: true,
+                showProtocolCharts: true,
+                showPacketCharts: true,
+                showTrafficCategories: true
+            };
+        } catch (e) {
+            console.warn('Failed to load dashboardConfig from localStorage', e);
+            return {
+                showStatsRow: true,
+                showLiveBandwidth: true,
+                showGauges: true,
+                showProtocolFilters: true,
+                showProtocolCharts: true,
+                showPacketCharts: true,
+                showTrafficCategories: true
+            };
+        }
     });
 
     const logRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        localStorage.setItem('dashboardConfig', JSON.stringify(dashboardConfig));
+        try {
+            localStorage.setItem('dashboardConfig', JSON.stringify(dashboardConfig));
+        } catch (e) {
+            console.warn('Failed to persist dashboardConfig', e);
+        }
     }, [dashboardConfig]);
 
     const toggleProtocol = (proto: string) => {
@@ -332,19 +376,30 @@ const AnalyticsDashboard = () => {
             }
             fetchRules();
             setEditingRule(null);
+            toast.success('Rule saved successfully');
         } catch (error) {
             console.error('Failed to save rule:', error);
+            toast.error('Failed to save rule');
         }
     };
 
-    const handleDeleteRule = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this rule?')) return;
-        try {
-            await axiosInstance.delete(`${API_CONFIG.ENDPOINTS.SECURITY.RULES}/${id}`);
-            fetchRules();
-        } catch (error) {
-            console.error('Failed to delete rule:', error);
-        }
+    const handleDeleteRule = (id: number) => {
+        toast('Delete this alert rule?', {
+            description: 'This firewall security rule will be removed permanently.',
+            action: {
+                label: 'Delete',
+                onClick: async () => {
+                    try {
+                        await axiosInstance.delete(`${API_CONFIG.ENDPOINTS.SECURITY.RULES}/${id}`);
+                        fetchRules();
+                        toast.success('Rule deleted successfully');
+                    } catch (error) {
+                        console.error('Failed to delete rule:', error);
+                        toast.error('Failed to delete rule');
+                    }
+                }
+            }
+        });
     };
 
     const exportToCSV = <T extends object>(data: T[], filename: string) => {
@@ -376,15 +431,19 @@ const AnalyticsDashboard = () => {
 
     useEffect(() => {
         // Load from cache initially
-        const cachedAnalytics = localStorage.getItem('statsea_cache_analytics');
-        const cachedBandwidth = localStorage.getItem('statsea_cache_bandwidth');
-        const cachedSecurity = localStorage.getItem('statsea_cache_security');
-        const cachedExternal = localStorage.getItem('statsea_cache_external');
+        try {
+            const cachedAnalytics = localStorage.getItem('statsea_cache_analytics');
+            const cachedBandwidth = localStorage.getItem('statsea_cache_bandwidth');
+            const cachedSecurity = localStorage.getItem('statsea_cache_security');
+            const cachedExternal = localStorage.getItem('statsea_cache_external');
 
-        if (cachedAnalytics) setAnalyticsData(JSON.parse(cachedAnalytics));
-        if (cachedBandwidth) setBandwidthData(JSON.parse(cachedBandwidth));
-        if (cachedSecurity) setSecurityEvents(JSON.parse(cachedSecurity));
-        if (cachedExternal) setExternalConnections(JSON.parse(cachedExternal));
+            if (cachedAnalytics) setAnalyticsData(JSON.parse(cachedAnalytics));
+            if (cachedBandwidth) setBandwidthData(JSON.parse(cachedBandwidth));
+            if (cachedSecurity) setSecurityEvents(JSON.parse(cachedSecurity));
+            if (cachedExternal) setExternalConnections(JSON.parse(cachedExternal));
+        } catch (e) {
+            console.warn('Failed to parse cache from localStorage', e);
+        }
 
         const fetchData = async () => {
             if (paused) return;
@@ -416,10 +475,14 @@ const AnalyticsDashboard = () => {
                 setExternalConnections(Array.isArray(connRes.data) ? connRes.data : []);
 
                 // Update cache
-                localStorage.setItem('statsea_cache_analytics', JSON.stringify(analyticsRes.data));
-                localStorage.setItem('statsea_cache_bandwidth', JSON.stringify(formattedBandwidth));
-                localStorage.setItem('statsea_cache_security', JSON.stringify(Array.isArray(secRes.data) ? secRes.data : []));
-                localStorage.setItem('statsea_cache_external', JSON.stringify(Array.isArray(connRes.data) ? connRes.data : []));
+                try {
+                    localStorage.setItem('statsea_cache_analytics', JSON.stringify(analyticsRes.data));
+                    localStorage.setItem('statsea_cache_bandwidth', JSON.stringify(formattedBandwidth));
+                    localStorage.setItem('statsea_cache_security', JSON.stringify(Array.isArray(secRes.data) ? secRes.data : []));
+                    localStorage.setItem('statsea_cache_external', JSON.stringify(Array.isArray(connRes.data) ? connRes.data : []));
+                } catch (e) {
+                    console.warn('Failed to persist analytics cache', e);
+                }
             } catch (error) {
                 console.error("Failed to fetch analytics data", error);
             } finally {
@@ -479,20 +542,21 @@ const AnalyticsDashboard = () => {
     if (loading && !analyticsData) return (
         <div className="h-[60vh] flex flex-col items-center justify-center text-muted-foreground gap-4">
             <Activity className="w-8 h-8 animate-pulse text-cyan-500" />
-            <span>Initializing Traffic Analyzer...</span>
+            <span>Initializing Traffic Analyzer…</span>
         </div>
     );
 
     if (!analyticsData) return (
         <div className="h-[60vh] flex flex-col items-center justify-center text-muted-foreground gap-4">
             <AlertTriangle className="w-10 h-10 text-amber-500" />
-            <h3 className="text-xl font-semibold text-white">Backend Unavailable</h3>
+            <h3 className="text-xl font-semibold text-text">Backend Unavailable</h3>
             <p className="max-w-md text-center text-muted-foreground">
                 Could not connect to the analysis engine. Please ensure the backend server is running.
             </p>
             <button
+                type="button"
                 onClick={() => window.location.reload()}
-                className="mt-4 px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground rounded-lg transition-colors border border-border"
+                className="mt-4 px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground rounded-lg transition-colors border border-border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
             >
                 Retry Connection
             </button>
@@ -568,9 +632,12 @@ const AnalyticsDashboard = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                    <button onClick={() => setPaused(!paused)}
+                    <button
+                        type="button"
+                        onClick={() => setPaused(!paused)}
+                        aria-label={paused ? "Resume live packet capture" : "Pause live packet capture"}
                         className={cn(
-                            "flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-xs font-mono transition-colors border",
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-xs font-mono transition-colors border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                             paused
                                 ? "bg-raised border-line text-ok hover:bg-line-strong"
                                 : "bg-raised border-line text-warn hover:bg-line-strong"
@@ -578,10 +645,11 @@ const AnalyticsDashboard = () => {
                         {paused ? <><Play className="w-3.5 h-3.5" /> Resume</> : <><Pause className="w-3.5 h-3.5" /> Pause</>}
                     </button>
                     <button
+                        type="button"
                         onClick={() => handleGenerateReport('network_summary')}
                         disabled={isGeneratingReport}
                         aria-label="Generate network summary report"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-raised hover:bg-line-strong text-text-soft hover:text-text border border-line rounded-[7px] text-xs font-mono transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-raised hover:bg-line-strong text-text-soft hover:text-text border border-line rounded-[7px] text-xs font-mono transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                     >
                         {isGeneratingReport ? (
                             <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
@@ -592,10 +660,11 @@ const AnalyticsDashboard = () => {
                     </button>
                     <div className="relative">
                         <button
+                            type="button"
                             onClick={() => setShowSettings(!showSettings)}
                             aria-label="Dashboard settings"
                             className={cn(
-                                "p-1.5 rounded-[7px] transition-colors border",
+                                "p-1.5 rounded-[7px] transition-colors border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                                 showSettings ? "bg-raised border-line-strong text-accent" : "bg-panel border-line text-text-soft hover:text-text"
                             )}
                         >
@@ -616,9 +685,10 @@ const AnalyticsDashboard = () => {
                                         { key: 'showPacketCharts', label: 'Packet Volume' },
                                     ].map(item => (
                                         <button
+                                            type="button"
                                             key={item.key}
                                             onClick={() => toggleWidget(item.key as keyof DashboardConfig)}
-                                            className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-raised rounded-[5px] text-xs text-text transition-colors"
+                                            className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-raised rounded-[5px] text-xs text-text transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                         >
                                             <span>{item.label}</span>
                                             <span className={cn(
@@ -768,8 +838,11 @@ const AnalyticsDashboard = () => {
             {/* ─── Tab Navigation ─── */}
             <div className="flex gap-1 border-b border-line">
                 {(['interfaces', 'live', 'statistics', 'topology', 'connections', 'security', 'history', 'dns', 'comparison'] as const).map(tab => (
-                    <button key={tab} onClick={() => setActiveView(tab)}
-                        className={`px-4 py-2 text-xs font-mono font-medium capitalize transition-all rounded-t-[7px] ${activeView === tab
+                    <button
+                        type="button"
+                        key={tab}
+                        onClick={() => setActiveView(tab)}
+                        className={`px-4 py-2 text-xs font-mono font-medium capitalize transition-colors rounded-t-[7px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${activeView === tab
                             ? 'text-accent bg-panel border border-line border-b-transparent -mb-px'
                             : 'text-text-soft hover:text-text'
                             }`}>
@@ -788,74 +861,74 @@ const AnalyticsDashboard = () => {
             {/* ═══════════════════ INTERFACES TAB ═══════════════════ */}
             {activeView === 'interfaces' && (
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                            <Activity className="w-4 h-4 text-accent" />
-                            <h2 className="text-sm font-semibold font-mono uppercase tracking-wider text-text">Network Interfaces</h2>
-                        </div>
-                        <button
-                            onClick={() => {
-                                const interfaces = [
-                                    { name: 'eth0', status: 'up', type: 'Ethernet', ip: '192.168.1.100', tx: 3450000000, rx: 8920000000 },
-                                    { name: 'wlan0', status: 'up', type: 'Wi-Fi', ip: '192.168.1.101', tx: 1200000000, rx: 4500000000 },
-                                    { name: 'docker0', status: 'up', type: 'Virtual', ip: '172.17.0.1', tx: 56000000, rx: 89000000 },
-                                    { name: 'tun0', status: 'down', type: 'VPN', ip: '-', tx: 0, rx: 0 },
-                                ];
-                                exportToCSV(interfaces, 'interfaces');
-                            }}
-                            className="px-2.5 py-1 bg-raised hover:bg-line-strong text-text-soft hover:text-text border border-line rounded-[7px] flex items-center gap-1.5 text-xs font-mono transition-colors"
-                        >
-                            <FileSpreadsheet className="w-3.5 h-3.5 text-ok" /> Export CSV
-                        </button>
-                    </div>
+                    {(() => {
+                        const ifaceNames = realInterfaces.length > 0 
+                            ? realInterfaces 
+                            : Object.keys(bandwidthSummary || {});
+                        
+                        const ifaceCards = ifaceNames.map((name) => {
+                            const summary = (bandwidthSummary as Record<string, { all_time?: { rx?: number; tx?: number }; month?: { rx?: number; tx?: number }; today?: { rx?: number; tx?: number } }>)?.[name] || {};
+                            const rx = summary?.all_time?.rx ?? summary?.month?.rx ?? summary?.today?.rx ?? 0;
+                            const tx = summary?.all_time?.tx ?? summary?.month?.tx ?? summary?.today?.tx ?? 0;
+                            const status = 'up';
+                            const type = name.startsWith('wl') ? 'Wi-Fi' : name.startsWith('docker') ? 'Virtual' : name.startsWith('tun') ? 'VPN' : 'Ethernet';
+                            return { name, status, type, ip: 'Monitored', tx, rx };
+                        });
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                        {[
-                            { name: 'eth0', status: 'up', type: 'Ethernet', ip: '192.168.1.100', tx: 3450000000, rx: 8920000000, history: [10, 25, 15, 40, 30, 60, 45, 80, 50, 20] },
-                            { name: 'wlan0', status: 'up', type: 'Wi-Fi', ip: '192.168.1.101', tx: 1200000000, rx: 4500000000, history: [5, 12, 8, 20, 15, 30, 22, 40, 25, 10] },
-                            { name: 'docker0', status: 'up', type: 'Virtual', ip: '172.17.0.1', tx: 56000000, rx: 89000000, history: [1, 5, 2, 8, 4, 15, 8, 20, 10, 3] },
-                            { name: 'tun0', status: 'down', type: 'VPN', ip: '-', tx: 0, rx: 0, history: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-                        ].map((iface) => (
-                            <div key={iface.name} className="panel p-4 rounded-[var(--r-panel)] border border-line bg-panel flex flex-col relative overflow-hidden group hover:border-line-strong transition-colors cursor-pointer">
-                                <div className="flex justify-between items-start mb-3">
+                        return (
+                            <>
+                                <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${iface.status === 'up' ? 'bg-ok' : 'bg-danger'} ${iface.status === 'up' ? 'animate-pulse' : ''}`} />
-                                        <h3 className="text-xs font-semibold font-mono text-text">{iface.name}</h3>
+                                        <Activity className="w-4 h-4 text-accent" />
+                                        <h2 className="text-sm font-semibold font-mono uppercase tracking-wider text-text">Network Interfaces</h2>
                                     </div>
-                                    <span className="text-[10px] uppercase font-mono tracking-wider text-faint bg-raised px-2 py-0.5 rounded-[4px] border border-line">{iface.type}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => exportToCSV(ifaceCards, 'interfaces')}
+                                        disabled={ifaceCards.length === 0}
+                                        className="px-2.5 py-1 bg-raised hover:bg-line-strong text-text-soft hover:text-text border border-line rounded-[7px] flex items-center gap-1.5 text-xs font-mono transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                                    >
+                                        <FileSpreadsheet className="w-3.5 h-3.5 text-ok" /> Export CSV
+                                    </button>
                                 </div>
 
-                                <div className="space-y-2 mb-4 font-mono">
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-faint">IP Address</span>
-                                        <span className="text-text">{iface.ip}</span>
+                                {ifaceCards.length === 0 ? (
+                                    <div className="panel p-8 text-center text-faint font-mono text-xs rounded-[var(--r-panel)] border border-line bg-panel">
+                                        No monitored network interfaces recorded in bandwidth history yet. Run telemetry or start collector to register active interfaces.
                                     </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-faint">Total RX</span>
-                                        <span className="text-upload num">{formatBytes(iface.rx)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-faint">Total TX</span>
-                                        <span className="text-ok num">{formatBytes(iface.tx)}</span>
-                                    </div>
-                                </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                                        {ifaceCards.map((iface) => (
+                                            <div key={iface.name} className="panel p-4 rounded-[var(--r-panel)] border border-line bg-panel flex flex-col relative overflow-hidden group hover:border-line-strong transition-colors cursor-pointer">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`w-2 h-2 rounded-full ${iface.status === 'up' ? 'bg-ok' : 'bg-danger'} ${iface.status === 'up' ? 'animate-pulse' : ''}`} />
+                                                        <h3 className="text-xs font-semibold font-mono text-text">{iface.name}</h3>
+                                                    </div>
+                                                    <span className="text-[10px] uppercase font-mono tracking-wider text-faint bg-raised px-2 py-0.5 rounded-[4px] border border-line">{iface.type}</span>
+                                                </div>
 
-                                <div className="mt-auto h-12 w-full pt-2 border-t border-line">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={iface.history.map((val, i) => ({ time: i, value: val }))}>
-                                            <defs>
-                                                <linearGradient id={`grad-${iface.name}`} x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor={iface.status === 'up' ? "var(--upload)" : "var(--faint)"} stopOpacity={0.3} />
-                                                    <stop offset="95%" stopColor={iface.status === 'up' ? "var(--upload)" : "var(--faint)"} stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <Area type="monotone" dataKey="value" stroke={iface.status === 'up' ? "var(--upload)" : "var(--faint)"} strokeWidth={1.5} fill={`url(#grad-${iface.name})`} dot={false} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                                                <div className="space-y-2 mb-2 font-mono">
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-faint">Interface Status</span>
+                                                        <span className="text-text capitalize">{iface.status}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-faint">Total RX</span>
+                                                        <span className="text-upload num">{formatBytes(iface.rx)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-faint">Total TX</span>
+                                                        <span className="text-ok num">{formatBytes(iface.tx)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        );
+                    })()}
                 </div>
             )}
 
@@ -868,25 +941,28 @@ const AnalyticsDashboard = () => {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-faint" />
                             <input
                                 type="text"
-                                placeholder="Search by IP, port, or protocol..."
+                                placeholder="Search by IP, port, or protocol…"
+                                aria-label="Search by IP, port, or protocol"
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
-                                className="w-full bg-raised border border-line rounded-[7px] pl-9 pr-4 py-1.5 text-xs font-mono text-text placeholder-faint focus:outline-none focus:border-accent transition-colors"
+                                className="w-full bg-raised border border-line rounded-[7px] pl-9 pr-4 py-1.5 text-xs font-mono text-text placeholder-faint focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors"
                             />
                         </div>
                         <div className="relative w-48">
                             <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-faint" />
                             <input
                                 type="text"
-                                placeholder="Filter Flags (e.g. syn)"
+                                placeholder="Filter Flags (e.g. syn)…"
+                                aria-label="Filter TCP/IP flags"
                                 value={flagFilter}
                                 onChange={e => setFlagFilter(e.target.value)}
-                                className="w-full bg-raised border border-line rounded-[7px] pl-9 pr-4 py-1.5 text-xs font-mono text-text placeholder-faint focus:outline-none focus:border-accent transition-colors"
+                                className="w-full bg-raised border border-line rounded-[7px] pl-9 pr-4 py-1.5 text-xs font-mono text-text placeholder-faint focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors"
                             />
                         </div>
                         <button
+                            type="button"
                             onClick={() => exportToCSV(filteredLog, 'live_traffic')}
-                            className="px-3 py-1.5 bg-raised border border-line rounded-[7px] hover:bg-line-strong flex items-center gap-1.5 text-xs font-mono text-text-soft hover:text-text transition-colors"
+                            className="px-3 py-1.5 bg-raised border border-line rounded-[7px] hover:bg-line-strong flex items-center gap-1.5 text-xs font-mono text-text-soft hover:text-text transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                         >
                             <FileSpreadsheet className="w-3.5 h-3.5 text-ok" /> Export CSV
                         </button>
@@ -1156,16 +1232,14 @@ const AnalyticsDashboard = () => {
                                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
                                         <div key={day} className="grid grid-cols-24 gap-1" style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}>
                                             {[...Array(24)].map((_, h) => {
-                                                const datum = heatmapData?.find(d => d.day === day && d.hour === h);
-                                                const val = datum?.value || 0;
-                                                const maxVal = Math.max(...(heatmapData?.map(d => d.value) || [1]));
-                                                const normalized = maxVal > 0 ? val / maxVal : 0;
+                                                const val = heatmapLookup.get(`${day}-${h}`) || 0;
+                                                const normalized = maxHeatmapVal > 0 ? val / maxHeatmapVal : 0;
                                                 const opacity = Math.max(0.05, normalized);
                                                 return (
                                                     <div
                                                         key={`${day}-${h}`}
                                                         title={`${day} ${h}:00 - ${formatBytes(val)}`}
-                                                        className="h-4 sm:h-6 rounded-[2px] cursor-pointer hover:ring-1 hover:ring-accent transition-all duration-200 group relative"
+                                                        className="h-4 sm:h-6 rounded-[2px] cursor-pointer hover:ring-1 hover:ring-accent transition-[box-shadow] duration-200 group relative"
                                                         style={{ backgroundColor: `rgba(34, 211, 238, ${opacity})` }}
                                                     >
                                                         {val > 0 && <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-raised text-text text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none whitespace-nowrap shadow-xl border border-line font-mono">
@@ -1332,7 +1406,14 @@ const AnalyticsDashboard = () => {
                                                     </span>
                                                 </div>
                                                 <p className="text-xs text-text-soft mt-1">{event.description}</p>
-                                                <p className="text-[10px] text-faint mt-1.5 font-mono">{new Date(event.timestamp).toLocaleString()}</p>
+                                                <p className="text-[10px] text-faint mt-1.5 font-mono">
+                                                    {new Intl.DateTimeFormat(undefined, {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    }).format(new Date(event.timestamp))}
+                                                </p>
                                             </div>
                                         </div>
                                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono flex-shrink-0 ${event.severity === 'CRITICAL' ? 'bg-danger/20 text-danger' :

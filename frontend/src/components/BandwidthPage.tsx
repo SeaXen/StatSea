@@ -37,7 +37,7 @@ const parseShortDate = (d?: string) => {
 const parseMonth = (m?: string) => {
     if (!m) return '';
     const [y, mo] = m.split('-');
-    return new Date(parseInt(y), parseInt(mo) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+    return new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(new Date(parseInt(y), parseInt(mo) - 1));
 };
 
 interface BandwidthMetric {
@@ -280,7 +280,11 @@ export default function BandwidthPage() {
                             onChange={(val) => setSelectedInterface(val)}
                         />
                     )}
-                    <button className="px-3.5 py-1.5 bg-raised hover:bg-line-strong text-text-soft hover:text-text border border-line rounded-[7px] text-xs font-mono transition-colors">
+                    <button
+                        type="button"
+                        aria-label="View full report"
+                        className="px-3.5 py-1.5 bg-raised hover:bg-line-strong text-text-soft hover:text-text border border-line rounded-[7px] text-xs font-mono transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                    >
                         FULL REPORT
                     </button>
                 </div>
@@ -315,7 +319,7 @@ export default function BandwidthPage() {
                             {/* Hourly Chart */}
                             <SectionCard title={`${activeInterface} / hourly`} icon={Clock} iconColor="#3b82f6">
                                 <div className="h-[220px] p-4">
-                                    {loadingHourly ? <div className="h-full flex items-center justify-center text-muted-foreground text-sm animate-pulse">Loading...</div> :
+                                    {loadingHourly ? <div className="h-full flex items-center justify-center text-muted-foreground text-sm animate-pulse">Loading…</div> :
                                         hourly.length > 0 ? (
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <BarChart data={hourly} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
@@ -334,7 +338,7 @@ export default function BandwidthPage() {
                             {/* 5-Minute Chart */}
                             <SectionCard title={`${activeInterface} / 5 minute`} icon={Zap} iconColor="#f59e0b">
                                 <div className="h-[220px] p-4">
-                                    {loadingFiveMin ? <div className="h-full flex items-center justify-center text-muted-foreground text-sm animate-pulse">Loading...</div> :
+                                    {loadingFiveMin ? <div className="h-full flex items-center justify-center text-muted-foreground text-sm animate-pulse">Loading…</div> :
                                         fiveMin.length > 0 ? (
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <BarChart data={fiveMin.slice(-60)} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
@@ -349,7 +353,7 @@ export default function BandwidthPage() {
                                                     />
                                                     <YAxis tickFormatter={v => formatBytes(v)} stroke="#52525b" fontSize={10} tickLine={false} axisLine={false} width={55} />
                                                     <Tooltip contentStyle={CHART_TOOLTIP_STYLE} itemStyle={{ color: '#e4e4e7' }}
-                                                        labelFormatter={(v) => { const d = new Date(v); return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }}
+                                                        labelFormatter={(v) => { const d = new Date(v); return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d); }}
                                                         formatter={(v: number) => [formatBytes(v), '']}
                                                     />
                                                     <Bar dataKey="rx" name="rx" stackId="a" fill="#84cc16" radius={[0, 0, 1, 1]} />

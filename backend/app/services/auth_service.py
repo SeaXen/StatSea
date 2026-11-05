@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
 
 import sqlalchemy.exc
 from sqlalchemy.orm import Session
@@ -10,6 +11,10 @@ from ..models import models
 from .audit_service import AuditService
 
 logger = get_logger("AuthService")
+
+
+def _hash_token(raw: str) -> str:
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
 class AuthService:
@@ -63,9 +68,10 @@ class AuthService:
             refresh_token_str, expires_at = create_refresh_token(
                 user_id=user.id, expires_delta=expires_delta
             )
+            token_hash = _hash_token(refresh_token_str)
 
             db_refresh_token = models.RefreshToken(
-                token=refresh_token_str, 
+                token=token_hash, 
                 user_id=user.id, 
                 expires_at=expires_at,
                 user_agent=user_agent,
@@ -76,7 +82,8 @@ class AuthService:
             user.last_login = datetime.now(timezone.utc)
             db.commit()
 
-            access_token = create_access_token(data={"sub": user.username})
+            tv = getattr(user, "token_version", 1) or 1
+            access_token = create_access_token(data={"sub": user.username}, token_version=tv)
             logger.info(f"Session created for {user.username}")
             
             org_id = user.organizations[0].organization_id if user.organizations else None
@@ -103,15 +110,15 @@ class AuthService:
     def refresh_session(db: Session, refresh_token: str) -> dict:
         """
         Invalidates current refresh token and issues a new pair.
-        Used for token rotation.
+        Enforces reuse detection: if an already-revoked token is presented,
+        revokes all active sessions for that user.
         """
+        token_hash = _hash_token(refresh_token)
+        
+        # Look for token by hash or legacy raw string
         db_token = (
             db.query(models.RefreshToken)
-            .filter(
-                models.RefreshToken.token == refresh_token,
-                models.RefreshToken.is_revoked == False,
-                models.RefreshToken.expires_at > datetime.now(timezone.utc),
-            )
+            .filter((models.RefreshToken.token == token_hash) | (models.RefreshToken.token == refresh_token))
             .first()
         )
 
@@ -123,14 +130,31 @@ class AuthService:
         if not user or not user.is_active:
             raise AuthenticationException("User unavailable")
 
+        # REUSE DETECTION: If already revoked, invalidate all sessions!
+        if db_token.is_revoked:
+            logger.warning(f"SECURITY ALERT: Refresh token reuse detected for {user.username}! Invalidating all sessions.")
+            user.token_version = (getattr(user, "token_version", 1) or 1) + 1
+            db.query(models.RefreshToken).filter(
+                models.RefreshToken.user_id == user.id
+            ).update({"is_revoked": True}, synchronize_session=False)
+            db.commit()
+            raise AuthenticationException("Suspicious activity detected: Token already used. All sessions revoked.")
+
+        exp = db_token.expires_at if db_token.expires_at.tzinfo else db_token.expires_at.replace(tzinfo=timezone.utc)
+        if exp <= datetime.now(timezone.utc):
+            logger.warning("Token refresh failed: Expired token")
+            raise AuthenticationException("Invalid or expired refresh token")
+
         try:
             db_token.is_revoked = True
 
-            new_access_token = create_access_token(data={"sub": user.username})
+            tv = getattr(user, "token_version", 1) or 1
+            new_access_token = create_access_token(data={"sub": user.username}, token_version=tv)
             new_refresh_token_str, new_expires_at = create_refresh_token(user_id=user.id)
+            new_token_hash = _hash_token(new_refresh_token_str)
 
             new_db_token = models.RefreshToken(
-                token=new_refresh_token_str, user_id=user.id, expires_at=new_expires_at
+                token=new_token_hash, user_id=user.id, expires_at=new_expires_at
             )
             db.add(new_db_token)
             db.commit()
@@ -150,6 +174,7 @@ class AuthService:
     def change_password(db: Session, user: models.User, current_password: str, new_password: str):
         """
         Changes a user's password after verifying the current one.
+        Resets must_change_password and increments token_version to invalidate prior access tokens.
         """
         if not user.verify_password(current_password):
             logger.warning(
@@ -159,8 +184,16 @@ class AuthService:
 
         try:
             user.hashed_password = models.User.get_password_hash(new_password)
+            user.must_change_password = False
+            user.token_version = (getattr(user, "token_version", 1) or 1) + 1
+
+            # Revoke all existing refresh tokens
+            db.query(models.RefreshToken).filter(
+                models.RefreshToken.user_id == user.id
+            ).update({"is_revoked": True}, synchronize_session=False)
+
             db.commit()
-            logger.info(f"Password changed for {user.username}")
+            logger.info(f"Password changed and active sessions revoked for {user.username}")
             
             org_id = user.organizations[0].organization_id if user.organizations else None
             AuditService.log_action(
@@ -183,9 +216,10 @@ class AuthService:
         """
         if refresh_token:
             try:
+                token_hash = _hash_token(refresh_token)
                 db_token = (
                     db.query(models.RefreshToken)
-                    .filter(models.RefreshToken.token == refresh_token)
+                    .filter((models.RefreshToken.token == token_hash) | (models.RefreshToken.token == refresh_token))
                     .first()
                 )
                 if db_token:
@@ -207,6 +241,7 @@ class AuthService:
             except sqlalchemy.exc.SQLAlchemyError:
                 logger.exception("Database error during logout")
                 db.rollback()
+
     @staticmethod
     def get_active_sessions(db: Session, user_id: int):
         """
@@ -229,8 +264,10 @@ class AuthService:
         Revokes all refresh tokens for a user except the provided one.
         """
         try:
+            token_hash = _hash_token(current_refresh_token)
             db.query(models.RefreshToken).filter(
                 models.RefreshToken.user_id == user_id,
+                models.RefreshToken.token != token_hash,
                 models.RefreshToken.token != current_refresh_token,
                 models.RefreshToken.is_revoked == False
             ).update({"is_revoked": True}, synchronize_session=False)
@@ -240,3 +277,4 @@ class AuthService:
             db.rollback()
             logger.exception(f"Failed to revoke other sessions for user {user_id}")
             raise AuthenticationException("Could not revoke other sessions") from None
+

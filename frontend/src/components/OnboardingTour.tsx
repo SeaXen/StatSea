@@ -72,8 +72,10 @@ export const OnboardingTour: React.FC = () => {
                 >
                     <div className="relative p-6">
                         <button
+                            type="button"
+                            aria-label="Close tour"
                             onClick={handleComplete}
-                            className="absolute top-4 right-4 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                            className="absolute top-4 right-4 p-1 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -82,7 +84,7 @@ export const OnboardingTour: React.FC = () => {
                             <span className="inline-block px-2 py-1 mb-3 text-xs font-medium text-blue-400 bg-blue-500/10 rounded-full border border-blue-500/20">
                                 Step {currentStep + 1} of {TOUR_STEPS.length}
                             </span>
-                            <h2 className="text-xl font-bold text-white mb-2">{step.title}</h2>
+                            <h2 className="text-xl font-bold text-foreground mb-2">{step.title}</h2>
                             <p className="text-muted-foreground leading-relaxed">{step.description}</p>
                         </div>
 
@@ -91,15 +93,16 @@ export const OnboardingTour: React.FC = () => {
                                 {TOUR_STEPS.map((_, idx) => (
                                     <div
                                         key={idx}
-                                        className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentStep ? 'w-6 bg-blue-500' : 'w-1.5 bg-white/10'
+                                        className={`h-1.5 rounded-full transition-[width,background-color] duration-300 ${idx === currentStep ? 'w-6 bg-accent' : 'w-1.5 bg-line-strong'
                                             }`}
                                     />
                                 ))}
                             </div>
 
                             <button
+                                type="button"
                                 onClick={handleNext}
-                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-lg transition-colors group"
+                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-lg transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                             >
                                 {isLastStep ? 'Get Started' : 'Next'}
                                 {isLastStep ? <Check className="w-4 h-4" /> : <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />}

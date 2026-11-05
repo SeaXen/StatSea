@@ -6,6 +6,7 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import { useDevices } from '../hooks/useDevices';
 import { useContainers } from '../hooks/useDocker';
 import { useHealth } from '../hooks/useSystem';
+import { useAnalyticsSummary } from '../hooks/useAnalytics';
 import SystemDetailOverlay from './SystemDetailOverlay';
 import { Device } from '../types';
 
@@ -48,6 +49,7 @@ const Dashboard: React.FC<DashboardProps> = ({ timeRange = '1h' }) => {
     const { data: devicesData = [] } = useDevices();
     const { data: containersData = [] } = useContainers();
     const { data: health } = useHealth();
+    const { data: analytics } = useAnalyticsSummary();
 
     const [overlayOpen, setOverlayOpen] = useState(false);
     const [overlayType, setOverlayType] = useState<'cpu' | 'ram' | 'disk' | 'all'>('all');
@@ -128,23 +130,31 @@ const Dashboard: React.FC<DashboardProps> = ({ timeRange = '1h' }) => {
                 </div>
                 <div className="cell">
                     <span className="label">Packets per second</span>
-                    <span className="value num">{Math.round(parseFloat(totalThroughput) * 125).toLocaleString()}</span>
+                    <span className="value num">
+                        {analytics?.packets_per_sec != null
+                            ? analytics.packets_per_sec.toLocaleString()
+                            : (parseFloat(totalThroughput) > 0 ? 'Active' : '0')}
+                    </span>
                     <span className="note ok">Real-time</span>
                 </div>
                 <div className="cell">
                     <span className="label">Latency</span>
                     <span className="value num">
-                        {health?.status ? '< 15' : '—'}{' '}
-                        <small className="muted text-[13px] font-normal">ms</small>
+                        {analytics?.latency_ms != null
+                            ? `${Math.round(analytics.latency_ms)}`
+                            : (health?.status ? 'Nominal' : '—')}
+                        {analytics?.latency_ms != null && (
+                            <small className="muted text-[13px] font-normal"> ms</small>
+                        )}
                     </span>
-                    <span className="note">Nominal</span>
+                    <span className="note">{health?.status || 'Active'}</span>
                 </div>
                 <div className="cell cursor-pointer" onClick={() => { setOverlayType('all'); setOverlayOpen(true); }}>
                     <span className="label">System health</span>
                     <span className={`value num ${health?.score != null && health.score < 80 ? 'warn' : ''}`}>
-                        {health?.score != null ? `${health.score}%` : '100%'}
+                        {health?.score != null ? `${health.score}%` : (health?.status ? 'Healthy' : '—')}
                     </span>
-                    <span className="note ok">{health?.status || 'Nominal'}</span>
+                    <span className="note ok">{health?.status || 'Operational'}</span>
                 </div>
             </section>
 

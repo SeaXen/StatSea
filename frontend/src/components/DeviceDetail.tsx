@@ -7,6 +7,7 @@ import { QuotaManager } from './QuotaManager';
 import { UptimeTimeline } from './UptimeTimeline';
 import { formatBytes, cn } from '../lib/utils';
 import { useWakeDevice } from '../hooks/useDevices';
+import { useModalA11y } from '../hooks/useModalA11y';
 import axiosInstance from '../config/axiosInstance';
 
 interface DailyUsage {
@@ -24,6 +25,7 @@ interface DeviceDetailProps {
 }
 
 export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: DeviceDetailProps) {
+    const modalRef = useModalA11y<HTMLDivElement>({ isOpen, onClose });
     const [stats, setStats] = useState<DailyUsage[]>([]);
     const { mutate: wakeDevice, isPending: isWaking } = useWakeDevice();
 
@@ -142,6 +144,11 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
 
                     {/* Side Panel */}
                     <motion.div
+                        ref={modalRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Device Details"
+                        tabIndex={-1}
                         initial={{ x: '100%', opacity: 0.5 }}
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: '100%', opacity: 0.5 }}
@@ -161,20 +168,26 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                             <div className="p-8 md:p-10 relative">
                                 {/* Top bar */}
                                 <div className="flex justify-between items-center mb-8">
-                                    <div className="flex bg-raised p-1 rounded-[7px] border border-line">
+                                    <div role="tablist" aria-label="Device view options" className="flex bg-raised p-1 rounded-[7px] border border-line">
                                         <button
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={!isEditing}
                                             onClick={() => setIsEditing(false)}
                                             className={cn(
-                                                "px-3 py-1.5 rounded-[5px] text-[10px] font-bold tracking-widest transition-all",
+                                                "px-3 py-1.5 rounded-[5px] text-[10px] font-bold tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                                                 !isEditing ? "bg-panel text-text shadow-sm" : "text-faint hover:text-text"
                                             )}
                                         >
                                             OVERVIEW
                                         </button>
                                         <button
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={isEditing}
                                             onClick={() => setIsEditing(true)}
                                             className={cn(
-                                                "px-3 py-1.5 rounded-[5px] text-[10px] font-bold tracking-widest transition-all",
+                                                "px-3 py-1.5 rounded-[5px] text-[10px] font-bold tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                                                 isEditing ? "bg-panel text-text shadow-sm" : "text-faint hover:text-text"
                                             )}
                                         >
@@ -182,9 +195,10 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                         </button>
                                     </div>
                                     <button
+                                        type="button"
                                         onClick={onClose}
                                         aria-label="Close device details"
-                                        className="w-9 h-9 flex items-center justify-center rounded-[7px] bg-raised hover:bg-raised/80 text-faint hover:text-text transition-all border border-line group"
+                                        className="w-9 h-9 flex items-center justify-center rounded-[7px] bg-raised hover:bg-raised/80 text-faint hover:text-text transition-colors border border-line group"
                                     >
                                         <X className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
                                     </button>
@@ -203,8 +217,9 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                         type="text"
                                                         value={editNickname}
                                                         onChange={(e) => setEditNickname(e.target.value)}
-                                                        placeholder={device.hostname || 'Device Name'}
-                                                        className="w-full bg-raised border border-line rounded-[7px] px-4 py-2.5 text-xl font-bold text-text focus:outline-none focus:border-line-strong transition-all placeholder:text-faint"
+                                                        placeholder={device.hostname || 'e.g. Core Switch…'}
+                                                        aria-label="Device nickname"
+                                                        className="w-full bg-raised border border-line rounded-[7px] px-4 py-2.5 text-xl font-bold text-text focus:outline-none focus:border-line-strong focus-visible:ring-1 focus-visible:ring-accent transition-colors placeholder:text-faint"
                                                     />
                                                 </div>
                                             ) : (
@@ -214,7 +229,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                     </h2>
                                                     <div className="flex items-center gap-3 mt-2">
                                                         <div className={cn(
-                                                            "flex items-center gap-1.5 px-2.5 py-1 rounded-[5px] text-[9px] font-bold uppercase tracking-widest border transition-all duration-700",
+                                                            "flex items-center gap-1.5 px-2.5 py-1 rounded-[5px] text-[9px] font-bold uppercase tracking-widest border transition-colors",
                                                             device.is_online
                                                                 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                                                                 : 'bg-raised text-faint border-line'
@@ -233,10 +248,11 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                             <>
                                                                 <span className="text-faint text-[10px] font-bold uppercase tracking-widest leading-none">•</span>
                                                                 <button
+                                                                    type="button"
                                                                     onClick={() => wakeDevice(device.mac_address)}
                                                                     disabled={isWaking}
                                                                     aria-label="Wake device"
-                                                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-[5px] bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 text-[9px] font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+                                                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-[5px] bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 text-[9px] font-bold uppercase tracking-widest transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                                                 >
                                                                     {isWaking ? <div className="w-3 h-3 border-2 border-accent/30 border-t-accent rounded-full animate-spin" /> : <Power className="w-3 h-3" />}
                                                                     WAKE
@@ -249,10 +265,11 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                         </div>
                                         {isEditing && (
                                             <button
+                                                type="button"
                                                 onClick={handleSave}
                                                 disabled={saving}
                                                 aria-label="Save changes"
-                                                className="w-10 h-10 flex items-center justify-center rounded-[7px] bg-accent hover:opacity-90 text-black font-bold transition-all shadow-md disabled:opacity-50 shrink-0"
+                                                className="w-10 h-10 flex items-center justify-center rounded-[7px] bg-accent hover:opacity-90 text-black font-bold transition-opacity shadow-md disabled:opacity-50 shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                             >
                                                 {saving ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <Check className="w-5 h-5" />}
                                             </button>
@@ -308,10 +325,16 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                         value={newTag}
                                                         onChange={(e) => setNewTag(e.target.value)}
                                                         onKeyDown={handleKeyDown}
-                                                        placeholder="Add tag..."
-                                                        className="bg-raised border border-line rounded-[5px] px-2 py-1 text-xs text-text focus:outline-none focus:border-line-strong min-w-[80px]"
+                                                        placeholder="Add tag…"
+                                                        aria-label="New tag name"
+                                                        className="bg-raised border border-line rounded-[5px] px-2 py-1 text-xs text-text focus:outline-none focus:border-line-strong focus-visible:ring-1 focus-visible:ring-accent min-w-[80px]"
                                                     />
-                                                    <button onClick={addTag} className="p-1 rounded-[5px] bg-raised hover:border-line-strong text-faint hover:text-text border border-line">
+                                                    <button
+                                                        type="button"
+                                                        onClick={addTag}
+                                                        aria-label="Add tag"
+                                                        className="p-1 rounded-[5px] bg-raised hover:border-line-strong text-faint hover:text-text border border-line transition-colors"
+                                                    >
                                                         <Plus className="w-3 h-3" />
                                                     </button>
                                                 </div>
@@ -324,9 +347,9 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                             {tag}
                                                         </span>
                                                     ))
-                                                ) : (
-                                                    <span className="text-faint italic text-xs">No tags.</span>
-                                                )}
+                                                 ) : (
+                                                     <span className="text-faint italic text-xs">No tags.</span>
+                                                 )}
                                             </>
                                         )}
                                     </div>
@@ -344,12 +367,13 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                 <div className="relative">
                                                     <select
                                                         value={selectedGroupId || ''}
+                                                        aria-label="Device group"
                                                         onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
-                                                        className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-sm text-text focus:outline-none focus:border-line-strong appearance-none"
+                                                        className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-sm text-text focus:outline-none focus:border-line-strong focus-visible:ring-1 focus-visible:ring-accent appearance-none"
                                                     >
-                                                        <option value="">No Group</option>
+                                                        <option value="" className="bg-panel text-text">No Group</option>
                                                         {groups.map(g => (
-                                                            <option key={g.id} value={g.id}>{g.name}</option>
+                                                            <option key={g.id} value={g.id} className="bg-panel text-text">{g.name}</option>
                                                         ))}
                                                     </select>
                                                 </div>
@@ -357,8 +381,9 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                             <textarea
                                                 value={editNotes}
                                                 onChange={(e) => setEditNotes(e.target.value)}
-                                                className="w-full h-24 bg-raised border border-line rounded-[7px] p-3 text-sm text-text focus:outline-none focus:border-line-strong resize-none"
-                                                placeholder="Add notes about this device..."
+                                                className="w-full h-24 bg-raised border border-line rounded-[7px] p-3 text-sm text-text focus:outline-none focus:border-line-strong focus-visible:ring-1 focus-visible:ring-accent resize-none"
+                                                placeholder="Add notes about this device…"
+                                                aria-label="Device notes"
                                             />
                                         </div>
                                     ) : (
@@ -525,7 +550,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                         </div>
                                         <div className="grid grid-cols-1 gap-2">
                                             {device.ports.map((port) => (
-                                                <div key={port.id} className="flex items-center justify-between p-3 rounded-[7px] bg-raised border border-line group/port hover:border-line-strong transition-all">
+                                                <div key={port.id} className="flex items-center justify-between p-3 rounded-[7px] bg-raised border border-line group/port hover:border-line-strong transition-colors">
                                                     <div className="flex items-center gap-4">
                                                         <div className="text-base font-bold text-text w-12 tabular-nums">{port.port}</div>
                                                         <div className="flex flex-col">
@@ -534,7 +559,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                                         </div>
                                                     </div>
                                                     <div className="text-[9px] font-mono text-faint uppercase tracking-widest tabular-nums">
-                                                        LAST SEEN: {new Date(port.last_discovered).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        LAST SEEN: {new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(port.last_discovered))}
                                                     </div>
                                                 </div>
                                             ))}
@@ -544,7 +569,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
 
                                 {/* Security & Analysis Footer */}
                                 <div className="grid grid-cols-2 gap-4 pb-16">
-                                    <div className="p-5 rounded-[var(--r-panel)] bg-red-500/5 border border-red-500/20 group/sec hover:bg-red-500/10 transition-all duration-300">
+                                    <div className="p-5 rounded-[var(--r-panel)] bg-red-500/5 border border-red-500/20 group/sec hover:bg-red-500/10 transition-colors duration-300">
                                         <div className="flex items-center gap-3 mb-4">
                                             <div className="w-8 h-8 rounded-[7px] bg-red-500/10 flex items-center justify-center border border-red-500/20 group-hover/sec:scale-105 transition-transform">
                                                 <Shield className="w-4 h-4 text-red-400" />
@@ -557,7 +582,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
                                             <SecurityItem label="Risk Score" status="0.01" />
                                         </div>
                                     </div>
-                                    <div className="p-5 rounded-[var(--r-panel)] bg-raised border border-line group/sys hover:border-line-strong transition-all duration-300">
+                                    <div className="p-5 rounded-[var(--r-panel)] bg-raised border border-line group/sys hover:border-line-strong transition-colors duration-300">
                                         <div className="flex items-center gap-3 mb-4">
                                             <div className="w-8 h-8 rounded-[7px] bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group-hover/sys:scale-105 transition-transform">
                                                 <Cpu className="w-4 h-4 text-blue-400" />
@@ -587,7 +612,7 @@ export function DeviceDetail({ device, isOpen, onClose, onUpdate, groups }: Devi
 
 function InfoCard({ icon, label, value, subValue }: { icon: React.ReactNode, label: string, value: string, subValue?: string }) {
     return (
-        <div className="p-4 md:p-5 rounded-[var(--r-panel)] bg-raised border border-line group/info hover:border-line-strong transition-all duration-300 relative overflow-hidden">
+        <div className="p-4 md:p-5 rounded-[var(--r-panel)] bg-raised border border-line group/info hover:border-line-strong transition-colors duration-300 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/info:opacity-20 transition-opacity">
                 {icon}
             </div>

@@ -88,8 +88,8 @@ const LoginPage: React.FC = () => {
                                         type="text"
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full bg-raised border border-line-strong rounded-[7px] py-2 pl-9 pr-3 text-xs text-text placeholder-faint focus:outline-none focus:border-accent transition-colors"
-                                        placeholder="Enter your username"
+                                        className="w-full bg-raised border border-line-strong rounded-[7px] py-2 pl-9 pr-3 text-xs text-text placeholder-faint focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors"
+                                        placeholder="e.g. operator_admin…"
                                         autoComplete="username"
                                         spellCheck={false}
                                         autoCapitalize="none"
@@ -113,7 +113,7 @@ const LoginPage: React.FC = () => {
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-raised border border-line-strong rounded-[7px] py-2 pl-9 pr-3 text-xs text-text placeholder-faint focus:outline-none focus:border-accent transition-colors"
+                                        className="w-full bg-raised border border-line-strong rounded-[7px] py-2 pl-9 pr-3 text-xs text-text placeholder-faint focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors"
                                         placeholder="••••••••"
                                         autoComplete="current-password"
                                         required
@@ -130,14 +130,14 @@ const LoginPage: React.FC = () => {
                                     name="remember_me"
                                     checked={rememberMe}
                                     onChange={(e) => setRememberMe(e.target.checked)}
-                                    className="rounded-[3px] bg-raised border-line text-accent focus:ring-0 focus:ring-offset-0"
+                                    className="rounded-[3px] bg-raised border-line text-accent focus:ring-1 focus:ring-accent focus:ring-offset-1 focus:ring-offset-bg"
                                 />
                                 <span>Remember key</span>
                             </label>
 
                             <button
                                 type="button"
-                                className="text-accent hover:underline transition-colors"
+                                className="text-accent hover:underline transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded-[3px] px-1"
                                 onClick={() => toast.info("Please contact system administrator to reset password.")}
                             >
                                 Forgot password?

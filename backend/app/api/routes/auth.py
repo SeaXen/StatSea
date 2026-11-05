@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form, Header, HTTPException, Query, Requ
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from app.core.auth_jwt import get_current_user
+from app.core.auth_jwt import get_current_user, get_current_user_allow_must_change
 from app.core.limiter import limiter
 from app.db.database import get_db
 from app.models import models
@@ -63,25 +63,40 @@ def logout(
     return {"status": "success"}
 
 
+@router.post(
+    "/change-password",
+    summary="Change user password",
+    description="Change password for current user. Clears must_change_password and revokes prior sessions.",
+)
+def change_password(
+    payload: schemas.ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user_allow_must_change),
+):
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+    AuthService.change_password(db, current_user, payload.current_password, payload.new_password)
+    return {"status": "success", "message": "Password changed successfully"}
+
+
 @router.get(
     "/me",
     response_model=schemas.User,
     summary="Get current user",
 )
-def read_users_me(current_user: models.User = Depends(get_current_user)):
+def read_users_me(current_user: models.User = Depends(get_current_user_allow_must_change)):
     return current_user
 
 @router.get("/sessions", response_model=list[schemas.SessionResponse])
 def list_my_sessions(
     x_session_token: str | None = Header(None, alias="X-Session-Token"),
-    current_token: str | None = Query(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     """
     List all active sessions for the current user.
     """
-    active_token = x_session_token or current_token
+    active_token = x_session_token
     sessions = AuthService.get_active_sessions(db, current_user.id)
     
     # Map to schemas and set is_current flag

@@ -106,9 +106,10 @@ export default function ReportSettings() {
                                     {report.formats.map((format) => (
                                         <button
                                             key={format}
+                                            type="button"
                                             onClick={() => handleDownload(report.id, format as 'pdf' | 'csv' | 'json')}
                                             disabled={isGenerating !== null}
-                                            className="px-3 py-1.5 bg-raised hover:bg-panel rounded-[5px] text-xs font-bold text-faint hover:text-text transition-all border border-line flex items-center gap-1.5 uppercase tracking-wider disabled:opacity-50"
+                                            className="px-3 py-1.5 bg-raised hover:bg-panel rounded-[5px] text-xs font-bold text-faint hover:text-text transition-colors border border-line flex items-center gap-1.5 uppercase tracking-wider disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                         >
                                             {isGenerating === report.id ? (
                                                 <div className="w-3 h-3 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
@@ -138,12 +139,15 @@ export default function ReportSettings() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex bg-panel p-1 rounded-[7px] border border-line">
+                        <div role="tablist" aria-label="Report frequency" className="flex bg-panel p-1 rounded-[7px] border border-line">
                             {(['daily', 'weekly', 'monthly'] as const).map((freq) => (
                                 <button
                                     key={freq}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={reportFrequency === freq}
                                     onClick={() => setReportFrequency(freq)}
-                                    className={`px-3 py-1.5 rounded-[5px] text-xs font-bold transition-all uppercase tracking-wider ${reportFrequency === freq
+                                    className={`px-3 py-1.5 rounded-[5px] text-xs font-bold transition-colors uppercase tracking-wider focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${reportFrequency === freq
                                         ? 'bg-accent text-black shadow-sm'
                                         : 'text-faint hover:text-text'
                                         }`}
@@ -154,6 +158,9 @@ export default function ReportSettings() {
                         </div>
 
                         <button
+                            type="button"
+                            role="switch"
+                            aria-checked={emailReports}
                             onClick={() => {
                                 setEmailReports(!emailReports);
                                 toast.success('Settings Updated', {
@@ -161,10 +168,10 @@ export default function ReportSettings() {
                                 });
                             }}
                             aria-label="Toggle scheduled email reports"
-                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${emailReports ? 'bg-accent' : 'bg-raised border border-line'
+                            className={`w-12 h-6 rounded-full relative transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${emailReports ? 'bg-accent' : 'bg-raised border border-line'
                                 }`}
                         >
-                            <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-300 ${emailReports ? 'left-6 shadow-md' : 'left-0.5'
+                            <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-[left] duration-300 ${emailReports ? 'left-6 shadow-md' : 'left-0.5'
                                 }`} />
                         </button>
                     </div>

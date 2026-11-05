@@ -67,9 +67,10 @@ export function SecurityAlertsWidget() {
                     </div>
                     <div className="flex gap-2">
                         <select
+                            aria-label="Filter by severity"
                             value={filterSeverity}
                             onChange={(e) => setFilterSeverity(e.target.value)}
-                            className="bg-muted/50 border border-border text-xs rounded-lg px-2 py-1 text-foreground focus:outline-none focus:border-primary/50"
+                            className="bg-muted/50 border border-border text-xs rounded-lg px-2 py-1 text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-primary focus:border-primary/50"
                         >
                             <option value="all">All Severities</option>
                             <option value="critical">Critical</option>
@@ -77,9 +78,10 @@ export function SecurityAlertsWidget() {
                             <option value="info">Info</option>
                         </select>
                         <select
+                            aria-label="Filter by timeframe"
                             value={filterTimeframe}
                             onChange={(e) => setFilterTimeframe(e.target.value)}
-                            className="bg-muted/50 border border-border text-xs rounded-lg px-2 py-1 text-foreground focus:outline-none focus:border-primary/50"
+                            className="bg-muted/50 border border-border text-xs rounded-lg px-2 py-1 text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-primary focus:border-primary/50"
                         >
                             <option value="1h">1 Hour</option>
                             <option value="24h">24 Hours</option>
@@ -105,11 +107,20 @@ export function SecurityAlertsWidget() {
                         {sortedAlerts.map((alert: SecurityAlert) => (
                             <motion.div
                                 key={alert.id}
+                                role="button"
+                                tabIndex={0}
+                                aria-expanded={selectedAlert?.id === alert.id}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
-                                className={`p-3 rounded-lg border cursor-pointer transition-all ${getSeverityStyles(alert.severity, alert.is_resolved)} ${selectedAlert?.id === alert.id ? 'ring-1 ring-primary/50' : ''}`}
+                                className={`p-3 rounded-lg border cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${getSeverityStyles(alert.severity, alert.is_resolved)} ${selectedAlert?.id === alert.id ? 'ring-1 ring-primary/50' : ''}`}
                                 onClick={() => setSelectedAlert(selectedAlert?.id === alert.id ? null : alert)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setSelectedAlert(selectedAlert?.id === alert.id ? null : alert);
+                                    }
+                                }}
                             >
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="flex items-start gap-2 flex-1 min-w-0">
@@ -118,14 +129,21 @@ export function SecurityAlertsWidget() {
                                             <p className="text-sm font-medium text-foreground truncate">{alert.title}</p>
                                             <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
                                                 <Clock className="w-3 h-3" />
-                                                {new Date(alert.timestamp).toLocaleString()}
+                                                {new Intl.DateTimeFormat(undefined, {
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                }).format(new Date(alert.timestamp))}
                                             </p>
                                         </div>
                                     </div>
                                     {!alert.is_resolved && (
                                         <button
+                                            type="button"
                                             onClick={(e) => handleResolve(alert.id, e)}
-                                            className="p-1 rounded-md bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-colors flex-shrink-0"
+                                            className="p-1 rounded-md bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
+                                            aria-label="Resolve alert"
                                             title="Resolve"
                                         >
                                             <Check className="w-3 h-3" />

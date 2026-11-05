@@ -31,7 +31,7 @@ def get_cache_header(max_age: int = 60):
     Dependency to set Cache-Control headers on the response.
     """
     def _set_cache_header(response: Response):
-        response.headers["Cache-Control"] = f"public, max-age={max_age}"
+        response.headers["Cache-Control"] = f"private, max-age={max_age}"
     return _set_cache_header
 
 def check_admin(

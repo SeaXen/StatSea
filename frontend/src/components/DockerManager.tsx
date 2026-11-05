@@ -167,8 +167,17 @@ const ContainerList: React.FC<ContainerListProps> = ({ containers, searchQuery, 
                             return (
                                 <tr
                                     key={container.id}
+                                    tabIndex={0}
+                                    role="button"
+                                    aria-label={`View details for container ${container.name}`}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            onSelect(container.id);
+                                        }
+                                    }}
                                     onClick={() => onSelect(container.id)}
-                                    className="cursor-pointer"
+                                    className="cursor-pointer focus-visible:outline-none focus-visible:bg-raised"
                                 >
                                     <td className="font-medium text-text">
                                         <div className="flex items-center gap-2">
@@ -228,7 +237,9 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
 
     React.useEffect(() => {
         if (logsEndRef.current) {
-            logsEndRef.current.scrollIntoView({ behavior: "smooth" });
+            logsEndRef.current.scrollIntoView({
+                behavior: typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+            });
         }
     }, [logs]);
 
@@ -249,8 +260,10 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
         >
             <header className="flex items-center gap-4">
                 <button
+                    type="button"
                     onClick={onBack}
-                    className="p-2 bg-raised border border-line rounded-[7px] text-text-soft hover:text-text hover:bg-line-strong transition-colors"
+                    aria-label="Back to containers list"
+                    className="p-2 bg-raised border border-line rounded-[7px] text-text-soft hover:text-text hover:bg-line-strong transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
                     <ArrowLeft className="w-4 h-4" />
                 </button>
@@ -270,23 +283,29 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                 </div>
                 <div className="flex items-center gap-2">
                     <button
+                        type="button"
                         disabled={!!actionLoading}
                         onClick={() => onAction(container.id, 'start')}
-                        className="px-3 py-1.5 bg-ok/10 hover:bg-ok/20 text-ok border border-ok/30 rounded-[7px] text-xs font-mono font-medium transition-colors disabled:opacity-50"
+                        aria-label={`Start container ${container.name}`}
+                        className="px-3 py-1.5 bg-ok/10 hover:bg-ok/20 text-ok border border-ok/30 rounded-[7px] text-xs font-mono font-medium transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                     >
                         START
                     </button>
                     <button
+                        type="button"
                         disabled={!!actionLoading}
                         onClick={() => onAction(container.id, 'stop')}
-                        className="px-3 py-1.5 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 rounded-[7px] text-xs font-mono font-medium transition-colors disabled:opacity-50"
+                        aria-label={`Stop container ${container.name}`}
+                        className="px-3 py-1.5 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 rounded-[7px] text-xs font-mono font-medium transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                     >
                         STOP
                     </button>
                     <button
+                        type="button"
                         disabled={!!actionLoading}
                         onClick={() => onAction(container.id, 'restart')}
-                        className="p-2 bg-raised hover:bg-line-strong text-text border border-line rounded-[7px] transition-colors disabled:opacity-50"
+                        aria-label={`Restart container ${container.name}`}
+                        className="p-2 bg-raised hover:bg-line-strong text-text border border-line rounded-[7px] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                     >
                         <RotateCw className={`w-3.5 h-3.5 ${actionLoading?.includes('restart') ? 'animate-spin' : ''}`} />
                     </button>
@@ -300,7 +319,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                         <div className="space-y-3 font-mono">
                             {[
                                 { label: 'Image', value: container.image, icon: Box },
-                                { label: 'Started', value: container.state?.StartedAt ? new Date(container.state.StartedAt).toLocaleString() : 'N/A', icon: Clock },
+                                { label: 'Started', value: container.state?.StartedAt ? new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(container.state.StartedAt)) : 'N/A', icon: Clock },
                                 { label: 'Network Rx', value: formatBytes(container.net_rx || 0), icon: Activity },
                                 { label: 'Network Tx', value: formatBytes(container.net_tx || 0), icon: Activity },
                             ].map((item, i) => (
@@ -433,7 +452,7 @@ const ContainerDetail: React.FC<ContainerDetailProps & { history: ContainerHisto
                                 </div>
                             )) : (
                                 <div className="h-full flex items-center justify-center text-faint italic">
-                                    {logsLoading ? 'Synchronizing stream...' : 'Waiting for telemetry...'}
+                                    {logsLoading ? 'Synchronizing stream…' : 'Waiting for telemetry…'}
                                 </div>
                             )}
                             <div ref={logsEndRef} />
@@ -480,22 +499,28 @@ const DockerManager: React.FC = () => {
         }
     };
 
-    const handlePrune = async () => {
-        if (!window.confirm("Are you sure you want to remove all stopped containers? This action cannot be undone.")) return;
+    const handlePrune = () => {
+        toast('Prune all stopped containers?', {
+            description: 'This will remove all stopped containers and reclaim unused disk space.',
+            action: {
+                label: 'Prune',
+                onClick: async () => {
+                    const toastId = toast.loading("Pruning stopped containers…");
+                    try {
+                        const result = await pruneMutation.mutateAsync();
+                        if (result.error) throw new Error(result.error);
 
-        const toastId = toast.loading("Pruning stopped containers...");
-        try {
-            const result = await pruneMutation.mutateAsync();
-            if (result.error) throw new Error(result.error);
+                        const deletedCount = result.ContainersDeleted?.length || 0;
+                        const spaceReclaimed = formatBytes(result.SpaceReclaimed || 0);
 
-            const deletedCount = result.ContainersDeleted?.length || 0;
-            const spaceReclaimed = formatBytes(result.SpaceReclaimed || 0);
-
-            toast.success(`Pruned ${deletedCount} containers. Reclaimed ${spaceReclaimed}`, { id: toastId });
-        } catch (error) {
-            console.error("Prune error:", error);
-            toast.error("Failed to prune containers", { id: toastId });
-        }
+                        toast.success(`Pruned ${deletedCount} containers. Reclaimed ${spaceReclaimed}`, { id: toastId });
+                    } catch (error) {
+                        console.error("Prune error:", error);
+                        toast.error("Failed to prune containers", { id: toastId });
+                    }
+                }
+            }
+        });
     };
 
     const selectedContainer = useMemo(() =>

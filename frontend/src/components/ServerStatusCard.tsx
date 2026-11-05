@@ -125,8 +125,17 @@ const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ onDetailClick }) =>
                 <div className="grid grid-cols-3 gap-4 flex-1">
                     {/* CPU */}
                     <div
-                        className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-accent/50 to-transparent border border-border hover:border-primary/30 transition-all cursor-pointer group/item relative overflow-hidden"
+                        role="button"
+                        tabIndex={0}
+                        aria-label="View CPU system details"
+                        className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-accent/50 to-transparent border border-border hover:border-primary/30 transition-colors cursor-pointer group/item relative overflow-hidden focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                         onClick={() => onDetailClick('cpu')}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                onDetailClick('cpu');
+                            }
+                        }}
                     >
                         <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/item:opacity-100 transition-opacity" />
                         <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-1 z-10">
@@ -140,8 +149,17 @@ const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ onDetailClick }) =>
 
                     {/* RAM */}
                     <div
-                        className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-accent/50 to-transparent border border-border hover:border-cyan-500/30 transition-all cursor-pointer group/item relative overflow-hidden"
+                        role="button"
+                        tabIndex={0}
+                        aria-label="View RAM system details"
+                        className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-accent/50 to-transparent border border-border hover:border-cyan-500/30 transition-colors cursor-pointer group/item relative overflow-hidden focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500"
                         onClick={() => onDetailClick('ram')}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                onDetailClick('ram');
+                            }
+                        }}
                     >
                         <div className="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover/item:opacity-100 transition-opacity" />
                         <div className="flex items-center gap-2 text-xs font-semibold text-cyan-500 dark:text-cyan-400 mb-1 z-10">
@@ -155,8 +173,17 @@ const ServerStatusCard: React.FC<ServerStatusCardProps> = ({ onDetailClick }) =>
 
                     {/* Disk */}
                     <div
-                        className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-accent/50 to-transparent border border-border hover:border-emerald-500/30 transition-all cursor-pointer group/item relative overflow-hidden"
+                        role="button"
+                        tabIndex={0}
+                        aria-label="View Disk system details"
+                        className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-accent/50 to-transparent border border-border hover:border-emerald-500/30 transition-colors cursor-pointer group/item relative overflow-hidden focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
                         onClick={() => onDetailClick('disk')}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                onDetailClick('disk');
+                            }
+                        }}
                     >
                         <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover/item:opacity-100 transition-opacity" />
                         <div className="flex items-center gap-2 text-xs font-semibold text-emerald-500 dark:text-emerald-400 mb-1 z-10">

@@ -38,9 +38,9 @@ import axiosInstance from '../config/axiosInstance';
 const formatDate = (date: string | Date, pattern: 'HH:mm' | 'HH:mm:ss' | 'MMM d, yyyy HH:mm') => {
     const d = new Date(date);
     if (isNaN(d.getTime())) return '--';
-    if (pattern === 'HH:mm') return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    if (pattern === 'HH:mm:ss') return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    return d.toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+    if (pattern === 'HH:mm') return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
+    if (pattern === 'HH:mm:ss') return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(d);
+    return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
 };
 
 interface SystemHistoryEntry {
@@ -309,9 +309,10 @@ const BackupsTab = ({ token: _token }: { token: string }) => {
                     <p className="text-xs text-faint font-mono">Automated daily and manual Snapshots of statsea.db</p>
                 </div>
                 <button
+                    type="button"
                     onClick={() => createMutation.mutate()}
                     disabled={createMutation.isPending}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-[7px] hover:opacity-90 transition-opacity font-mono text-xs font-medium disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-[7px] hover:opacity-90 transition-opacity font-mono text-xs font-medium disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
                     {createMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                     Create Manual Backup
@@ -340,15 +341,17 @@ const BackupsTab = ({ token: _token }: { token: string }) => {
                         </div>
                         <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                             <button
-                                className="p-1.5 hover:bg-raised rounded-[7px] text-faint hover:text-text border border-transparent hover:border-line transition-colors"
+                                type="button"
+                                className="p-1.5 hover:bg-raised rounded-[7px] text-faint hover:text-text border border-transparent hover:border-line transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                 aria-label="Download backup"
                                 title="Download backup"
                             >
                                 <Download className="w-3.5 h-3.5" />
                             </button>
                             <button
+                                type="button"
                                 onClick={() => deleteMutation.mutate(b.id)}
-                                className="p-1.5 hover:bg-danger/10 rounded-[7px] text-faint hover:text-danger border border-transparent hover:border-danger/20 transition-colors"
+                                className="p-1.5 hover:bg-danger/10 rounded-[7px] text-faint hover:text-danger border border-transparent hover:border-danger/20 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                 aria-label="Delete backup"
                                 title="Delete backup"
                             >
@@ -424,8 +427,9 @@ const HealthChecksTab = ({ token: _token }: { token: string }) => {
                     <p className="text-xs text-faint font-mono">Monitor uptime and response times for arbitrary URLs</p>
                 </div>
                 <button
+                    type="button"
                     onClick={() => setShowAdd(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-[7px] hover:opacity-90 transition-opacity font-mono text-xs font-medium"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-[7px] hover:opacity-90 transition-opacity font-mono text-xs font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
                     <Plus className="w-3.5 h-3.5" />
                     Add Monitor
@@ -440,31 +444,36 @@ const HealthChecksTab = ({ token: _token }: { token: string }) => {
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                         <div>
-                            <label className="text-[10px] font-semibold text-faint uppercase font-mono mb-1 block">Name</label>
+                            <label htmlFor="monitor-name" className="text-[10px] font-semibold text-faint uppercase font-mono mb-1 block">Name</label>
                             <input
+                                id="monitor-name"
                                 type="text"
-                                placeholder="Google DNS"
-                                className="w-full bg-raised border border-line text-text rounded-[7px] px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-accent"
+                                placeholder="e.g. Google Public DNS…"
+                                aria-label="Health check name"
+                                className="w-full bg-raised border border-line text-text rounded-[7px] px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent"
                                 value={newCheck.name}
                                 onChange={e => setNewCheck({ ...newCheck, name: e.target.value })}
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-semibold text-faint uppercase font-mono mb-1 block">URL</label>
+                            <label htmlFor="monitor-url" className="text-[10px] font-semibold text-faint uppercase font-mono mb-1 block">URL</label>
                             <input
+                                id="monitor-url"
                                 type="text"
-                                placeholder="https://..."
-                                className="w-full bg-raised border border-line text-text rounded-[7px] px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-accent"
+                                placeholder="https://…"
+                                aria-label="Health check target URL"
+                                className="w-full bg-raised border border-line text-text rounded-[7px] px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent"
                                 value={newCheck.url}
                                 onChange={e => setNewCheck({ ...newCheck, url: e.target.value })}
                             />
                         </div>
                     </div>
                     <div className="flex justify-end gap-2">
-                        <button onClick={() => setShowAdd(false)} className="px-3 py-1.5 text-xs font-mono text-faint hover:text-text">Cancel</button>
+                        <button type="button" onClick={() => setShowAdd(false)} className="px-3 py-1.5 text-xs font-mono text-faint hover:text-text focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded">Cancel</button>
                         <button
+                            type="button"
                             onClick={() => createMutation.mutate(newCheck)}
-                            className="px-3 py-1.5 bg-accent text-accent-foreground rounded-[7px] hover:opacity-90 text-xs font-mono font-medium"
+                            className="px-3 py-1.5 bg-accent text-accent-foreground rounded-[7px] hover:opacity-90 text-xs font-mono font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                         >
                             Save Monitor
                         </button>
@@ -504,15 +513,20 @@ const HealthChecksTab = ({ token: _token }: { token: string }) => {
                             </div>
                             <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                                 <button
+                                    type="button"
                                     onClick={() => triggerMutation.mutate(c.id)}
-                                    className="p-1.5 hover:bg-raised rounded-[7px] text-faint hover:text-text border border-transparent hover:border-line transition-colors"
+                                    className="p-1.5 hover:bg-raised rounded-[7px] text-faint hover:text-text border border-transparent hover:border-line transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                     title="Check Now"
+                                    aria-label={`Run check now for ${c.name}`}
                                 >
                                     <Play className="w-3.5 h-3.5" />
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={() => deleteMutation.mutate(c.id)}
-                                    className="p-1.5 hover:bg-danger/10 rounded-[7px] text-faint hover:text-danger border border-transparent hover:border-danger/20 transition-colors"
+                                    className="p-1.5 hover:bg-danger/10 rounded-[7px] text-faint hover:text-danger border border-transparent hover:border-danger/20 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                                    title="Delete Monitor"
+                                    aria-label={`Delete monitor ${c.name}`}
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -559,13 +573,16 @@ export const SystemManager = () => {
                 </div>
 
                 {/* Sub-tabs */}
-                <div className="flex items-center bg-panel rounded-[7px] border border-line-strong p-0.5 font-mono text-xs">
+                <div className="flex items-center bg-panel rounded-[7px] border border-line-strong p-0.5 font-mono text-xs" role="tablist" aria-label="System operations tabs">
                     {tabs.map(tab => (
                         <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === tab.id}
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as 'metrics' | 'backups' | 'health')}
                             className={cn(
-                                "flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] transition-colors",
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                                 activeTab === tab.id
                                     ? "bg-accent/20 text-accent font-medium"
                                     : "text-text-soft hover:text-text hover:bg-raised"

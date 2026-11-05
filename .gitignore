@@ -37,6 +37,7 @@ Thumbs.db
 coverage/
 .vite/
 frontend/dist/
+artifacts/
 **/test_green.txt
 
 # Debug / Error logs (dev artifacts)
@@ -58,3 +59,4 @@ lint_out*.json
 scratch/
 .playwright/
 test-results/
+.openchamber

@@ -43,12 +43,11 @@ class DeviceUpdate(BaseModel):
     group_id: int | None = None
 
 
-class Device(DeviceBase):
+class DeviceListItem(DeviceBase):
     id: int
     first_seen: datetime
     last_seen: datetime | None
     is_online: bool
-    traffic_logs: list["TrafficLog"] = []
     ports: list["DevicePort"] = []
 
     @field_validator("tags", mode="before")
@@ -64,6 +63,10 @@ class Device(DeviceBase):
         return v
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class Device(DeviceListItem):
+    traffic_logs: list["TrafficLog"] = []
 
 
 class SystemSettingBase(BaseModel):
@@ -250,6 +253,7 @@ class TokenData(BaseModel):
     username: str | None = None
 
 class ChangePasswordRequest(BaseModel):
+    username: str | None = None
     current_password: str
     new_password: str
 

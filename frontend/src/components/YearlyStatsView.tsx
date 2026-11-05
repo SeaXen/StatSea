@@ -33,8 +33,8 @@ const YearlyStatsView = () => {
 
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
-        if (period === 'daily') return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-        if (period === 'monthly') return date.toLocaleDateString([], { month: 'short', year: 'numeric' });
+        if (period === 'daily') return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
+        if (period === 'monthly') return new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(date);
         if (period === 'yearly') return date.getFullYear().toString();
         return dateStr;
     };
@@ -56,12 +56,15 @@ const YearlyStatsView = () => {
                     </div>
                 </div>
 
-                <div className="flex bg-muted p-1 rounded-xl border border-border">
+                <div className="flex bg-muted p-1 rounded-xl border border-border" role="tablist" aria-label="Analytics time periods">
                     {(['daily', 'monthly', 'yearly'] as const).map((p) => (
                         <button
+                            type="button"
+                            role="tab"
+                            aria-selected={period === p}
                             key={p}
                             onClick={() => setPeriod(p)}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${period === p
+                            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${period === p
                                 ? 'bg-primary text-primary-foreground shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                                 }`}
@@ -109,7 +112,7 @@ const YearlyStatsView = () => {
                     </div>
                     {loading && (
                         <div className="flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-widest animate-pulse">
-                            Refreshing...
+                            Refreshing…
                         </div>
                     )}
                 </div>

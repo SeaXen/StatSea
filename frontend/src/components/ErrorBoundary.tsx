@@ -38,7 +38,7 @@ class ErrorBoundary extends Component<Props, State> {
                         </div>
 
                         <div className="space-y-2">
-                            <h1 className="text-2xl font-bold text-white">Something went wrong</h1>
+                            <h1 className="text-2xl font-bold text-foreground">Something went wrong</h1>
                             <p className="text-muted-foreground text-sm">
                                 An unexpected error occurred in the application. We've been notified and are working on it.
                             </p>
@@ -54,15 +54,17 @@ class ErrorBoundary extends Component<Props, State> {
 
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button
+                                type="button"
                                 onClick={() => window.location.reload()}
-                                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-secondary hover:bg-secondary/80 text-foreground rounded-xl font-medium transition-colors"
+                                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-secondary hover:bg-secondary/80 text-foreground rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                             >
                                 <RefreshCcw size={18} />
                                 Refresh Page
                             </button>
                             <button
+                                type="button"
                                 onClick={this.handleReset}
-                                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium shadow-md transition-all active:scale-95"
+                                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium shadow-md transition-[transform,background-color] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                             >
                                 <Home size={18} />
                                 Back to Dashboard

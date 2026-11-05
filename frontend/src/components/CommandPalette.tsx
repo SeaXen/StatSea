@@ -24,7 +24,7 @@ export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, se
             onOpenChange={setOpen}
             label="Global Command Menu"
             className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[580px] max-w-[94vw] bg-panel border border-line-strong rounded-[9px] shadow-2xl p-2 z-50 text-text font-sans"
-            overlayClassName="fixed inset-0 bg-[#0f1115]/80 backdrop-blur-none z-40"
+            overlayClassName="fixed inset-0 bg-background/80 backdrop-blur-none z-40"
         >
             <div className="flex items-center border-b border-line px-3 py-1" cmdk-input-wrapper="">
                 <Search className="w-4 h-4 text-muted mr-2" />
@@ -35,7 +35,7 @@ export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, se
                 <kbd className="mono text-[10px] text-faint ml-auto bg-raised border border-line px-1.5 py-0.5 rounded-[4px]">ESC</kbd>
             </div>
 
-            <Command.List className="max-h-[300px] overflow-y-auto p-1.5 scroll-py-1">
+            <Command.List className="max-h-[300px] overflow-y-auto p-1.5 scroll-py-1 overscroll-contain">
                 <Command.Empty className="p-4 text-center text-xs font-mono text-muted">No telemetry or commands found.</Command.Empty>
 
                 <Command.Group heading="Navigation Views" className="text-[10px] uppercase font-mono tracking-wider text-faint mb-1 px-2.5 pt-2">

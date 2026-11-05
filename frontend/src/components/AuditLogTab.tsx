@@ -107,7 +107,8 @@ export default function AuditLogTab() {
                         <div className="relative">
                             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-faint" />
                             <select
-                                className="pl-9 pr-8 py-1.5 rounded-[7px] border border-line bg-raised focus:outline-none focus:border-accent appearance-none font-mono text-xs text-text transition-colors"
+                                aria-label="Filter audit logs by action"
+                                className="pl-9 pr-8 py-1.5 rounded-[7px] border border-line bg-raised focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus:border-accent appearance-none font-mono text-xs text-text transition-colors"
                                 value={actionFilter}
                                 onChange={(e) => {
                                     setActionFilter(e.target.value);
@@ -125,8 +126,9 @@ export default function AuditLogTab() {
                         <div className="flex items-center gap-2 bg-raised border border-line rounded-[7px] px-3 py-1 font-mono text-xs text-text">
                             <Calendar className="w-3.5 h-3.5 text-faint" />
                             <input
+                                aria-label="Start date"
                                 type="date"
-                                className="bg-transparent border-none text-xs font-mono outline-none w-[120px] text-text"
+                                className="bg-transparent border-none text-xs font-mono outline-none w-[120px] text-text focus-visible:ring-1 focus-visible:ring-accent rounded"
                                 value={startDate}
                                 onChange={(e) => {
                                     setStartDate(e.target.value);
@@ -135,8 +137,9 @@ export default function AuditLogTab() {
                             />
                             <span className="text-faint">-</span>
                             <input
+                                aria-label="End date"
                                 type="date"
-                                className="bg-transparent border-none text-xs font-mono outline-none w-[120px] text-text"
+                                className="bg-transparent border-none text-xs font-mono outline-none w-[120px] text-text focus-visible:ring-1 focus-visible:ring-accent rounded"
                                 value={endDate}
                                 onChange={(e) => {
                                     setEndDate(e.target.value);
@@ -164,7 +167,7 @@ export default function AuditLogTab() {
                                     <tr>
                                         <td colSpan={5} className="px-4 py-12 text-center text-faint font-mono text-xs">
                                             <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-accent" />
-                                            <p>Loading audit logs...</p>
+                                            <p>Loading audit logs…</p>
                                         </td>
                                     </tr>
                                 ) : logs.length === 0 ? (
@@ -178,10 +181,10 @@ export default function AuditLogTab() {
                                     logs.map((log) => (
                                         <tr key={log.id} className="hover:bg-raised/60 transition-colors group">
                                             <td className="px-4 py-2.5 whitespace-nowrap text-faint font-mono text-xs">
-                                                {new Date(log.timestamp).toLocaleString(undefined, {
+                                                {new Intl.DateTimeFormat(undefined, {
                                                     year: 'numeric', month: 'short', day: 'numeric',
                                                     hour: '2-digit', minute: '2-digit', second: '2-digit'
-                                                })}
+                                                }).format(new Date(log.timestamp))}
                                             </td>
                                             <td className="px-4 py-2.5 whitespace-nowrap">
                                                 <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[5px] text-[10px] uppercase tracking-wider font-bold font-mono border ${getActionColor(log.action)}`}>
@@ -233,9 +236,11 @@ export default function AuditLogTab() {
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <button
+                                    type="button"
+                                    aria-label="Previous page"
                                     onClick={() => setPage(p => Math.max(1, p - 1))}
                                     disabled={page === 1}
-                                    className="p-1.5 rounded-[7px] border border-line bg-panel hover:bg-line-strong disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-text"
+                                    className="p-1.5 rounded-[7px] border border-line bg-panel hover:bg-line-strong disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-text focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                 >
                                     <ChevronLeft className="w-3.5 h-3.5" />
                                 </button>
@@ -243,9 +248,11 @@ export default function AuditLogTab() {
                                     Page {page} of {totalPages}
                                 </span>
                                 <button
+                                    type="button"
+                                    aria-label="Next page"
                                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                     disabled={page === totalPages}
-                                    className="p-1.5 rounded-[7px] border border-line bg-panel hover:bg-line-strong disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-text"
+                                    className="p-1.5 rounded-[7px] border border-line bg-panel hover:bg-line-strong disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-text focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                 >
                                     <ChevronRight className="w-3.5 h-3.5" />
                                 </button>

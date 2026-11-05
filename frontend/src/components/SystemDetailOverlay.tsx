@@ -10,6 +10,7 @@ import {
     ArrowUpDown
 } from 'lucide-react';
 import axiosInstance from '../config/axiosInstance';
+import { useModalA11y } from '../hooks/useModalA11y';
 
 interface ResourceProcess {
     id: string;
@@ -27,6 +28,7 @@ interface SystemDetailOverlayProps {
 }
 
 const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClose, initialType = 'all' }) => {
+    const modalRef = useModalA11y<HTMLDivElement>({ isOpen, onClose });
     const [processes, setProcesses] = useState<ResourceProcess[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -99,6 +101,10 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
 
                     {/* Content */}
                     <motion.div
+                        ref={modalRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="system-detail-title"
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -111,13 +117,15 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
                                     <Activity className="w-6 h-6 text-blue-400" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-foreground tracking-tight">Resource Management</h2>
+                                    <h2 id="system-detail-title" className="text-xl font-bold text-foreground tracking-tight">Resource Management</h2>
                                     <p className="text-muted-foreground text-sm">Real-time status of system processes and containers</p>
                                 </div>
                             </div>
                             <button
+                                type="button"
                                 onClick={onClose}
-                                className="p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-all border border-transparent hover:border-border"
+                                aria-label="Close dialog"
+                                className="p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors border border-transparent hover:border-border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                             >
                                 <X className="w-6 h-6" />
                             </button>
@@ -129,19 +137,21 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <input
                                     type="text"
-                                    placeholder="Search by name..."
+                                    placeholder="Search by name…"
+                                    aria-label="Search processes and containers by name"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full bg-muted/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-all"
+                                    className="w-full bg-muted/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary transition-colors"
                                 />
                             </div>
 
                             <div className="flex items-center gap-2 p-1 bg-muted/50 rounded-xl border border-border">
                                 {(['all', 'Process', 'Container'] as const).map((type) => (
                                     <button
+                                        type="button"
                                         key={type}
                                         onClick={() => setFilterType(type)}
-                                        className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${filterType === type
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${filterType === type
                                             ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                                             : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                                             }`}
@@ -157,7 +167,14 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
                             <table className="w-full text-left border-collapse">
                                 <thead className="sticky top-0 bg-card z-10">
                                     <tr className="border-b border-border">
-                                        <th className="px-6 py-4 text-muted-foreground text-[10px] uppercase font-bold tracking-wider cursor-pointer hover:text-foreground transition-colors" onClick={() => toggleSort('name')}>
+                                        <th
+                                            tabIndex={0}
+                                            role="button"
+                                            aria-label="Sort by application name"
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('name'); } }}
+                                            className="px-6 py-4 text-muted-foreground text-[10px] uppercase font-bold tracking-wider cursor-pointer hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                                            onClick={() => toggleSort('name')}
+                                        >
                                             <div className="flex items-center gap-2">
                                                 <span>Application / Process</span>
                                                 <ArrowUpDown className="w-3 h-3" />
@@ -165,14 +182,28 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
                                         </th>
                                         <th className="px-6 py-4 text-muted-foreground text-[10px] uppercase font-bold tracking-wider">Type</th>
                                         <th className="px-6 py-4 text-muted-foreground text-[10px] uppercase font-bold tracking-wider">Status</th>
-                                        <th className="px-6 py-4 text-muted-foreground text-[10px] uppercase font-bold tracking-wider cursor-pointer hover:text-foreground transition-colors" onClick={() => toggleSort('cpu')}>
+                                        <th
+                                            tabIndex={0}
+                                            role="button"
+                                            aria-label="Sort by CPU percentage"
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('cpu'); } }}
+                                            className="px-6 py-4 text-muted-foreground text-[10px] uppercase font-bold tracking-wider cursor-pointer hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                                            onClick={() => toggleSort('cpu')}
+                                        >
                                             <div className="flex items-center gap-2">
                                                 <Cpu className="w-3 h-3" />
                                                 <span>CPU %</span>
                                                 <ArrowUpDown className="w-3 h-3" />
                                             </div>
                                         </th>
-                                        <th className="px-6 py-4 text-muted-foreground text-[10px] uppercase font-bold tracking-wider cursor-pointer hover:text-foreground transition-colors" onClick={() => toggleSort('ram')}>
+                                        <th
+                                            tabIndex={0}
+                                            role="button"
+                                            aria-label="Sort by RAM usage"
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('ram'); } }}
+                                            className="px-6 py-4 text-muted-foreground text-[10px] uppercase font-bold tracking-wider cursor-pointer hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                                            onClick={() => toggleSort('ram')}
+                                        >
                                             <div className="flex items-center gap-2">
                                                 <Database className="w-3 h-3" />
                                                 <span>RAM (MB)</span>
@@ -187,7 +218,7 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
                                             <td colSpan={5} className="px-6 py-20 text-center text-muted-foreground">
                                                 <div className="flex flex-col items-center gap-3">
                                                     <div className="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-                                                    <span>Analyzing resource usage...</span>
+                                                    <span>Analyzing resource usage…</span>
                                                 </div>
                                             </td>
                                         </tr>
@@ -241,7 +272,7 @@ const SystemDetailOverlay: React.FC<SystemDetailOverlayProps> = ({ isOpen, onClo
                                                         </span>
                                                         <div className="h-1 w-20 bg-muted rounded-full overflow-hidden hidden sm:block">
                                                             <div
-                                                                className={`h-full rounded-full transition-all duration-500 ${p.cpu > 50 ? 'bg-red-500' : 'bg-blue-500'}`}
+                                                                className={`h-full rounded-full transition-[width] duration-500 ${p.cpu > 50 ? 'bg-red-500' : 'bg-blue-500'}`}
                                                                 style={{ width: `${Math.min(p.cpu, 100)}%` }}
                                                             />
                                                         </div>

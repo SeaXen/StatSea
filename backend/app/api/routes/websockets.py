@@ -3,8 +3,7 @@ import logging
 import time
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
-from jose import JWTError, jwt
-
+from ...core.auth_jwt import _extract_user_from_token
 from ...core.collector import global_collector
 from ...core.config import settings
 from ...db.database import SessionLocal
@@ -54,23 +53,24 @@ def _safe_broadcast(msg: dict):
 # Hook the global collector's event callback to broadcast to "events" channel
 global_collector.set_event_callback(_safe_broadcast)
 
-async def authenticate_websocket(websocket: WebSocket, token: str) -> models.User | None:
-    """Validate token for WebSocket connections."""
+async def authenticate_websocket(websocket: WebSocket, token: str | None = None) -> models.User | None:
+    """Validate token for WebSocket connections via query param or Sec-WebSocket-Protocol header."""
+    if not token:
+        sec_protocol = websocket.headers.get("sec-websocket-protocol")
+        if sec_protocol:
+            for p in [x.strip() for x in sec_protocol.split(",")]:
+                if p != "Bearer" and len(p) > 20:
+                    token = p
+                    break
     if not token:
         return None
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            return None
-            
         with SessionLocal() as db:
-            user = db.query(models.User).filter(models.User.username == username).first()
-            if user and user.is_active:
-                return user
-    except JWTError:
-        pass
-    return None
+            user, _ = _extract_user_from_token(token, db)
+            return user
+    except Exception as e:
+        logger.debug(f"WebSocket auth failed: {e}")
+        return None
 
 @router.websocket("/live")
 async def websocket_live(websocket: WebSocket, token: str = Query(None)):
@@ -149,24 +149,24 @@ async def speedtest_websocket(websocket: WebSocket, provider: str = "ookla", tok
                 logger.error(f"Bridge callback error: {e}")
 
         async def run_test():
-            db = next(get_db())
-            try:
-                result = await speedtest_service.run_speedtest(db, provider=provider, progress_callback=bridge_callback)
-                await queue.put({"phase": "complete", "result": {
-                    "download": result.download,
-                    "upload": result.upload,
-                    "ping": result.ping,
-                    "server": {
-                        "name": result.server_name,
-                        "country": result.server_country,
-                        "id": result.server_id
-                    },
-                    "isp": result.isp
-                }})
-            except Exception as e:
-                await queue.put({"error": str(e)})
-            finally:
-                await queue.put(None)
+            with SessionLocal() as db:
+                try:
+                    result = await speedtest_service.run_speedtest(db, provider=provider, progress_callback=bridge_callback)
+                    await queue.put({"phase": "complete", "result": {
+                        "download": result.download,
+                        "upload": result.upload,
+                        "ping": result.ping,
+                        "server": {
+                            "name": result.server_name,
+                            "country": result.server_country,
+                            "id": result.server_id
+                        },
+                        "isp": result.isp
+                    }})
+                except Exception as e:
+                    await queue.put({"error": str(e)})
+                finally:
+                    await queue.put(None)
 
         task = asyncio.create_task(run_test())
 

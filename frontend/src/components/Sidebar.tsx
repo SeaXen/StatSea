@@ -35,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     isMobileOpen,
     setIsMobileOpen
 }) => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
 
     const navItems = [
         { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -181,8 +181,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {/* Bottom Actions / User */}
                 <div className="absolute bottom-0 w-full p-3 border-t border-border bg-background/20 backdrop-blur-md">
                     <button
+                        type="button"
+                        aria-label="User profile and logout"
+                        onClick={logout}
                         className={`
-                            group flex w-full items-center rounded-lg transition-all duration-200
+                            group flex w-full items-center rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary
                             ${isCollapsed ? 'justify-center h-10' : 'px-3 py-2.5 bg-accent/50 hover:bg-accent'}
                         `}
                     >
@@ -211,8 +214,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     {isCollapsed && (
                         <button
+                            type="button"
+                            aria-label="Expand sidebar"
                             onClick={() => setIsCollapsed(false)}
-                            className="hidden md:flex w-full mt-2 items-center justify-center text-muted-foreground hover:text-foreground"
+                            className="hidden md:flex w-full mt-2 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded"
                         >
                             <Menu className="h-4 w-4" />
                         </button>

@@ -78,7 +78,7 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
                 {/* Daily Quota */}
                 <div className="p-4 rounded-[7px] bg-raised border border-line">
                     <div className="flex justify-between mb-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-faint">Daily Limit (GB)</label>
+                        <label htmlFor="daily-limit-input" className="text-xs font-bold uppercase tracking-wider text-faint">Daily Limit (GB)</label>
                         {dailyLimit && (
                             <span className={`text-xs font-mono font-bold ${dailyUsage > dailyLimit ? "text-red-500" : "text-emerald-500"}`}>
                                 {((dailyUsage / dailyLimit) * 100).toFixed(1)}% Used
@@ -87,12 +87,13 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
                     </div>
                     <div className="flex gap-2">
                         <input
+                            id="daily-limit-input"
                             type="number"
                             step="0.1"
                             value={dailyInput}
                             onChange={(e) => handleDailyChange(e.target.value)}
                             placeholder="No Limit"
-                            className="bg-panel border border-line rounded-[7px] px-3 py-2 text-sm text-text w-full focus:outline-none focus:border-line-strong font-mono"
+                            className="bg-panel border border-line rounded-[7px] px-3 py-2 text-sm text-text w-full focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus:border-line-strong font-mono"
                         />
                     </div>
 
@@ -100,7 +101,7 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
                         <div className="mt-3">
                             <div className="h-1.5 w-full bg-line rounded-full overflow-hidden">
                                 <div
-                                    className={`h-full rounded-full transition-all duration-500 ${getProgressColor(dailyUsage, dailyLimit)}`}
+                                    className={`h-full rounded-full transition-[width] duration-500 ${getProgressColor(dailyUsage, dailyLimit)}`}
                                     style={{ width: `${Math.min((dailyUsage / dailyLimit) * 100, 100)}%` }}
                                 />
                             </div>
@@ -115,7 +116,7 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
                 {/* Monthly Quota */}
                 <div className="p-4 rounded-[7px] bg-raised border border-line">
                     <div className="flex justify-between mb-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-faint">Monthly Limit (GB)</label>
+                        <label htmlFor="monthly-limit-input" className="text-xs font-bold uppercase tracking-wider text-faint">Monthly Limit (GB)</label>
                         {monthlyLimit && (
                             <span className={`text-xs font-mono font-bold ${monthlyUsage > monthlyLimit ? "text-red-500" : "text-emerald-500"}`}>
                                 {((monthlyUsage / monthlyLimit) * 100).toFixed(1)}% Used
@@ -124,19 +125,20 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
                     </div>
                     <div className="flex gap-2">
                         <input
+                            id="monthly-limit-input"
                             type="number"
                             step="1"
                             value={monthlyInput}
                             onChange={(e) => handleMonthlyChange(e.target.value)}
                             placeholder="No Limit"
-                            className="bg-panel border border-line rounded-[7px] px-3 py-2 text-sm text-text w-full focus:outline-none focus:border-line-strong font-mono"
+                            className="bg-panel border border-line rounded-[7px] px-3 py-2 text-sm text-text w-full focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus:border-line-strong font-mono"
                         />
                     </div>
                     {monthlyLimit && (
                         <div className="mt-3">
                             <div className="h-1.5 w-full bg-line rounded-full overflow-hidden">
                                 <div
-                                    className={`h-full rounded-full transition-all duration-500 ${getProgressColor(monthlyUsage, monthlyLimit)}`}
+                                    className={`h-full rounded-full transition-[width] duration-500 ${getProgressColor(monthlyUsage, monthlyLimit)}`}
                                     style={{ width: `${Math.min((monthlyUsage / monthlyLimit) * 100, 100)}%` }}
                                 />
                             </div>
@@ -151,12 +153,13 @@ export function QuotaManager({ deviceId, dailyUsage, monthlyUsage }: QuotaManage
 
             <div className="mt-4 flex justify-end">
                 <button
+                    type="button"
                     onClick={handleSave}
                     disabled={saveQuotaMutation.isPending}
-                    className="flex items-center gap-2 px-4 py-2 bg-accent/15 hover:bg-accent/25 text-accent rounded-[7px] text-xs font-bold transition-colors border border-accent/25 uppercase tracking-wider disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-accent/15 hover:bg-accent/25 text-accent rounded-[7px] text-xs font-bold transition-colors border border-accent/25 uppercase tracking-wider disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
                     <Save className="w-4 h-4" />
-                    {saveQuotaMutation.isPending ? "Saving..." : "Save Quotas"}
+                    {saveQuotaMutation.isPending ? "Saving…" : "Save Quotas"}
                 </button>
             </div>
         </div>

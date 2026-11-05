@@ -1,3 +1,4 @@
+import calendar
 import logging
 from datetime import datetime
 
@@ -45,7 +46,7 @@ class AIPredictor:
 
             # Predict for the rest of the month
             today = datetime.now()
-            days_in_month = 30  # Simplified
+            days_in_month = calendar.monthrange(today.year, today.month)[1]
             remaining_days = days_in_month - today.day
 
             if remaining_days <= 0:

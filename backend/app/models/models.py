@@ -82,6 +82,7 @@ class User(Base):
     failed_login_attempts = Column(Integer, default=0)
     locked_until = Column(DateTime(timezone=True), nullable=True)
     must_change_password = Column(Boolean, default=False)
+    token_version = Column(Integer, default=1, nullable=False)
     
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)

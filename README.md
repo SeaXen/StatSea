@@ -8,7 +8,7 @@
 [![FastAPI: 0.115](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python: 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![Docker: Ready](https://img.shields.io/badge/Docker-Port%2021080-2496ED?logo=docker&logoColor=white)](./docker-compose.yml)
-[![Tests: 60/60 Passing](https://img.shields.io/badge/Pytest-60%2F60%20Passing-brightgreen?logo=pytest&logoColor=white)](./backend/tests)
+[![Tests: 65/65 Passing](https://img.shields.io/badge/Pytest-65%2F65%20Passing-brightgreen?logo=pytest&logoColor=white)](./backend/tests)
 [![Playwright E2E: 11/11 Passing](https://img.shields.io/badge/Playwright%20E2E-11%2F11%20Verified-brightgreen?logo=playwright&logoColor=white)](./tests/test_statsea_e2e_playwright.py)
 [![PWA: Offline Ready](https://img.shields.io/badge/PWA-Workbox%20v0.19-purple?logo=pwa&logoColor=white)](./frontend/src/sw.ts)
 [![Data Optimization: Gzip](https://img.shields.io/badge/API-GZip%20Compressed-success)](./backend/app/main.py)
@@ -186,10 +186,10 @@ StatSea features 6 built-in themes that synchronize 100% of the UI instantaneous
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Dark Ops** *(Default)* | Low-light NOC console | `#0f1115` | `#15181e` | `#7c8cff` (Periwinkle) | `rgba(124, 140, 255, 0.10)` |
 | **Daylight** | High-ambient audit | `#f5f6fa` | `#ffffff` | `#4f5ce6` (Cobalt) | `rgba(79, 92, 230, 0.08)` |
-| **Cyberpunk** | High-energy terminal | `#08080f` | `#121224` | `#00ffcc` (Neon Cyan) | `rgba(0, 255, 204, 0.12)` |
-| **Dracula** | Iconic dark gothic | `#282a36` | `#343746` | `#bd93f9` (Purple) | `rgba(189, 147, 249, 0.15)` |
-| **Nord** | Arctic low-contrast | `#2e3440` | `#3b4252` | `#88c0d0` (Frost Blue) | `rgba(136, 192, 208, 0.15)` |
-| **Midnight** | Deep oceanic | `#060913` | `#0e1424` | `#38bdf8` (Sky Blue) | `rgba(56, 189, 248, 0.12)` |
+| **Cyberpunk** | High-energy terminal | `#0a0e17` | `#121a2d` | `#facc15` (Neon Yellow) | `rgba(250, 204, 21, 0.12)` |
+| **Dracula** | Iconic dark gothic | `#1e1f29` | `#282a36` | `#ff79c6` (Pink) | `rgba(255, 121, 198, 0.12)` |
+| **Nord** | Arctic low-contrast | `#242933` | `#2e3440` | `#88c0d0` (Frost Blue) | `rgba(136, 192, 208, 0.12)` |
+| **Midnight** | Deep oceanic | `#0a0e1a` | `#131b30` | `#38bdf8` (Sky Blue) | `rgba(56, 189, 248, 0.12)` |
 
 *Custom accents can be selected from the interactive color picker in Settings.*
 
@@ -219,7 +219,7 @@ python tests/test_statsea_e2e_playwright.py
 ### Verified Benchmark Scorecard
 | Test Tier | Metric | Status | Result |
 | :--- | :--- | :--- | :--- |
-| **Pytest Unit & Integration** | 60 Test Cases | **PASS** | 60 passed in 18.99s (100%) |
+| **Pytest Unit & Integration** | 65 Test Cases | **PASS** | 65 passed in 12.61s (100%) |
 | **TypeScript Typecheck** | Strict Mode | **PASS** | 0 errors |
 | **ESLint Quality Standard** | Unused directives reported | **PASS** | 0 errors / 0 warnings |
 | **Production Bundle** | Vite Build + Workbox PWA | **PASS** | Built in 11.59s (<130KB core bundle) |

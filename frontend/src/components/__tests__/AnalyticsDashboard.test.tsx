@@ -1,7 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AnalyticsDashboard from '../AnalyticsDashboard';
 import axiosInstance from '../../config/axiosInstance';
+
+const renderWithClient = (ui: React.ReactElement) => {
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: { retry: false },
+        },
+    });
+    return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+};
 
 // Mock recharts ResponsiveContainer
 vi.mock('recharts', async () => {
@@ -62,7 +72,7 @@ describe('AnalyticsDashboard', () => {
     });
 
     it('renders traffic analyzer heading, capture state, and control actions', async () => {
-        render(<AnalyticsDashboard />);
+        renderWithClient(<AnalyticsDashboard />);
 
         await waitFor(() => {
             expect(screen.getByText('Traffic Analyzer')).toBeInTheDocument();
@@ -72,7 +82,7 @@ describe('AnalyticsDashboard', () => {
     });
 
     it('toggles pause and resume telemetry state', async () => {
-        render(<AnalyticsDashboard />);
+        renderWithClient(<AnalyticsDashboard />);
 
         await waitFor(() => {
             expect(screen.getByText('Traffic Analyzer')).toBeInTheDocument();
@@ -86,7 +96,7 @@ describe('AnalyticsDashboard', () => {
     });
 
     it('switches between overview, dns, and security tabs', async () => {
-        render(<AnalyticsDashboard />);
+        renderWithClient(<AnalyticsDashboard />);
 
         await waitFor(() => {
             expect(screen.getByText('Traffic Analyzer')).toBeInTheDocument();

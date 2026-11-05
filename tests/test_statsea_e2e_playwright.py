@@ -22,7 +22,11 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 FRONTEND_URL = os.getenv("STATSEA_FRONTEND_URL", "http://localhost:5173")
-ARTIFACT_DIR = os.getenv("ARTIFACT_DIR", r"C:\Users\Sagar-EB\.gemini\antigravity-ide\brain\962c83e3-e3ec-4f08-9d6b-99f3a5d12df0")
+ARTIFACT_DIR = os.getenv(
+    "ARTIFACT_DIR",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "artifacts"),
+)
+os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
 
 def run_e2e_tests():
@@ -55,14 +59,14 @@ def run_e2e_tests():
             # Step 2: Login Form Inspection
             print("[Step 2] Validating Login UI elements...")
             assert page.locator("text=StatSea").first.is_visible()
-            assert page.locator('input[placeholder="Enter your username"]').is_visible()
+            assert page.locator('input#username, input[name="username"]').is_visible()
             assert page.locator('input[type="password"]').is_visible()
             page.screenshot(path=os.path.join(ARTIFACT_DIR, "page_01_login.png"), full_page=True)
             print("  [PASS] Login branding, username, and password fields visible (captured page_01_login.png)")
 
             # Step 3: Rejected Bad Credentials
             print("[Step 3] Testing rejection of invalid credentials...")
-            page.fill('input[placeholder="Enter your username"]', "invalid_user")
+            page.fill('input#username, input[name="username"]', "invalid_user")
             page.fill('input[type="password"]', "wrong_password_123")
             page.click('button[type="submit"]')
             page.wait_for_timeout(1200)
@@ -71,7 +75,7 @@ def run_e2e_tests():
 
             # Step 4: Valid Login with admin / admin123
             print("[Step 4] Logging in with seeded admin credentials...")
-            page.fill('input[placeholder="Enter your username"]', "admin")
+            page.fill('input#username, input[name="username"]', "admin")
             page.fill('input[type="password"]', "admin123")
             with page.expect_response(lambda r: "/api/auth/login" in r.url and r.status == 200, timeout=15000):
                 page.click('button[type="submit"]')
@@ -92,7 +96,7 @@ def run_e2e_tests():
 
             # Step 5: Dashboard and Telemetry Badge Verification
             print("[Step 5] Checking TopNav and Telemetry Transparency badge...")
-            badge_locator = page.locator('text="SIMULATION MODE"').first
+            badge_locator = page.locator('span:has-text("LIVE SNIFFING"), span:has-text("SIMULATION MODE")').first
             badge_locator.wait_for(state="visible", timeout=8000)
             badge_text = badge_locator.inner_text().strip()
             print(f"  [PASS] Telemetry Transparency Badge verified: '{badge_text}'")
@@ -127,11 +131,11 @@ def run_e2e_tests():
             ]
 
             for idx, (tab_label, tab_id) in enumerate(all_tabs, start=2):
-                btn = page.locator(f'nav.tabs button:has-text("{tab_label}"), aside button:has-text("{tab_label}"), button.tab-btn:has-text("{tab_label}")').first
+                btn = page.locator(f'button.tab-btn:has-text("{tab_label}"), nav.tabs button:has-text("{tab_label}"), aside button:has-text("{tab_label}")').first
                 if not btn.is_visible():
-                    # Try partial text or alternative label
-                    btn = page.locator(f'nav button:has-text("{tab_label}"), button[title*="{tab_label}"]').first
+                    btn = page.locator(f'button:has-text("{tab_label}")').first
                 if btn.is_visible():
+                    btn.scroll_into_view_if_needed()
                     btn.click()
                     page.wait_for_timeout(1000)
 
@@ -144,22 +148,23 @@ def run_e2e_tests():
                     print(f"  [PASS] Successfully opened tab '{tab_label}' ({tab_screenshot})")
 
             # Switch back to Overview
-            overview_btn = page.locator('nav.tabs button:has-text("Overview"), aside button:has-text("Overview"), button.tab-btn:has-text("Overview")').first
+            overview_btn = page.locator('button.tab-btn:has-text("Overview"), nav.tabs button:has-text("Overview"), aside button:has-text("Overview")').first
             overview_btn.wait_for(state="visible", timeout=5000)
+            overview_btn.scroll_into_view_if_needed()
             overview_btn.click()
             page.wait_for_timeout(1200)
             print("  [PASS] Successfully returned to 'Overview' tab")
 
             # Step 7: Timeline Dropdown Interaction
             print("[Step 7] Testing unified Timeline Horizon dropdown...")
-            timeline_btn = page.locator('button[aria-label="Choose timeline window"]').first
+            timeline_btn = page.locator('button[aria-label="Select timeline range"], button[aria-label="Choose timeline window"], button[title="Timeline Range"]').first
             if timeline_btn.is_visible():
                 timeline_btn.click()
                 page.wait_for_timeout(500)
                 page.screenshot(path=os.path.join(ARTIFACT_DIR, "timeline_dropdown.png"))
                 print("  [PASS] Timeline Horizon dropdown opened and captured (timeline_dropdown.png)")
                 # Click 6h option
-                opt_6h = page.locator('button[role="menuitem"]:has-text("6h")').first
+                opt_6h = page.locator('button:has-text("6h")').first
                 if opt_6h.is_visible():
                     opt_6h.click()
                     page.wait_for_timeout(400)

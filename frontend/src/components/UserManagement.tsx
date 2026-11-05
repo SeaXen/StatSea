@@ -27,6 +27,8 @@ interface User {
     created_at: string;
 }
 
+import { useModalA11y } from '../hooks/useModalA11y';
+
 export const UserManagement: React.FC = () => {
     const { data: users = [], isLoading } = useUsers() as { data: User[]; isLoading: boolean };
     const createUserMutation = useCreateUser();
@@ -36,6 +38,7 @@ export const UserManagement: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const modalRef = useModalA11y<HTMLDivElement>({ isOpen: isModalOpen, onClose: () => setIsModalOpen(false) });
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [formData, setFormData] = useState({
@@ -121,15 +124,21 @@ export const UserManagement: React.FC = () => {
         }
     };
 
-    const deleteUser = async (userId: number) => {
-        if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-
-        try {
-            await deleteUserMutation.mutateAsync(userId);
-            toast.success('User deleted successfully');
-        } catch {
-            toast.error('Failed to delete user');
-        }
+    const deleteUser = (userId: number) => {
+        toast('Delete user account?', {
+            description: 'This action cannot be undone and will revoke all active sessions.',
+            action: {
+                label: 'Delete',
+                onClick: async () => {
+                    try {
+                        await deleteUserMutation.mutateAsync(userId);
+                        toast.success('User deleted successfully');
+                    } catch {
+                        toast.error('Failed to delete user');
+                    }
+                }
+            }
+        });
     };
 
     const safeUsers = Array.isArray(users) ? users : [];
@@ -166,8 +175,9 @@ export const UserManagement: React.FC = () => {
 
                 <div className="flex items-center gap-2">
                     <button
+                        type="button"
                         onClick={() => handleOpenModal('add')}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-accent hover:opacity-90 text-accent-foreground rounded-[7px] text-xs font-semibold font-mono transition-opacity shadow-sm"
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-accent hover:opacity-90 text-accent-foreground rounded-[7px] text-xs font-semibold font-mono transition-opacity shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                     >
                         <UserPlus className="w-3.5 h-3.5" />
                         + ADD OPERATOR
@@ -181,8 +191,9 @@ export const UserManagement: React.FC = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-faint" />
                     <input
                         type="text"
-                        placeholder="Search operator by name, username or email..."
-                        className="w-full bg-raised border border-line rounded-[7px] py-1.5 pl-9 pr-3 text-xs font-mono text-text focus:outline-none focus:border-accent transition-colors placeholder:text-faint"
+                        placeholder="Search operator by name, username or email…"
+                        aria-label="Search operator by name, username or email"
+                        className="w-full bg-raised border border-line rounded-[7px] py-1.5 pl-9 pr-3 text-xs font-mono text-text focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors placeholder:text-faint"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -225,7 +236,7 @@ export const UserManagement: React.FC = () => {
                                 {isLoading ? (
                                     <tr>
                                         <td colSpan={5} className="py-12 text-center text-text-soft font-mono text-xs animate-pulse">
-                                            Syncing operator directory...
+                                            Syncing operator directory…
                                         </td>
                                     </tr>
                                 ) : filteredUsers.length > 0 ? filteredUsers.map((user) => (
@@ -246,9 +257,10 @@ export const UserManagement: React.FC = () => {
                                         </td>
                                         <td className="px-4 py-2.5 font-mono">
                                             <button
+                                                type="button"
                                                 onClick={() => toggleAdminStatus(user)}
                                                 className={cn(
-                                                    "status text-[9px] uppercase px-1.5 py-0.5",
+                                                    "status text-[9px] uppercase px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                                                     user.is_admin ? "warn" : "ok"
                                                 )}
                                             >
@@ -257,9 +269,10 @@ export const UserManagement: React.FC = () => {
                                         </td>
                                         <td className="px-4 py-2.5 text-center font-mono">
                                             <button
+                                                type="button"
                                                 onClick={() => toggleUserStatus(user)}
                                                 className={cn(
-                                                    "status text-[9px] uppercase px-1.5 py-0.5",
+                                                    "status text-[9px] uppercase px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                                                     user.is_active ? "ok" : "offline"
                                                 )}
                                             >
@@ -268,23 +281,25 @@ export const UserManagement: React.FC = () => {
                                         </td>
                                         <td className="px-4 py-2.5 text-center font-mono">
                                             <div className="text-text-soft text-xs num">
-                                                {user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
+                                                {user.last_login ? new Intl.DateTimeFormat(undefined, { dateStyle: 'short' }).format(new Date(user.last_login)) : 'Never'}
                                             </div>
-                                            <div className="text-faint text-[9px]">Created {new Date(user.created_at).toLocaleDateString()}</div>
+                                            <div className="text-faint text-[9px]">Created {new Intl.DateTimeFormat(undefined, { dateStyle: 'short' }).format(new Date(user.created_at))}</div>
                                         </td>
                                         <td className="px-4 py-2.5 text-right">
                                             <div className="flex justify-end gap-1.5">
                                                 <button
+                                                    type="button"
                                                     onClick={() => handleOpenModal('edit', user)}
                                                     aria-label={`Edit ${user.username}`}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-[5px] bg-raised hover:bg-line-strong border border-line text-text-soft hover:text-text transition-colors"
+                                                    className="w-7 h-7 flex items-center justify-center rounded-[5px] bg-raised hover:bg-line-strong border border-line text-text-soft hover:text-text transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                                 >
                                                     <Edit2 className="w-3.5 h-3.5" />
                                                 </button>
                                                 <button
+                                                    type="button"
                                                     onClick={() => deleteUser(user.id)}
                                                     aria-label={`Delete ${user.username}`}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-[5px] bg-raised hover:bg-line-strong border border-line text-danger hover:text-danger transition-colors"
+                                                    className="w-7 h-7 flex items-center justify-center rounded-[5px] bg-raised hover:bg-line-strong border border-line text-danger hover:text-danger transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
@@ -321,14 +336,21 @@ export const UserManagement: React.FC = () => {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="relative w-full max-w-lg"
                         >
-                            <div className="panel p-0 border border-line bg-panel shadow-2xl overflow-hidden rounded-[var(--r-panel)]">
+                            <div
+                                ref={modalRef}
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="user-modal-title"
+                                tabIndex={-1}
+                                className="panel p-0 border border-line bg-panel shadow-2xl overflow-hidden rounded-[var(--r-panel)]"
+                            >
                                 <div className="p-5 border-b border-line bg-raised flex justify-between items-center relative overflow-hidden">
                                     <div className="flex items-center gap-3 relative z-10">
                                         <div className="w-9 h-9 rounded-[7px] bg-accent/10 flex items-center justify-center border border-accent/20">
                                             {modalMode === 'add' ? <UserPlus className="w-4 h-4 text-accent" /> : <Edit2 className="w-4 h-4 text-accent" />}
                                         </div>
                                         <div>
-                                            <h2 className="text-base font-bold text-text tracking-tight uppercase">
+                                            <h2 id="user-modal-title" className="text-base font-bold text-text tracking-tight uppercase">
                                                 {modalMode === 'add' ? 'Provision Identity' : 'Update Credentials'}
                                             </h2>
                                             <p className="text-faint text-[10px] font-mono uppercase tracking-wider mt-0.5">
@@ -337,9 +359,10 @@ export const UserManagement: React.FC = () => {
                                         </div>
                                     </div>
                                     <button
+                                        type="button"
                                         onClick={() => setIsModalOpen(false)}
                                         aria-label="Close dialog"
-                                        className="relative z-10 p-1.5 rounded-[5px] hover:bg-panel text-faint hover:text-text transition-all border border-transparent hover:border-line"
+                                        className="relative z-10 p-1.5 rounded-[5px] hover:bg-panel text-faint hover:text-text transition-colors border border-transparent hover:border-line focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                     >
                                         <XCircle className="w-4 h-4" />
                                     </button>
@@ -349,36 +372,42 @@ export const UserManagement: React.FC = () => {
                                     <div className="space-y-3">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             <div className="space-y-1">
-                                                <label className="text-[10px] font-bold text-faint uppercase tracking-wider">Username</label>
+                                                <label htmlFor="user-username-input" className="text-[10px] font-bold text-faint uppercase tracking-wider">Username</label>
                                                 <input
+                                                    id="user-username-input"
                                                     type="text"
+                                                    autoComplete="username"
                                                     disabled={modalMode === 'edit'}
                                                     required
-                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-line-strong transition-all font-mono disabled:opacity-40 placeholder:text-faint"
+                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors font-mono disabled:opacity-40 placeholder:text-faint"
                                                     value={formData.username}
                                                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                                    placeholder="Operator handle..."
+                                                    placeholder="Operator handle…"
                                                 />
                                             </div>
                                             <div className="space-y-1">
-                                                <label className="text-[10px] font-bold text-faint uppercase tracking-wider">Full Name</label>
+                                                <label htmlFor="user-fullname-input" className="text-[10px] font-bold text-faint uppercase tracking-wider">Full Name</label>
                                                 <input
+                                                    id="user-fullname-input"
                                                     type="text"
+                                                    autoComplete="name"
                                                     required
-                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-line-strong transition-all font-mono placeholder:text-faint"
+                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors font-mono placeholder:text-faint"
                                                     value={formData.full_name}
                                                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                                                    placeholder="Real-world name..."
+                                                    placeholder="Real-world name…"
                                                 />
                                             </div>
                                         </div>
 
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-faint uppercase tracking-wider">Email Identifier</label>
+                                            <label htmlFor="user-email-input" className="text-[10px] font-bold text-faint uppercase tracking-wider">Email Identifier</label>
                                             <input
+                                                id="user-email-input"
                                                 type="email"
+                                                autoComplete="email"
                                                 required
-                                                className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-line-strong transition-all font-mono placeholder:text-faint"
+                                                className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors font-mono placeholder:text-faint"
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                 placeholder="address@domain.com"
@@ -386,13 +415,15 @@ export const UserManagement: React.FC = () => {
                                         </div>
 
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-faint uppercase tracking-wider">
+                                            <label htmlFor="user-password-input" className="text-[10px] font-bold text-faint uppercase tracking-wider">
                                                 {modalMode === 'add' ? 'Access Cipher' : 'New Cipher (leave blank to retain)'}
                                             </label>
                                             <input
+                                                id="user-password-input"
                                                 type="password"
+                                                autoComplete="new-password"
                                                 required={modalMode === 'add'}
-                                                className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-line-strong transition-all font-mono placeholder:text-faint"
+                                                className="w-full bg-raised border border-line rounded-[7px] px-3 py-2 text-xs text-text focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors font-mono placeholder:text-faint"
                                                 value={formData.password}
                                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                                 placeholder="••••••••••••"
@@ -407,10 +438,12 @@ export const UserManagement: React.FC = () => {
                                                 </div>
                                                 <button
                                                     type="button"
+                                                    role="switch"
+                                                    aria-checked={formData.is_admin}
                                                     onClick={() => setFormData({ ...formData, is_admin: !formData.is_admin })}
                                                     aria-label="Toggle privileged admin access"
                                                     className={cn(
-                                                        "w-10 h-5 rounded-full relative transition-all border border-line",
+                                                        "w-10 h-5 rounded-full relative transition-colors border border-line focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                                                         formData.is_admin ? "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.2)]" : "bg-panel"
                                                     )}
                                                 >
@@ -428,10 +461,12 @@ export const UserManagement: React.FC = () => {
                                                 </div>
                                                 <button
                                                     type="button"
+                                                    role="switch"
+                                                    aria-checked={formData.is_active}
                                                     onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
                                                     aria-label="Toggle user active status"
                                                     className={cn(
-                                                        "w-10 h-5 rounded-full relative transition-all border border-line",
+                                                        "w-10 h-5 rounded-full relative transition-colors border border-line focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                                                         formData.is_active ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]" : "bg-rose-500 shadow-[0_0_10px_rgba(225,29,72,0.2)]"
                                                     )}
                                                 >
@@ -448,13 +483,13 @@ export const UserManagement: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={() => setIsModalOpen(false)}
-                                            className="flex-1 px-4 py-2 bg-raised hover:bg-panel text-faint hover:text-text text-xs font-bold uppercase tracking-wider rounded-[5px] border border-line transition-all"
+                                            className="flex-1 px-4 py-2 bg-raised hover:bg-panel text-faint hover:text-text text-xs font-bold uppercase tracking-wider rounded-[5px] border border-line transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             type="submit"
-                                            className="flex-1 px-4 py-2 bg-accent hover:opacity-90 text-black text-xs font-bold uppercase tracking-wider rounded-[5px] transition-all shadow-md"
+                                            className="flex-1 px-4 py-2 bg-accent hover:opacity-90 text-black text-xs font-bold uppercase tracking-wider rounded-[5px] transition-colors shadow-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                         >
                                             {modalMode === 'add' ? 'Confirm Enrollment' : 'Sync Records'}
                                         </button>

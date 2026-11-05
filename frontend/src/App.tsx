@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './config/queryClient';
 import { Loader2 } from 'lucide-react';
@@ -10,8 +10,10 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import { TopNav } from './components/TopNav';
 import ErrorBoundary from './components/ErrorBoundary';
-import { OnboardingTour } from './components/OnboardingTour';
 import { ThemeProvider } from './context/ThemeContext';
+import { useAnalyticsSummary } from './hooks/useAnalytics';
+
+const OnboardingTour = lazy(() => import('./components/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
 
 // Lazy loaded components
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -38,8 +40,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-[#0f1115] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-[#7c8cff] animate-spin" />
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
         );
     }
@@ -80,12 +82,27 @@ export default function App() {
 }
 
 function AppContent() {
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'dashboard';
+
+    const setActiveTab = (tab: string) => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            if (tab === 'dashboard') {
+                next.delete('tab');
+            } else {
+                next.set('tab', tab);
+            }
+            return next;
+        });
+    };
+
     const [commandOpen, setCommandOpen] = useState(false);
     const [timeRange, setTimeRange] = useState('1h');
     const [selectedDeviceMac, setSelectedDeviceMac] = useState<string | null>(null);
     const { user } = useAuth();
     const { isConnected, wsData } = useWebSocket();
+    const { data: analyticsData } = useAnalyticsSummary();
 
     const tabs = [
         { id: 'dashboard', label: 'Overview' },
@@ -106,7 +123,9 @@ function AppContent() {
         <div className="flex flex-col min-h-screen bg-bg text-text font-sans selection:bg-accent/20">
             <Toaster richColors position="top-right" theme="dark" />
             <CommandPalette open={commandOpen} setOpen={setCommandOpen} changeTab={setActiveTab} />
-            <OnboardingTour />
+            <Suspense fallback={null}>
+                <OnboardingTour />
+            </Suspense>
 
             {/* 1. StatSea Console Topbar */}
             <TopNav
@@ -140,7 +159,7 @@ function AppContent() {
             </nav>
 
             {/* 3. Main Console Viewport */}
-            <main className="page">
+            <main id="main-content" className="page">
                 <Suspense fallback={
                     <div className="flex items-center justify-center h-[300px]">
                         <Loader2 className="w-8 h-8 text-accent animate-spin" />
@@ -176,9 +195,13 @@ function AppContent() {
 
             {/* 4. StatSea Console Statusbar Footer */}
             <footer className="statusbar">
-                <span className="status">Capturing on eth0</span>
+                <span className="status">{isConnected ? 'Capturing network traffic' : 'Telemetry offline'}</span>
                 <span className="num">
-                    {wsData && wsData.length > 0 ? (wsData.length * 1542).toLocaleString() : '1,842,510'} packets
+                    {analyticsData?.total_packets != null
+                        ? `${analyticsData.total_packets.toLocaleString()} packets`
+                        : wsData && wsData.length > 0
+                            ? `${wsData.length.toLocaleString()} interval frames`
+                            : '0 packets'}
                 </span>
                 <span className="muted">
                     {isConnected ? 'WebSocket connected' : 'Connecting…'}

@@ -1,6 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DevicesPage } from '../DevicesPage';
+
+const renderWithClient = (ui: React.ReactElement) => {
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: { retry: false },
+        },
+    });
+    return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+};
 
 vi.mock('../../hooks/useDevices', () => ({
     useDevices: vi.fn(),
@@ -66,7 +76,7 @@ describe('DevicesPage', () => {
     });
 
     it('renders device catalog with hostnames, IP addresses and MACs', () => {
-        render(<DevicesPage />);
+        renderWithClient(<DevicesPage />);
 
         expect(screen.getByText('MacBook-Pro-M2')).toBeInTheDocument();
         expect(screen.getByText('192.168.1.50')).toBeInTheDocument();
@@ -77,7 +87,7 @@ describe('DevicesPage', () => {
     });
 
     it('filters devices interactively via search query', () => {
-        render(<DevicesPage />);
+        renderWithClient(<DevicesPage />);
 
         const searchInput = screen.getByPlaceholderText(/filter by name, ip, mac/i);
         expect(searchInput).toBeInTheDocument();
@@ -89,7 +99,7 @@ describe('DevicesPage', () => {
     });
 
     it('toggles view mode between list and grid', () => {
-        render(<DevicesPage />);
+        renderWithClient(<DevicesPage />);
 
         const gridBtn = screen.getByRole('button', { name: /grid view/i });
         expect(gridBtn).toBeInTheDocument();
@@ -99,7 +109,7 @@ describe('DevicesPage', () => {
     });
 
     it('toggles sort mode by status and bandwidth', () => {
-        render(<DevicesPage />);
+        renderWithClient(<DevicesPage />);
 
         const sortBtn = screen.getByRole('button', { name: /sort by/i });
         expect(sortBtn).toBeInTheDocument();

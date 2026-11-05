@@ -21,14 +21,17 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab })
 
     return (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-panel/95 backdrop-blur-xl border-t border-line px-6 py-3 pb-safe">
-            <div className="flex justify-between items-center max-w-md mx-auto">
+            <div role="tablist" aria-label="Mobile navigation" className="flex justify-between items-center max-w-md mx-auto">
                 {items.map((item) => {
                     const isActive = activeTab === item.id;
                     return (
                         <button
+                            type="button"
+                            role="tab"
+                            aria-selected={isActive}
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
-                            className={`flex flex-col items-center gap-1 transition-all duration-200 ${isActive ? 'text-accent font-bold' : 'text-faint hover:text-text'
+                            className={`flex flex-col items-center gap-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded ${isActive ? 'text-accent font-bold' : 'text-faint hover:text-text'
                                 }`}
                             aria-label={`Navigate to ${item.label}`}
                         >

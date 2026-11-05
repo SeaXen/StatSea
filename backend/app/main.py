@@ -69,6 +69,7 @@ def seed_initial_data():
 
         # 2. Create Admin User
         admin_user = db.query(models.User).filter(models.User.username == "admin").first()
+        is_dev = app_settings.ENVIRONMENT.lower() in ("development", "dev", "local", "test")
         if not admin_user:
             admin_user = models.User(
                 username="admin",
@@ -76,12 +77,16 @@ def seed_initial_data():
                 hashed_password=models.User.get_password_hash("admin123"),
                 full_name="StatSea Admin",
                 is_admin=True,
-                must_change_password=True,
+                must_change_password=False if is_dev else True,
             )
             db.add(admin_user)
             db.commit()
             db.refresh(admin_user)
-            logger.info("Default admin user created: admin / admin123")
+            logger.info("Default admin user created.")
+        elif is_dev and admin_user.must_change_password:
+            admin_user.must_change_password = False
+            db.commit()
+            logger.info("Dev admin password rotation requirement cleared.")
         
         # 3. Add Admin to Organization
         member = db.query(models.OrganizationMember).filter(
@@ -99,22 +104,40 @@ def seed_initial_data():
         db.close()
 
 
+_PLACEHOLDER_PATTERNS = (
+    "change-me", "changeme", "change_me", "your-secret",
+    "placeholder", "example", "todo", "xxx", "secret-key-change"
+)
+
+
+def _validate_jwt_secret(secret: str | None, environment: str) -> None:
+    if not secret:
+        raise RuntimeError("JWT_SECRET_KEY is not set. Refusing to start.")
+    if len(secret) < 32:
+        if environment != "development":
+            raise RuntimeError("JWT_SECRET_KEY must be at least 32 characters in production.")
+        logger.warning("SECURITY RISK: JWT_SECRET_KEY is shorter than 32 characters.")
+    lowered = secret.lower()
+    if any(p in lowered for p in _PLACEHOLDER_PATTERNS):
+        if environment != "development":
+            raise RuntimeError(
+                "SECURITY BREACH PREVENTION: JWT_SECRET_KEY looks like a placeholder. "
+                "Generate one with `python -c \"import secrets; print(secrets.token_urlsafe(48))\"`."
+            )
+        logger.warning("SECURITY RISK: Using placeholder JWT_SECRET_KEY. Change it in .env")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables at startup
-    Base.metadata.create_all(bind=engine)
+    # Create tables at startup (gated for development/testing)
+    if app_settings.ENVIRONMENT.lower() in ("development", "dev", "local", "test"):
+        Base.metadata.create_all(bind=engine)
     
-    # Seed data after tables are created
+    # Seed data after tables are verified
     seed_initial_data()
     
-    # Security check: Warn or fail if using default JWT secret
-    is_default_secret = app_settings.JWT_SECRET_KEY == "statsea-jwt-secret-key-change-me-at-least-thirty-two-chars"  # noqa: S105
-    if is_default_secret:
-        if app_settings.ENVIRONMENT != "development":
-            logger.critical("SECURITY BREACH PREVENTION: Cannot start in production with default JWT_SECRET_KEY.")
-            raise RuntimeError("Must change JWT_SECRET_KEY in production.")
-        else:
-            logger.warning("SECURITY RISK: Using default JWT_SECRET_KEY. Change it in .env")
+    # Security check: Validate JWT secret fails closed in production
+    _validate_jwt_secret(app_settings.JWT_SECRET_KEY, app_settings.ENVIRONMENT)
 
     # Start services
     global_collector.start()
@@ -134,11 +157,15 @@ async def lifespan(app: FastAPI):
     scheduler.scheduler.shutdown()
 
 
+_is_dev = app_settings.ENVIRONMENT.lower() in ("development", "dev", "local", "test")
 app = FastAPI(
     title=app_settings.PROJECT_NAME,
     version=app_settings.PROJECT_VERSION,
     description="Network Intelligence Dashboard API",
     lifespan=lifespan,
+    docs_url="/docs" if _is_dev else None,
+    redoc_url="/redoc" if _is_dev else None,
+    openapi_url="/openapi.json" if _is_dev else None,
 )
 
 # Limiter setup
@@ -239,7 +266,4 @@ def read_root():
 
 
 if __name__ == "__main__":
-    import os
-    host = os.getenv("HOST", "127.0.0.1")
-    port = int(os.getenv("PORT", "8001"))
-    uvicorn.run("app.main:app", host=host, port=port, reload=True)
+    uvicorn.run("app.main:app", host=app_settings.HOST, port=app_settings.PORT, reload=True)

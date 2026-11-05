@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Trash2, Bell, AlertTriangle, Info, CheckCircle, ShieldAlert } from 'lucide-react';
 import { useWebSocket, Notification } from '../contexts/WebSocketContext';
+import { useModalA11y } from '../hooks/useModalA11y';
 
 interface NotificationCenterProps {
     isOpen: boolean;
@@ -10,6 +11,7 @@ interface NotificationCenterProps {
 
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose }) => {
     const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useWebSocket();
+    const modalRef = useModalA11y<HTMLDivElement>({ isOpen, onClose });
 
     const getIcon = (type: Notification['type']) => {
         switch (type) {
@@ -30,16 +32,21 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 z-50 bg-[#0f1115]/75"
+                        className="fixed inset-0 z-50 bg-background/75"
                     />
 
                     {/* Sidebar Panel */}
                     <motion.div
+                        ref={modalRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="System Telemetry Log"
+                        tabIndex={-1}
                         initial={{ x: '100%' }}
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-                        className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-sm border-l border-line bg-panel shadow-2xl"
+                        className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-sm border-l border-line bg-panel shadow-2xl overscroll-contain"
                     >
                         <div className="flex h-full flex-col font-sans">
                             {/* Header */}
@@ -57,24 +64,31 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                                     {notifications.length > 0 && (
                                         <>
                                             <button
+                                                type="button"
                                                 onClick={markAllAsRead}
-                                                className="p-1 rounded-[5px] text-muted hover:text-text hover:bg-raised transition-colors"
+                                                className="p-1 rounded-[5px] text-muted hover:text-text hover:bg-raised transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                                 title="Mark all as read"
+                                                aria-label="Mark all as read"
                                             >
                                                 <Check className="h-3.5 w-3.5" />
                                             </button>
                                             <button
+                                                type="button"
                                                 onClick={clearNotifications}
-                                                className="p-1 rounded-[5px] text-muted hover:text-danger hover:bg-raised transition-colors"
+                                                className="p-1 rounded-[5px] text-muted hover:text-danger hover:bg-raised transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                                 title="Clear all"
+                                                aria-label="Clear all notifications"
                                             >
                                                 <Trash2 className="h-3.5 w-3.5" />
                                             </button>
                                         </>
                                     )}
                                     <button
+                                        type="button"
                                         onClick={onClose}
-                                        className="p-1 rounded-[5px] text-muted hover:text-text hover:bg-raised transition-colors"
+                                        className="p-1 rounded-[5px] text-muted hover:text-text hover:bg-raised transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                                        title="Close notification center"
+                                        aria-label="Close notification center"
                                     >
                                         <X className="h-4 w-4" />
                                     </button>
@@ -82,7 +96,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                             </div>
 
                             {/* Content */}
-                            <div className="flex-1 overflow-y-auto px-3 py-3">
+                            <div className="flex-1 overflow-y-auto px-3 py-3 overscroll-contain" aria-live="polite">
                                 {notifications.length === 0 ? (
                                     <div className="flex h-full flex-col items-center justify-center text-center text-muted font-mono text-xs">
                                         <Bell className="h-8 w-8 opacity-20 mb-3 text-muted" />
@@ -95,14 +109,23 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                                             <motion.div
                                                 key={notification.id}
                                                 layout
+                                                tabIndex={0}
+                                                role="button"
+                                                aria-label={`Notification: ${notification.title}`}
                                                 initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, x: -10 }}
-                                                className={`relative rounded-[7px] border p-3 transition-colors cursor-pointer ${notification.read
+                                                className={`relative rounded-[7px] border p-3 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${notification.read
                                                     ? 'border-line bg-raised/30 text-text-soft'
                                                     : 'border-line-strong bg-raised text-text'
                                                     }`}
                                                 onClick={() => markAsRead(notification.id)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                        e.preventDefault();
+                                                        markAsRead(notification.id);
+                                                    }
+                                                }}
                                             >
                                                 {!notification.read && (
                                                     <div className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full bg-accent" />
@@ -118,8 +141,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                                                         <p className="text-[11px] text-text-soft leading-relaxed font-mono">
                                                             {notification.description}
                                                         </p>
-                                                        <span className="text-[9.5px] font-mono text-faint block mt-1">
-                                                            {new Date(notification.timestamp).toLocaleTimeString()}
+                                                        <span className="text-[9.5px] font-mono text-faint block mt-1 num">
+                                                            {new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(notification.timestamp))}
                                                         </span>
                                                     </div>
                                                 </div>

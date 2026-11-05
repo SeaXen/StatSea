@@ -87,15 +87,17 @@ const DnsQueryLog: React.FC = () => {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-faint" />
                                 <input
                                     type="text"
-                                    placeholder="Search domain..."
-                                    className="w-full bg-raised border border-line rounded-[7px] pl-8 pr-4 py-1.5 text-xs text-text focus:outline-none focus:border-line-strong transition-all placeholder:text-faint font-mono"
+                                    placeholder="Search domain…"
+                                    aria-label="Search DNS query domain"
+                                    className="w-full bg-raised border border-line rounded-[7px] pl-8 pr-4 py-1.5 text-xs text-text focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors placeholder:text-faint font-mono"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
 
                             <select
-                                className="bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs text-text focus:outline-none focus:border-line-strong transition-all appearance-none outline-none font-mono"
+                                aria-label="Filter DNS queries by device"
+                                className="bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs text-text focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors appearance-none outline-none font-mono"
                                 value={selectedDeviceId || ''}
                                 onChange={(e) => setSelectedDeviceId(e.target.value ? Number(e.target.value) : undefined)}
                             >
@@ -123,7 +125,7 @@ const DnsQueryLog: React.FC = () => {
                                 {logs.map((log) => (
                                     <tr key={log.id} className="hover:bg-raised/60 transition-colors">
                                         <td className="py-2.5 px-3 text-faint whitespace-nowrap tabular-nums">
-                                            {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                            {new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(log.timestamp))}
                                         </td>
                                         <td className="py-2.5 px-3">
                                             <div className="flex flex-col">

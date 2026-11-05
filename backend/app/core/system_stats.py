@@ -8,6 +8,12 @@ from app.core.logging import get_logger
 
 logger = get_logger("SystemStats")
 
+# Prime CPU percent measurement so first call is not 0.0
+try:
+    psutil.cpu_percent(interval=None)
+except Exception:
+    pass
+
 
 class SystemStats:
     @staticmethod
@@ -40,14 +46,12 @@ class SystemStats:
         net_io = psutil.net_io_counters()
 
         # Try to get CPU Load (average)
+        load_avg = None
         try:
             if hasattr(os, "getloadavg"):
-                load_avg = os.getloadavg()[0]
-            else:
-                # Windows fallback
-                load_avg = cpu_pct / 10  # rough estimation for UI
+                load_avg = round(os.getloadavg()[0], 2)
         except Exception:
-            load_avg = 0
+            load_avg = None
 
         # Try to get CPU Temperature
         temperature = None

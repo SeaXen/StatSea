@@ -1,9 +1,11 @@
 import asyncio
+import collections
+import concurrent.futures
 import ipaddress
 import random
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 try:
     from scapy.all import DNS, IP, TCP, UDP, Raw, sniff
@@ -24,6 +26,7 @@ from ..models.models import (
     Device,
     DeviceDailySummary,
     DeviceStatusLog,
+    DnsLog,
     Organization,
     SecurityAlert,
     TrafficLog,
@@ -113,6 +116,14 @@ class PacketCollector:
         self.interface = None
         self.upload_acc = 0
         self.download_acc = 0
+        self.total_upload_bytes = 0
+        self.total_download_bytes = 0
+        self.interval_upload = 0
+        self.interval_download = 0
+        self._last_rate_ts = time.time()
+        self.current_upload_rate = 0.0
+        self.current_download_rate = 0.0
+        self._geoip_executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
         self._last_persist_upload = 0
         self._last_persist_download = 0
         self._thread = None
@@ -129,8 +140,8 @@ class PacketCollector:
         self.suspicious_count = 0
         self._last_pps_time = time.time()
         self._pps_packet_count = 0
-        self.packet_log: list[dict] = []  # ring buffer for live stream
         self.PACKET_LOG_SIZE = 1000
+        self.packet_log = collections.deque(maxlen=self.PACKET_LOG_SIZE)  # O(1) bounded ring buffer
         # --- Extended Analytics ---
         self.bandwidth_history: list[dict] = []  # ring buffer of {time, up, down}
         self.BANDWIDTH_HISTORY_SIZE = 60  # 60 snapshots = ~2 minutes at 2s interval
@@ -188,10 +199,14 @@ class PacketCollector:
         logger.info(f"Collector started on interface: {self.interface or 'default'}")
 
     def stop(self):
-        """Stops the sniffing thread."""
+        """Stops sniffing and persistence threads and cleans up resources."""
         self.running = False
-        if self._thread:
-            self._thread.join(timeout=1)
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=2.0)
+        if self._persistence_thread and self._persistence_thread.is_alive():
+            self._persistence_thread.join(timeout=2.0)
+        if hasattr(self, "_geoip_executor"):
+            self._geoip_executor.shutdown(wait=False)
 
     def _packet_callback(self, packet):
         """Processes each captured packet."""
@@ -225,7 +240,8 @@ class PacketCollector:
                         sni = extract_sni(payload)
                         if sni:
                             category = categorize_domain(sni)
-                            self.ip_app_map[dst_ip] = {"app": category, "last_seen": time.time()}
+                            with self.stats_lock:
+                                self.ip_app_map[dst_ip] = {"app": category, "last_seen": time.time()}
                 elif dst_port == 80 or src_port == 80:
                     proto = "HTTP"
                 elif dst_port == 22 or src_port == 22:
@@ -264,14 +280,17 @@ class PacketCollector:
                                 }
                                 record_type = type_map.get(qtype, str(qtype))
 
-                                self.dns_log_buffer.append(
-                                    {
-                                        "timestamp": datetime.now(),
-                                        "client_ip": src_ip,
-                                        "query_domain": qname,
-                                        "record_type": record_type,
-                                    }
-                                )
+                                with self.stats_lock:
+                                    self.dns_log_buffer.append(
+                                        {
+                                            "timestamp": datetime.now(timezone.utc),
+                                            "client_ip": src_ip,
+                                            "query_domain": qname,
+                                            "record_type": record_type,
+                                        }
+                                    )
+                                    if len(self.dns_log_buffer) > 10000:
+                                        self.dns_log_buffer.pop(0)
                     except Exception as err:
                         logger.debug("Malformed DNS packet skipped: %s", err)
             elif packet[IP].proto == 1:
@@ -310,6 +329,8 @@ class PacketCollector:
 
                     self.device_traffic[src_mac]["upload"] += packet_len
                     self.upload_acc += packet_len
+                    self.total_upload_bytes += packet_len
+                    self.interval_upload += packet_len
 
                     # Buffer for persistence
                     if src_mac not in self.daily_traffic_buffer:
@@ -326,12 +347,11 @@ class PacketCollector:
                 # 2. Track Destination (Download to device)
                 if packet.dst:
                     dst_mac = packet.dst
-                    # We only track download for devices we've seen (or should we add them?)
-                    # Let's add them if they look like local devices, but promiscuous mode might see non-local MACs?
-                    # Generally safely to assume traffic on LAN interface with MAC is local-ish.
                     if dst_mac in self.active_devices:
                         self.device_traffic[dst_mac]["download"] += packet_len
                         self.download_acc += packet_len
+                        self.total_download_bytes += packet_len
+                        self.interval_download += packet_len
 
                         if dst_mac not in self.daily_traffic_buffer:
                             self.daily_traffic_buffer[dst_mac] = {"upload": 0, "download": 0}
@@ -349,10 +369,42 @@ class PacketCollector:
 
                 # Protocol tracking
                 self.protocol_counts[proto] = self.protocol_counts.get(proto, 0) + 1
+                self.bytes_per_protocol[proto] = self.bytes_per_protocol.get(proto, 0) + packet_len
+
+                # Packet size buckets
+                if packet_len < 128:
+                    self.packet_size_buckets["tiny (<128B)"] = self.packet_size_buckets.get("tiny (<128B)", 0) + 1
+                elif packet_len <= 512:
+                    self.packet_size_buckets["small (128-512B)"] = self.packet_size_buckets.get("small (128-512B)", 0) + 1
+                elif packet_len <= 1024:
+                    self.packet_size_buckets["medium (512-1024B)"] = self.packet_size_buckets.get("medium (512-1024B)", 0) + 1
+                else:
+                    self.packet_size_buckets["large (1024B+)"] = self.packet_size_buckets.get("large (1024B+)", 0) + 1
+
+                # HTTP / DNS counters
+                if proto in ("HTTP", "HTTPS"):
+                    self.http_requests += 1
+                elif proto == "DNS":
+                    self.dns_queries += 1
+
+                # Internal vs external connection classification
+                try:
+                    src_priv = ipaddress.ip_address(src_ip).is_private
+                    dst_priv = ipaddress.ip_address(dst_ip).is_private
+                    if src_priv and dst_priv:
+                        self.connection_types["internal"] = self.connection_types.get("internal", 0) + 1
+                    else:
+                        self.connection_types["external"] = self.connection_types.get("external", 0) + 1
+                except Exception:
+                    pass
+
+                # Active sessions tracking
+                sess_key = f"{src_ip}:{src_port}->{dst_ip}:{dst_port}/{proto}"
+                self.active_sessions[sess_key] = time.time()
 
                 # Packet log for live stream
                 log_entry = {
-                    "time": datetime.now().strftime("%H:%M:%S.%f")[:-3],
+                    "time": datetime.now(timezone.utc).strftime("%H:%M:%S.%f")[:-3],
                     "proto": proto,
                     "src": f"{src_ip}:{src_port}" if src_port else src_ip,
                     "dst": f"{dst_ip}:{dst_port}" if dst_port else dst_ip,
@@ -360,8 +412,6 @@ class PacketCollector:
                     "flags": flags,
                 }
                 self.packet_log.append(log_entry)
-                if len(self.packet_log) > self.PACKET_LOG_SIZE:
-                    self.packet_log.pop(0)
 
                 # Compute packets/sec every second
                 now = time.time()
@@ -484,27 +534,38 @@ class PacketCollector:
                 time.sleep(1)
 
     def get_current_stats(self):
-        """Returns and resets the accumulated bitrates."""
+        """Returns interval bitrates and calculates rate per second without zeroing lifetime counters."""
         with self.stats_lock:
+            now = time.time()
+            elapsed = max(now - self._last_rate_ts, 0.001)
+            
+            rate_up = self.interval_upload / elapsed
+            rate_down = self.interval_download / elapsed
+            self.current_upload_rate = rate_up
+            self.current_download_rate = rate_down
+
             stats = {
-                "u": self.upload_acc,
-                "d": self.download_acc,
+                "u": self.interval_upload,
+                "d": self.interval_download,
+                "upload_rate": rate_up,
+                "download_rate": rate_down,
                 "active_device_count": len(self.active_devices),
                 "is_synthetic": self.is_synthetic,
             }
-            self.upload_acc = 0
-            self.download_acc = 0
+            # Only reset the interval accumulators, NEVER the lifetime totals
+            self.interval_upload = 0
+            self.interval_download = 0
+            self._last_rate_ts = now
             return stats
 
     def _persistence_loop(self):
-        """Periodically flushes active devices to the database."""
+        """Periodically flushes active devices and telemetry to the database."""
         while self.running:
             try:
                 self._flush_devices()
-                # Persist daily stats every ~5 minutes or so (controlled by flush_interval for now)
-                # In production you might want a separate schedule, but this is fine for now
                 self._persist_daily_stats()
                 self._flush_app_traffic()
+                self._flush_dns_logs()
             except sqlalchemy.exc.SQLAlchemyError:
                 logger.exception("Database error in persistence loop")
             except Exception:
@@ -512,25 +573,37 @@ class PacketCollector:
             time.sleep(self.flush_interval)
 
     def _flush_devices(self):
-        """Writes in-memory device data to the database."""
+        """Writes in-memory device data to the database using batch lookups and sets organization_id."""
         db = SessionLocal()
         try:
             with self.stats_lock:
                 devices_to_flush = list(self.active_devices.items())
 
+            if not devices_to_flush:
+                return
+
+            default_org = db.query(Organization).first()
+            org_id = default_org.id if default_org else 1
+
+            mac_list = [mac for mac, _ in devices_to_flush]
+            existing_devices = {
+                d.mac_address: d for d in db.query(Device).filter(Device.mac_address.in_(mac_list)).all()
+            }
+
             for mac, data in devices_to_flush:
-                device = db.query(Device).filter(Device.mac_address == mac).first()
+                last_seen_ts = data.get("last_seen", time.time())
+                last_seen_dt = datetime.fromtimestamp(last_seen_ts, tz=timezone.utc)
+                
+                device = existing_devices.get(mac)
                 if not device:
-                    # Attempt MAC OUI vendor lookup
                     vendor = "Unknown"
                     try:
                         vendor = mac_lookup.lookup(mac)
                     except Exception as e:
                         logger.debug(f"MAC OUI lookup failed for {mac}: {e}")
 
-                    # Determine a basic type based on vendor (can be expanded later)
                     device_type = "Unknown"
-                    icon_type = "help" # Default icon
+                    icon_type = "help"
                     vendor_lower = vendor.lower()
                     if "apple" in vendor_lower:
                         device_type = "Mobile/Laptop"
@@ -551,22 +624,21 @@ class PacketCollector:
                         type=device_type,
                         icon_type=icon_type,
                         is_online=True,
-                        last_seen=datetime.fromtimestamp(data["last_seen"]),
+                        organization_id=org_id,
+                        last_seen=last_seen_dt,
                     )
                     db.add(device)
-                    db.flush()  # Get ID
+                    db.flush()
 
-                    # Log initial status
                     status_log = DeviceStatusLog(
                         device_id=device.id, status="online", timestamp=datetime.now(timezone.utc)
                     )
                     db.add(status_log)
-
-                    # Trigger alert for truly new devices
-                    self._trigger_new_device_alert(db, mac, data["ip"])
+                    self._trigger_new_device_alert(mac, data["ip"])
                     logger.info(f"New device discovered and persisted: {mac} ({data['ip']}) - Vendor: {vendor}")
                 else:
-                    # Check for status change
+                    if not device.organization_id:
+                        device.organization_id = org_id
                     if not device.is_online:
                         status_log = DeviceStatusLog(
                             device_id=device.id, status="online", timestamp=datetime.now(timezone.utc)
@@ -575,14 +647,41 @@ class PacketCollector:
 
                     device.ip_address = data["ip"]
                     device.is_online = True
-                    device.last_seen = datetime.fromtimestamp(data["last_seen"])
+                    device.last_seen = last_seen_dt
 
             db.commit()
         finally:
             db.close()
 
+    def _flush_dns_logs(self):
+        """Writes buffered DNS query logs to the database in bulk."""
+        with self.stats_lock:
+            if not self.dns_log_buffer:
+                return
+            logs_to_flush = list(self.dns_log_buffer)
+            self.dns_log_buffer.clear()
+
+        db = SessionLocal()
+        try:
+            records = [
+                DnsLog(
+                    timestamp=item.get("timestamp", datetime.now(timezone.utc)),
+                    client_ip=item.get("client_ip", "0.0.0.0"),
+                    query_domain=item.get("query_domain", ""),
+                    record_type=item.get("record_type", "A"),
+                )
+                for item in logs_to_flush
+            ]
+            db.bulk_save_objects(records)
+            db.commit()
+        except Exception:
+            logger.exception("Error persisting DNS logs")
+            db.rollback()
+        finally:
+            db.close()
+
     def _persist_daily_stats(self):
-        """Aggregates and persists traffic stats to DeviceDailySummary."""
+        """Aggregates and persists traffic stats to DeviceDailySummary and BandwidthHistory."""
         with self.stats_lock:
             if not self.daily_traffic_buffer:
                 return
@@ -591,39 +690,41 @@ class PacketCollector:
 
         db = SessionLocal()
         try:
-            today = datetime.now().date()
+            today = datetime.now(timezone.utc).date()
+            mac_list = list(buffer_copy.keys())
+            existing_devices = {
+                d.mac_address: d for d in db.query(Device).filter(Device.mac_address.in_(mac_list)).all()
+            }
+            device_ids = [d.id for d in existing_devices.values()]
+            existing_summaries = {
+                s.device_id: s for s in db.query(DeviceDailySummary).filter(
+                    DeviceDailySummary.device_id.in_(device_ids), DeviceDailySummary.date == today
+                ).all()
+            }
 
             for mac, traffic in buffer_copy.items():
-                device = db.query(Device).filter(Device.mac_address == mac).first()
+                device = existing_devices.get(mac)
                 if not device:
-                    continue  # Should have been created by _flush_devices already
+                    continue
 
-                # Check for existing summary for today
-                summary = (
-                    db.query(DeviceDailySummary)
-                    .filter(
-                        DeviceDailySummary.device_id == device.id, DeviceDailySummary.date == today
-                    )
-                    .first()
-                )
-
+                summary = existing_summaries.get(device.id)
                 if not summary:
                     summary = DeviceDailySummary(
                         device_id=device.id, date=today, upload_bytes=0, download_bytes=0
                     )
                     db.add(summary)
+                    existing_summaries[device.id] = summary
 
                 summary.upload_bytes += traffic["upload"]
                 summary.download_bytes += traffic["download"]
 
-            # Persist Global Bandwidth History (Delta)
-            current_upload = self.upload_acc
-            current_download = self.download_acc
+            # Persist Global Bandwidth History using monotonic lifetime counters
+            current_upload = self.total_upload_bytes
+            current_download = self.total_download_bytes
 
             delta_upload = current_upload - self._last_persist_upload
             delta_download = current_download - self._last_persist_download
 
-            # Update last persist reference
             self._last_persist_upload = current_upload
             self._last_persist_download = current_download
 
@@ -634,12 +735,11 @@ class PacketCollector:
                 db.add(bw_history)
 
             db.commit()
-            # logger.info(f"Persisted daily stats for {len(buffer_copy)} devices")
         except sqlalchemy.exc.SQLAlchemyError:
             logger.exception("Error persisting daily stats")
+            db.rollback()
         except Exception:
             logger.exception("Unexpected error persisting daily stats")
-            # Restore buffer on error? Naah, simpler to drop data than complex recovery for now.
         finally:
             db.close()
 
@@ -651,14 +751,19 @@ class PacketCollector:
             buffer_copy = self.app_traffic_buffer.copy()
             self.app_traffic_buffer.clear()
             
-            # Also cleanup stale intellectual ip mappings
             now = time.time()
             self.ip_app_map = {k: v for k, v in self.ip_app_map.items() if (now - v["last_seen"]) < 3600}
 
         db = SessionLocal()
         try:
+            mac_list = list(buffer_copy.keys())
+            existing_devices = {
+                d.mac_address: d for d in db.query(Device).filter(Device.mac_address.in_(mac_list)).all()
+            }
+            logs = []
+            now_dt = datetime.now(timezone.utc)
             for mac, categories in buffer_copy.items():
-                device = db.query(Device).filter(Device.mac_address == mac).first()
+                device = existing_devices.get(mac)
                 if not device:
                     continue
 
@@ -668,58 +773,66 @@ class PacketCollector:
                         upload_bytes=traffic["upload"],
                         download_bytes=traffic["download"],
                         app_category=app_category,
-                        timestamp=datetime.now()
+                        timestamp=now_dt
                     )
-                    db.add(log)
-            db.commit()
+                    logs.append(log)
+            if logs:
+                db.bulk_save_objects(logs)
+                db.commit()
         except sqlalchemy.exc.SQLAlchemyError:
             logger.exception("Error persisting traffic logs")
+            db.rollback()
         finally:
             db.close()
 
-    def _trigger_new_device_alert(self, db, mac, ip):
-        """Triggers a security alert for a new device."""
-        device = db.query(Device).filter(Device.mac_address == mac).first()
-        alert = SecurityAlert(
-            severity="info",
-            title="New Device Detected",
-            description=f"A new device with MAC {mac} and IP {ip} has joined the network.",
-            device_id=device.id if device else None,
-        )
-        db.add(alert)
-        # Note: Caller is responsible for committing the transaction to prevent deadlocks
-
-        # Dispatch external notifications
-        vendor = device.vendor if device and device.vendor else "Unknown"
+    def _trigger_new_device_alert(self, mac, ip):
+        """Creates an in-app alert and sends notification via separate DB session."""
         notif_title = "New Device Detected"
         notif_desc = (
             f"A new device has joined the network:\n\n"
             f"**MAC:** `{mac}`\n"
-            f"**IP:** `{ip}`\n"
-            f"**Vendor:** {vendor}"
+            f"**IP:** `{ip}`"
         )
         
-        # Helper to dispatch notification in thread
         def dispatch_alert():
-            try:
-                # Resolve org_id 
-                # Device is already related to the organization in some models, 
-                # but here we'll default to first org if not explicit.
-                org = db.query(Organization).first()
-                org_id = org.id if org else 1
-                
-                NotificationService.send_alert(
-                    db=db,
-                    organization_id=org_id,
-                    title=notif_title,
-                    description=notif_desc,
-                    severity="INFO"
-                )
-            except Exception as e:
-                logger.error(f"Failed to send new device notification: {e}")
+            with SessionLocal() as thread_db:
+                try:
+                    org = thread_db.query(Organization).first()
+                    org_id = org.id if org else 1
 
-        # Run in thread to prevent blocking the sniffing loop
+                    device = thread_db.query(Device).filter(Device.mac_address == mac).first()
+                    alert = SecurityAlert(
+                        severity="info",
+                        title=notif_title,
+                        description=f"A new device with MAC {mac} and IP {ip} has joined the network.",
+                        device_id=device.id if device else None,
+                        organization_id=org_id,
+                    )
+                    thread_db.add(alert)
+                    thread_db.commit()
+
+                    NotificationService.send_alert(
+                        db=thread_db,
+                        organization_id=org_id,
+                        title=notif_title,
+                        description=notif_desc,
+                        severity="INFO"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send new device notification: {e}")
+
         threading.Thread(target=dispatch_alert, daemon=True).start()
+
+        if self.event_callback and self._loop:
+            event_data = {
+                "type": "NEW_DEVICE",
+                "severity": "info",
+                "title": "New Device Detected",
+                "description": f"New device {mac} discovered.",
+                "mac": mac,
+                "ip": ip,
+            }
+            self.event_callback(event_data)
 
         if self.event_callback and self._loop:
             event_data = {
@@ -828,11 +941,11 @@ class PacketCollector:
                 "total_bytes": self.total_bytes,
                 "packets_per_sec": round(self.packets_per_sec, 1),
                 "suspicious": self.suspicious_count,
-                "upload_rate": self.upload_acc,
-                "download_rate": self.download_acc,
+                "upload_rate": getattr(self, "current_upload_rate", 0.0),
+                "download_rate": getattr(self, "current_download_rate", 0.0),
                 "protocols": dict(self.protocol_counts),
                 "top_devices": top_devices,
-                "packet_log": list(self.packet_log[-50:]),  # last 50 packets
+                "packet_log": list(self.packet_log)[-50:],  # last 50 packets
                 "active_device_count": len(self.active_devices),
                 # Extended analytics
                 "bandwidth_history": list(self.bandwidth_history),
@@ -858,7 +971,7 @@ class PacketCollector:
             # Slice to max size first if no filters to speed up?
             # No, we need to filter first then slice.
 
-            filtered = self.packet_log
+            filtered = list(self.packet_log)
 
             if protocol:
                 protocol = protocol.upper()
@@ -885,12 +998,26 @@ class PacketCollector:
             return list(filtered[-limit:])
 
     def get_analytics_heatmap(self) -> list[dict]:
-        """Returns an empty 7x24 matrix for production."""
-        heatmap_data = []
+        """Returns 7x24 matrix aggregated from the last 7 days of BandwidthHistory."""
         days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        for day_name in days:
-            for h in range(24):
-                heatmap_data.append({"day": day_name, "hour": h, "value": 0})
-        return heatmap_data
+        matrix = {(day, hour): 0 for day in days for hour in range(24)}
+        try:
+            with SessionLocal() as db:
+                since = datetime.now(timezone.utc) - timedelta(days=7)
+                rows = (
+                    db.query(BandwidthHistory)
+                    .filter(BandwidthHistory.timestamp >= since)
+                    .all()
+                )
+                for r in rows:
+                    if r.timestamp:
+                        ts = r.timestamp if r.timestamp.tzinfo else r.timestamp.replace(tzinfo=timezone.utc)
+                        day_name = days[ts.weekday()]
+                        hour = ts.hour
+                        matrix[(day_name, hour)] += (r.upload_bytes or 0) + (r.download_bytes or 0)
+        except Exception as e:
+            logger.error(f"Error computing analytics heatmap: {e}")
+
+        return [{"day": day, "hour": hour, "value": matrix[(day, hour)]} for day in days for hour in range(24)]
 
 global_collector = PacketCollector()

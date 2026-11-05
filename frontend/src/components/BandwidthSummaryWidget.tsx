@@ -81,7 +81,7 @@ export function BandwidthSummaryWidget() {
     const isIncrease = totalChange >= 0;
 
     return (
-        <div className="relative overflow-hidden rounded-xl border border-border/50 bg-card p-5 shadow-sm transition-all hover:shadow-md flex flex-col h-full">
+        <div className="relative overflow-hidden rounded-xl border border-border/50 bg-card p-5 shadow-sm transition-shadow hover:shadow-md flex flex-col h-full">
             <div className="flex items-center justify-between mb-4 z-10">
                 <div className="flex items-center gap-2">
                     <div className="rounded-lg bg-primary/10 p-2 text-primary">
@@ -102,8 +102,10 @@ export function BandwidthSummaryWidget() {
                         </div>
                     )}
                     <button
+                        type="button"
+                        aria-label="Refresh bandwidth summary"
                         onClick={() => fetchData(true)}
-                        className={`text-muted-foreground hover:text-foreground transition-colors ${refreshing ? 'animate-spin' : ''}`}
+                        className={`text-muted-foreground hover:text-foreground transition-colors p-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded ${refreshing ? 'animate-spin' : ''}`}
                     >
                         <RefreshCw className="h-3 w-3" />
                     </button>

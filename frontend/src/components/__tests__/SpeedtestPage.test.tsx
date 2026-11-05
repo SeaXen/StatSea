@@ -13,14 +13,17 @@ vi.mock('recharts', async () => {
 });
 
 // Mock framer-motion to avoid animation timer stalls in jsdom
-vi.mock('framer-motion', () => ({
-    motion: {
-        div: ({ children, className, onClick, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-            <div className={className} onClick={onClick} {...props}>{children}</div>
-        ),
-    },
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('framer-motion', async () => {
+    const React = await import('react');
+    return {
+        motion: {
+            div: React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ children, className, onClick, ...props }, ref) => (
+                React.createElement('div', { ref, className, onClick, ...props }, children)
+            )),
+        },
+        AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+    };
+});
 
 vi.mock('../../config/axiosInstance', () => ({
     default: {

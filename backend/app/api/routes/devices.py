@@ -16,7 +16,7 @@ router = APIRouter(prefix="/devices", tags=["Devices"])
 
 @router.get(
     "",
-    response_model=schemas.CursorPage[schemas.Device],
+    response_model=schemas.CursorPage[schemas.DeviceListItem],
     summary="List all devices",
 )
 def list_devices(

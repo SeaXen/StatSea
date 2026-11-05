@@ -65,10 +65,20 @@ export default function Settings() {
     };
 
     const clearLocalStorage = () => {
-        if (confirm("Are you sure? This will reset all local preferences including theme.")) {
-            localStorage.clear();
-            window.location.reload();
-        }
+        toast('Reset all local preferences?', {
+            description: 'This will reset all preferences and theme settings immediately.',
+            action: {
+                label: 'Reset',
+                onClick: () => {
+                    try {
+                        localStorage.clear();
+                    } catch (e) {
+                        console.warn('Failed to clear localStorage', e);
+                    }
+                    window.location.reload();
+                }
+            }
+        });
     };
 
     const handleExport = async () => {
@@ -128,8 +138,9 @@ export default function Settings() {
 
     const SidebarItem = ({ id, icon: Icon, label }: { id: string, icon: React.ElementType, label: string }) => (
         <button
+            type="button"
             onClick={() => setActiveSection(id)}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-[5px] font-mono text-xs transition-colors ${activeSection === id
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-[5px] font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${activeSection === id
                 ? 'bg-accent/15 text-accent font-medium border-l-2 border-accent'
                 : 'text-text-soft hover:bg-raised hover:text-text'
                 }`}
@@ -163,9 +174,11 @@ export default function Settings() {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-[7px] bg-panel border border-line-strong font-mono text-xs">
                     <span className="text-faint text-[10px] uppercase">Engine</span>
                     <button
+                        type="button"
                         onClick={toggleDevMode}
+                        aria-label="Toggle developer mode"
                         className={cn(
-                            "status text-[9px] uppercase px-2 py-0.5 transition-colors",
+                            "status text-[9px] uppercase px-2 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent",
                             devMode ? "ok" : "warn"
                         )}
                     >
@@ -246,35 +259,41 @@ export default function Settings() {
 
                                         <form onSubmit={handleChangePassword} className="space-y-3 max-w-md">
                                             <div className="space-y-1">
-                                                <label className="text-xs font-mono text-text-soft">Current Password</label>
+                                                <label htmlFor="current-password-input" className="text-xs font-mono text-text-soft">Current Password</label>
                                                 <input
+                                                    id="current-password-input"
                                                     type="password"
+                                                    autoComplete="current-password"
                                                     required
                                                     value={currentPassword}
                                                     onChange={(e) => setCurrentPassword(e.target.value)}
-                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text placeholder:text-faint focus:outline-none focus:border-accent transition-colors"
+                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text placeholder:text-faint focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors"
                                                     placeholder="••••••••"
                                                 />
                                             </div>
                                             <div className="space-y-1">
-                                                <label className="text-xs font-mono text-text-soft">New Password</label>
+                                                <label htmlFor="new-password-input" className="text-xs font-mono text-text-soft">New Password</label>
                                                 <input
+                                                    id="new-password-input"
                                                     type="password"
+                                                    autoComplete="new-password"
                                                     required
                                                     value={newPassword}
                                                     onChange={(e) => setNewPassword(e.target.value)}
-                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text placeholder:text-faint focus:outline-none focus:border-accent transition-colors"
+                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text placeholder:text-faint focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors"
                                                     placeholder="••••••••"
                                                 />
                                             </div>
                                             <div className="space-y-1">
-                                                <label className="text-xs font-mono text-text-soft">Confirm New Password</label>
+                                                <label htmlFor="confirm-password-input" className="text-xs font-mono text-text-soft">Confirm New Password</label>
                                                 <input
+                                                    id="confirm-password-input"
                                                     type="password"
+                                                    autoComplete="new-password"
                                                     required
                                                     value={confirmPassword}
                                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text placeholder:text-faint focus:outline-none focus:border-accent transition-colors"
+                                                    className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text placeholder:text-faint focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors"
                                                     placeholder="••••••••"
                                                 />
                                             </div>
@@ -282,12 +301,12 @@ export default function Settings() {
                                             <button
                                                 type="submit"
                                                 disabled={changePasswordMutation.isPending}
-                                                className="mt-2 bg-accent text-accent-foreground font-mono font-semibold py-1.5 px-4 rounded-[7px] text-xs hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                                                className="mt-2 bg-accent text-accent-foreground font-mono font-semibold py-1.5 px-4 rounded-[7px] text-xs hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                             >
                                                 {changePasswordMutation.isPending ? (
                                                     <>
                                                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                        Updating...
+                                                        Updating…
                                                     </>
                                                 ) : (
                                                     'Update Password'
@@ -311,8 +330,9 @@ export default function Settings() {
                                             {Object.entries(presets).map(([key, theme]) => (
                                                 <button
                                                     key={key}
+                                                    type="button"
                                                     onClick={() => updateTheme({ mode: key as ThemeMode })}
-                                                    className={`panel p-3 text-left transition-all hover:border-line-strong flex flex-col justify-between h-28 relative rounded-[7px] ${themeConfig.mode === key
+                                                    className={`panel p-3 text-left transition-colors hover:border-line-strong flex flex-col justify-between h-28 relative rounded-[7px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${themeConfig.mode === key
                                                         ? 'border-accent ring-1 ring-accent/40 bg-raised/90'
                                                         : 'bg-panel border-line hover:bg-raised/40'
                                                         }`}
@@ -374,8 +394,10 @@ export default function Settings() {
                                                     return (
                                                         <button
                                                             key={color.name}
+                                                            type="button"
+                                                            aria-label={`Select accent color ${color.name}`}
                                                             onClick={() => updateTheme({ accent: color.hex })}
-                                                            className={`w-9 h-9 rounded-full relative transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 ring-offset-background ${isSelected ? 'ring-2 ring-text scale-105' : ''}`}
+                                                            className={`w-9 h-9 rounded-full relative transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 ring-offset-background focus-visible:ring-accent ${isSelected ? 'ring-2 ring-text scale-105' : ''}`}
                                                             style={{ backgroundColor: color.hex }}
                                                             title={color.name}
                                                         >
@@ -390,7 +412,7 @@ export default function Settings() {
                                             </div>
                                             <div className="mt-4 pt-3 border-t border-line flex items-center gap-3">
                                                 <div className="w-full h-1.5 rounded-full bg-raised overflow-hidden">
-                                                    <div className="h-full bg-accent transition-all duration-300 w-2/3" />
+                                                    <div className="h-full bg-accent transition-[width,background-color] duration-300 w-2/3" />
                                                 </div>
                                                 <span className="text-[11px] font-mono text-faint whitespace-nowrap">Active Accent</span>
                                             </div>
@@ -421,13 +443,15 @@ export default function Settings() {
                                             <div className="flex gap-2 max-w-sm">
                                                 <input
                                                     type="number"
-                                                    className="bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text w-full focus:outline-none focus:border-accent transition-colors"
+                                                    aria-label="Ping Interval in seconds"
+                                                    className="bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text w-full focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors"
                                                     value={settings['ping_interval'] || '5'}
                                                     onChange={(e) => setSettings(prev => ({ ...prev, ping_interval: e.target.value }))}
                                                 />
                                                 <button
+                                                    type="button"
                                                     onClick={() => saveSetting('ping_interval', settings['ping_interval'] || '5', 'int')}
-                                                    className="bg-accent hover:opacity-90 text-accent-foreground px-3 py-1.5 rounded-[7px] text-xs font-mono font-semibold transition-opacity flex items-center gap-1.5 shadow-sm"
+                                                    className="bg-accent hover:opacity-90 text-accent-foreground px-3 py-1.5 rounded-[7px] text-xs font-mono font-semibold transition-opacity flex items-center gap-1.5 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                                 >
                                                     <Save className="w-3.5 h-3.5" />
                                                     SAVE
@@ -445,13 +469,15 @@ export default function Settings() {
                                             <div className="flex gap-2 max-w-sm">
                                                 <input
                                                     type="number"
-                                                    className="bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text w-full focus:outline-none focus:border-accent transition-colors"
+                                                    aria-label="Speedtest Interval in minutes"
+                                                    className="bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text w-full focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors"
                                                     value={settings['speedtest_interval'] || '180'}
                                                     onChange={(e) => setSettings(prev => ({ ...prev, speedtest_interval: e.target.value }))}
                                                 />
                                                 <button
+                                                    type="button"
                                                     onClick={() => saveSetting('speedtest_interval', settings['speedtest_interval'] || '180', 'int')}
-                                                    className="bg-accent hover:opacity-90 text-accent-foreground px-3 py-1.5 rounded-[7px] text-xs font-mono font-semibold transition-opacity flex items-center gap-1.5 shadow-sm"
+                                                    className="bg-accent hover:opacity-90 text-accent-foreground px-3 py-1.5 rounded-[7px] text-xs font-mono font-semibold transition-opacity flex items-center gap-1.5 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                                 >
                                                     <Save className="w-3.5 h-3.5" />
                                                     SAVE
@@ -500,14 +526,15 @@ export default function Settings() {
                                                     </p>
                                                 </div>
                                                 <button
+                                                    type="button"
                                                     onClick={handleExport}
                                                     disabled={isExporting}
-                                                    className="flex items-center gap-1.5 bg-accent text-accent-foreground px-4 py-2 rounded-[7px] hover:opacity-90 transition-opacity font-mono text-xs font-medium shadow-sm disabled:opacity-50 disabled:pointer-events-none"
+                                                    className="flex items-center gap-1.5 bg-accent text-accent-foreground px-4 py-2 rounded-[7px] hover:opacity-90 transition-opacity font-mono text-xs font-medium shadow-sm disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                                 >
                                                     {isExporting ? (
                                                         <>
                                                             <Loader2 className="w-4 h-4 animate-spin" />
-                                                            Exporting...
+                                                            Exporting…
                                                         </>
                                                     ) : (
                                                         <>
@@ -556,8 +583,10 @@ export default function Settings() {
                                                         <span className="font-medium text-xs text-text">Local Storage</span>
                                                     </div>
                                                     <button
+                                                        type="button"
                                                         onClick={clearLocalStorage}
-                                                        className="p-1.5 text-danger hover:bg-danger/10 rounded-[6px] transition-colors"
+                                                        aria-label="Clear local storage"
+                                                        className="p-1.5 text-danger hover:bg-danger/10 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>

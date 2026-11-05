@@ -127,10 +127,11 @@ export function NetworkTopology() {
                     </div>
                 </div>
                 <button
+                    type="button"
                     onClick={fetchTopology}
                     disabled={loading}
                     aria-label="Refresh network topology"
-                    className="p-2 rounded-[7px] bg-raised hover:bg-panel text-faint hover:text-text transition-all border border-line disabled:opacity-50"
+                    className="p-2 rounded-[7px] bg-raised hover:bg-panel text-faint hover:text-text transition-colors border border-line disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
                     <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                 </button>
@@ -141,7 +142,7 @@ export function NetworkTopology() {
                     <div className="absolute inset-0 flex items-center justify-center z-20 bg-panel/85 backdrop-blur-sm">
                         <div className="flex flex-col items-center gap-3">
                             <div className="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-                            <div className="text-xs font-bold text-accent uppercase tracking-wider">Scanning Network...</div>
+                            <div className="text-xs font-bold text-accent uppercase tracking-wider">Scanning Network…</div>
                         </div>
                     </div>
                 ) : error ? (

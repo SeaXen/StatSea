@@ -92,7 +92,7 @@ export const presets: Record<ThemeMode, ThemeDefinition> = {
             "--line-strong": "#d5d9e5",
             "--text": "#151826",
             "--text-soft": "#4a5168",
-            "--faint": "#98a0b5",
+            "--faint": "#68728d",
             "--accent-soft": "rgba(79, 92, 230, 0.08)",
             "--upload": "#0ea5e9",
             "--ok": "#16a34a",

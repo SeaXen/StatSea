@@ -81,7 +81,7 @@ const PredictionWidget: React.FC = () => {
                             </div>
                             <div className="w-full h-2 rounded-[3px] bg-raised overflow-hidden border border-line">
                                 <div
-                                    className="h-full bg-accent transition-all duration-700"
+                                    className="h-full bg-accent transition-[width] duration-700"
                                     style={{ width: `${progressPct}%` }}
                                 />
                             </div>

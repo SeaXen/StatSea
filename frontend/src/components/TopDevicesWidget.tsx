@@ -25,7 +25,7 @@ function MiniBar({ value, max, color }: { value: number; max: number; color: str
     return (
         <div className="h-1.5 w-full rounded-full bg-muted/60 overflow-hidden mt-1">
             <div
-                className="h-full rounded-full transition-all duration-700"
+                className="h-full rounded-full transition-[width] duration-700"
                 style={{ width: `${pct}%`, background: color }}
             />
         </div>
@@ -80,6 +80,7 @@ export function TopDevicesWidget() {
                         Live
                     </span>
                     <button
+                        type="button"
                         onClick={() => fetchTopDevices(true)}
                         className="p-1 rounded-md hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
                         title="Refresh top devices"

@@ -25,13 +25,11 @@ COPY . .
 # Ensure data directory exists for SQLite
 RUN mkdir -p /app/data
 
-# Create non-root user, configure docker group for docker.sock access, and grant raw socket capabilities
+# Create non-root user and grant raw socket capability for packet sniffing
 RUN useradd -m -r statsea && \
-    (groupadd -g 999 docker || true) && \
-    (usermod -aG docker statsea || true) && \
     mkdir -p /app/data && \
     chown -R statsea:statsea /app && \
-    setcap cap_net_raw,cap_net_admin+eip $(readlink -f $(which python3))
+    setcap cap_net_raw+eip $(readlink -f $(which python3))
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \

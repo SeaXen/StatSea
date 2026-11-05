@@ -96,7 +96,12 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({ agent }) => {
                                 )}
                                 <span className="flex items-center gap-1.5 bg-accent/50 px-2 py-0.5 rounded text-muted-foreground">
                                     <Clock className="w-3 h-3" />
-                                    {agent.last_seen ? new Date(agent.last_seen).toLocaleString() : 'Never'}
+                                    {agent.last_seen ? new Intl.DateTimeFormat(undefined, {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    }).format(new Date(agent.last_seen)) : 'Never'}
                                 </span>
                             </div>
                         </div>
@@ -112,7 +117,7 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({ agent }) => {
                 </div>
 
                 {/* Metrics Grid */}
-                <div className={`grid grid-cols-3 gap-4 flex-1 ${!isOnline && 'opacity-50 grayscale transition-all'}`}>
+                <div className={`grid grid-cols-3 gap-4 flex-1 ${!isOnline && 'opacity-50 grayscale transition-opacity'}`}>
                     {/* CPU */}
                     <div className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-b from-accent/50 to-transparent border border-border relative overflow-hidden">
                         <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-1 z-10">

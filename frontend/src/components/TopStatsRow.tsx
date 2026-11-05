@@ -86,15 +86,15 @@ const TopStatsRow = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    className="bg-[#0A0B0E] border border-white/5 rounded-2xl p-4 relative overflow-hidden group"
+                    className="bg-panel border border-line rounded-2xl p-4 relative overflow-hidden group"
                 >
                     <div className="flex items-center justify-between mb-2 relative z-10">
                         <div>
-                            <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider mb-1">
+                            <p className="text-faint text-[10px] uppercase font-bold tracking-wider mb-1">
                                 {card.title}
                             </p>
                             <div className="flex items-baseline gap-2">
-                                <h4 className="text-white font-bold text-xl tabular-nums">{card.value}</h4>
+                                <h4 className="text-text font-bold text-xl tabular-nums">{card.value}</h4>
                                 {card.subValue && (
                                     <span className={`text-[10px] font-medium ${card.color}`}>
                                         {card.subValue}

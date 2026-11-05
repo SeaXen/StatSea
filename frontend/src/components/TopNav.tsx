@@ -134,10 +134,9 @@ export const TopNav: React.FC<TopNavProps> = ({
     return (
         <header className="topbar relative z-40">
             {/* Brand */}
-            <div
-                className="brand cursor-pointer select-none"
-                tabIndex={0}
-                role="button"
+            <button
+                type="button"
+                className="brand cursor-pointer select-none text-left bg-transparent border-none p-0 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[4px]"
                 onClick={() => setActiveTab('dashboard')}
                 aria-label="StatSea overview"
             >
@@ -146,7 +145,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                     <path d="M2 16c3-4 6-4 10 0s7 4 10 0" opacity=".5" />
                 </svg>
                 <span>StatSea</span>
-            </div>
+            </button>
 
             {/* Active Section Breadcrumb */}
             {activeTab && (
@@ -306,7 +305,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                         type="button"
                         onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                         aria-expanded={isUserMenuOpen}
-                        className="flex items-center gap-2 px-1.5 py-1 rounded-[7px] hover:bg-raised transition-colors focus-visible:outline-none"
+                        className="flex items-center gap-2 px-1.5 py-1 rounded-[7px] hover:bg-raised transition-colors border border-transparent focus-visible:outline-none focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent"
                         aria-label="Operator menu"
                     >
                         <span className="text-xs text-text-soft hidden lg:inline font-medium">

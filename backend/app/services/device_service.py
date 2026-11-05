@@ -13,13 +13,15 @@ logger = get_logger("DeviceService")
 
 class DeviceService:
     @staticmethod
-    def get_devices(db: Session, organization_id: int, cursor: int | None = None, limit: int = 100) -> schemas.CursorPage[schemas.Device]:
+    def get_devices(db: Session, organization_id: int, cursor: int | None = None, limit: int = 100) -> schemas.CursorPage[schemas.DeviceListItem]:
         """
-        Retrieves devices from the database with cursor pagination for a specific organization.
+        Retrieves devices from the database with cursor pagination for a specific organization,
+        including unassigned global devices.
         """
         try:
-            query = db.query(models.Device).filter(models.Device.organization_id == organization_id).options(
-                selectinload(models.Device.traffic_logs),
+            query = db.query(models.Device).filter(
+                (models.Device.organization_id == organization_id) | (models.Device.organization_id.is_(None))
+            ).options(
                 selectinload(models.Device.ports)
             )
             
@@ -37,11 +39,11 @@ class DeviceService:
     @staticmethod
     def get_device(db: Session, device_id: int, organization_id: int) -> models.Device:
         """
-        Retrieves a specific device by ID, ensuring it belongs to the organization.
+        Retrieves a specific device by ID, ensuring it belongs to the organization or is globally visible.
         """
         device = db.query(models.Device).filter(
             models.Device.id == device_id, 
-            models.Device.organization_id == organization_id
+            (models.Device.organization_id == organization_id) | (models.Device.organization_id.is_(None))
         ).options(
             selectinload(models.Device.traffic_logs),
             selectinload(models.Device.ports)

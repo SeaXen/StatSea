@@ -14,9 +14,14 @@ request_id_ctx_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
 )
 
 
+_RESERVED_LOG_ATTRS = set(vars(logging.LogRecord("", 0, "", 0, "", (), None)).keys()) | {
+    "message", "asctime", "request_id"
+}
+
+
 class JsonFormatter(logging.Formatter):
     """
-    Custom formatter that outputs logs as JSON, including request ID if available.
+    Custom formatter that outputs logs as JSON, including request ID and structured fields.
     """
 
     def format(self, record: logging.LogRecord) -> str:
@@ -34,11 +39,16 @@ class JsonFormatter(logging.Formatter):
         if record.exc_info:
             log_record["exception"] = self.formatException(record.exc_info)
 
-        # Add custom fields (extra={...})
-        if hasattr(record, "extra"):
-            log_record.update(record.extra)
+        # Extract structured fields from record.__dict__
+        extras = {
+            k: v for k, v in record.__dict__.items()
+            if k not in _RESERVED_LOG_ATTRS and not k.startswith("_")
+        }
+        if hasattr(record, "extra") and isinstance(record.extra, dict):
+            extras.update(record.extra)
+        log_record.update(extras)
 
-        return json.dumps(log_record)
+        return json.dumps(log_record, default=str)
 
 
 def setup_logging(level: int = logging.INFO):

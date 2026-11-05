@@ -56,15 +56,27 @@ def get_docker_container_usage(
     return AnalyticsService.get_docker_usage(db, container_id)
 
 
+import re
+
+_REDACT_REGEX = re.compile(r"(?i)(password|secret|token|api[_-]?key|authorization)\s*[:=]\s*\S+")
+
+
+def _redact_logs(text: str) -> str:
+    if not isinstance(text, str):
+        return text
+    return _REDACT_REGEX.sub(lambda m: m.group(1) + "=***REDACTED***", text)
+
+
 @router.get(
     "/containers/{container_id}/logs",
     summary="Get container logs",
     description="Retrieve logs for a specific container.",
 )
 async def get_container_logs(
-    container_id: str, tail: int = 100, current_user: models.User = Depends(get_current_user)
+    container_id: str, tail: int = 100, admin_user: models.User = Depends(get_current_admin_user)
 ):
-    return {"logs": docker_monitor.get_logs(container_id, tail)}
+    raw_logs = docker_monitor.get_logs(container_id, tail)
+    return {"logs": _redact_logs(raw_logs)}
 
 
 @router.post(

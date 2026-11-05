@@ -3,6 +3,7 @@ import { X, Save, MessageSquare, Bell, Clock, Hash } from 'lucide-react';
 import { toast } from 'sonner';
 import axiosInstance from '../config/axiosInstance';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useModalA11y } from '../hooks/useModalA11y';
 
 interface SpeedtestSettingsModalProps {
     isOpen: boolean;
@@ -10,6 +11,7 @@ interface SpeedtestSettingsModalProps {
 }
 
 const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen, onClose }) => {
+    const modalRef = useModalA11y<HTMLDivElement>({ isOpen, onClose });
     const [settings, setSettings] = useState({
         speedtest_interval: "0",
         telegram_bot_token: "",
@@ -77,6 +79,11 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
         <AnimatePresence>
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                 <motion.div
+                    ref={modalRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="speedtest-modal-title"
+                    tabIndex={-1}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
@@ -89,11 +96,11 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                                 <Bell className="w-5 h-5" />
                             </div>
                             <div>
-                                <h2 className="text-sm font-semibold text-text font-mono">Speedtest Automation</h2>
+                                <h2 id="speedtest-modal-title" className="text-sm font-semibold text-text font-mono">Speedtest Automation</h2>
                                 <p className="text-xs text-faint font-mono">Configure schedule and notifications</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-1.5 hover:bg-panel rounded-[7px] transition-colors text-faint hover:text-text">
+                        <button type="button" onClick={onClose} aria-label="Close speedtest settings modal" className="p-1.5 hover:bg-panel rounded-[7px] transition-colors text-faint hover:text-text focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent">
                             <X className="w-4 h-4" />
                         </button>
                     </div>
@@ -114,8 +121,9 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                                     {[0, 1, 6, 12, 24].map((interval) => (
                                         <button
                                             key={interval}
+                                            type="button"
                                             onClick={() => handleChange('speedtest_interval', String(interval))}
-                                            className={`px-3 py-1.5 rounded-[7px] text-xs font-medium transition-colors ${String(settings.speedtest_interval) === String(interval)
+                                            className={`px-3 py-1.5 rounded-[7px] text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${String(settings.speedtest_interval) === String(interval)
                                                 ? 'bg-accent text-accent-foreground font-semibold shadow-sm'
                                                 : 'bg-panel text-faint hover:text-text border border-line'
                                                 }`}
@@ -125,10 +133,11 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                                     ))}
                                     <input
                                         type="number"
-                                        placeholder="Custom"
+                                        aria-label="Speedtest custom interval hours"
+                                        placeholder="e.g. 12…"
                                         value={settings.speedtest_interval}
                                         onChange={(e) => handleChange('speedtest_interval', e.target.value)}
-                                        className="w-20 px-2.5 py-1.5 bg-panel border border-line rounded-[7px] text-text text-xs focus:outline-none focus:border-accent"
+                                        className="w-20 px-2.5 py-1.5 bg-panel border border-line rounded-[7px] text-text text-xs focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent"
                                     />
                                 </div>
                                 <p className="mt-2 text-[10px] text-faint">
@@ -147,31 +156,33 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                             <div className="bg-raised rounded-[var(--r-panel)] p-4 border border-line space-y-3">
                                 <div className="flex items-center gap-2 mb-2">
                                     <div className="w-5 h-5 rounded-full bg-[#229ED9]/20 flex items-center justify-center">
-                                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram" className="w-3.5 h-3.5" />
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram" width={14} height={14} className="w-3.5 h-3.5" />
                                     </div>
                                     <span className="text-text font-medium text-xs">Telegram</span>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <div>
-                                        <label className="block text-[10px] font-medium text-faint mb-1">Bot Token</label>
+                                        <label htmlFor="telegram-bot-token" className="block text-[10px] font-medium text-faint mb-1">Bot Token</label>
                                         <div className="relative">
                                             <Hash className="absolute left-2.5 top-2 w-3.5 h-3.5 text-faint" />
                                             <input
+                                                id="telegram-bot-token"
                                                 type="password"
                                                 value={settings.telegram_bot_token}
                                                 onChange={(e) => handleChange('telegram_bot_token', e.target.value)}
-                                                className="w-full pl-8 pr-3 py-1.5 bg-panel border border-line rounded-[7px] text-text text-xs focus:outline-none focus:border-accent"
-                                                placeholder="123456:ABC-DEF..."
+                                                className="w-full pl-8 pr-3 py-1.5 bg-panel border border-line rounded-[7px] text-text text-xs focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent"
+                                                placeholder="123456:ABC-DEF…"
                                             />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-medium text-faint mb-1">Chat ID</label>
+                                        <label htmlFor="telegram-chat-id" className="block text-[10px] font-medium text-faint mb-1">Chat ID</label>
                                         <input
+                                            id="telegram-chat-id"
                                             type="text"
                                             value={settings.telegram_chat_id}
                                             onChange={(e) => handleChange('telegram_chat_id', e.target.value)}
-                                            className="w-full px-3 py-1.5 bg-panel border border-line rounded-[7px] text-text text-xs focus:outline-none focus:border-accent"
+                                            className="w-full px-3 py-1.5 bg-panel border border-line rounded-[7px] text-text text-xs focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent"
                                             placeholder="-100123456789"
                                         />
                                     </div>
@@ -182,18 +193,19 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                             <div className="bg-raised rounded-[var(--r-panel)] p-4 border border-line space-y-3">
                                 <div className="flex items-center gap-2 mb-2">
                                     <div className="w-5 h-5 rounded-full bg-[#5865F2]/20 flex items-center justify-center">
-                                        <img src="https://assets-global.website-files.com/6257adef93867e56f84d3092/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" alt="Discord" className="w-3.5 h-3.5" />
+                                        <img src="https://assets-global.website-files.com/6257adef93867e56f84d3092/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" alt="Discord" width={14} height={14} className="w-3.5 h-3.5" />
                                     </div>
                                     <span className="text-text font-medium text-xs">Discord</span>
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-medium text-faint mb-1">Webhook URL</label>
+                                    <label htmlFor="discord-webhook-url" className="block text-[10px] font-medium text-faint mb-1">Webhook URL</label>
                                     <input
+                                        id="discord-webhook-url"
                                         type="password"
                                         value={settings.discord_webhook_url}
                                         onChange={(e) => handleChange('discord_webhook_url', e.target.value)}
-                                        className="w-full px-3 py-1.5 bg-panel border border-line rounded-[7px] text-text text-xs focus:outline-none focus:border-accent"
-                                        placeholder="https://discord.com/api/webhooks/..."
+                                        className="w-full px-3 py-1.5 bg-panel border border-line rounded-[7px] text-text text-xs focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent"
+                                        placeholder="https://discord.com/api/webhooks/…"
                                     />
                                 </div>
                             </div>
@@ -203,15 +215,17 @@ const SpeedtestSettingsModal: React.FC<SpeedtestSettingsModalProps> = ({ isOpen,
                     {/* Footer */}
                     <div className="p-4 border-t border-line bg-raised flex justify-end gap-2">
                         <button
+                            type="button"
                             onClick={onClose}
-                            className="px-3 py-1.5 text-xs font-mono text-faint hover:text-text transition-colors"
+                            className="px-3 py-1.5 text-xs font-mono text-faint hover:text-text transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded-[7px]"
                         >
                             Cancel
                         </button>
                         <button
+                            type="button"
                             onClick={handleSave}
                             disabled={loading}
-                            className="flex items-center gap-1.5 px-4 py-1.5 bg-accent text-accent-foreground rounded-[7px] font-mono text-xs font-medium hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-1.5 px-4 py-1.5 bg-accent text-accent-foreground rounded-[7px] font-mono text-xs font-medium hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                         >
                             {loading ? <div className="w-3.5 h-3.5 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                             Save Changes

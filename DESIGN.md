@@ -112,12 +112,14 @@ StatSea uses a unified two-tier token hierarchy powered by CSS custom properties
 * **Faint Text (`--faint`)**: `#5d6574` — Subtle hints, secondary labels, and inactive indicators.
 
 ### 6 Synchronized Theme Presets
-1. **Dark Ops (`dark`)**: Precision NOC console (`#0f1115` canvas / `#15181e` panel / `#7c8cff` periwinkle accent).
-2. **Daylight (`light`)**: Clean high-contrast audit mode (`#f5f6fa` canvas / `#ffffff` panel / `#4f5ce6` cobalt accent).
-3. **Cyberpunk (`cyberpunk`)**: Neon terminal theme (`#08080f` canvas / `#121224` panel / `#00ffcc` teal neon accent).
-4. **Dracula (`dracula`)**: Iconic gothic palette (`#282a36` canvas / `#343746` panel / `#bd93f9` purple accent).
-5. **Nord (`nord`)**: Arctic blue tones (`#2e3440` canvas / `#3b4252` panel / `#88c0d0` ice blue accent).
-6. **Midnight (`midnight`)**: Deep marine theme (`#060913` canvas / `#0e1424` panel / `#38bdf8` sky blue accent).
+| Theme Preset | Environment | Canvas (`--bg`) | Panel (`--panel`) | Accent (`--accent`) | Accent Soft |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Dark Ops** *(Default)* | Low-light NOC console | `#0f1115` | `#15181e` | `#7c8cff` (Periwinkle) | `rgba(124, 140, 255, 0.10)` |
+| **Daylight** | High-ambient audit | `#f5f6fa` | `#ffffff` | `#4f5ce6` (Cobalt) | `rgba(79, 92, 230, 0.08)` |
+| **Cyberpunk** | High-energy terminal | `#0a0e17` | `#121a2d` | `#facc15` (Neon Yellow) | `rgba(250, 204, 21, 0.12)` |
+| **Dracula** | Iconic dark gothic | `#1e1f29` | `#282a36` | `#ff79c6` (Pink) | `rgba(255, 121, 198, 0.12)` |
+| **Nord** | Arctic low-contrast | `#242933` | `#2e3440` | `#88c0d0` (Frost Blue) | `rgba(136, 192, 208, 0.12)` |
+| **Midnight** | Deep oceanic | `#0a0e1a` | `#131b30` | `#38bdf8` (Sky Blue) | `rgba(56, 189, 248, 0.12)` |
 
 ### Semantic Status Tokens
 * **Download / Telemetry**: `var(--accent)` (`#7c8cff`)

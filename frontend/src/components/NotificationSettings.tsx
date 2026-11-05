@@ -54,11 +54,18 @@ export default function NotificationSettings() {
         return err instanceof Error ? err.message : String(err);
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this channel?")) return;
-        deleteChannelMutation.mutate(id, {
-            onSuccess: () => toast.success("Channel deleted successfully"),
-            onError: (err) => toast.error(`Failed to delete channel: ${getErrorMessage(err)}`)
+    const handleDelete = (id: number) => {
+        toast('Delete notification channel?', {
+            description: 'Alerts will no longer be dispatched to this destination.',
+            action: {
+                label: 'Delete',
+                onClick: () => {
+                    deleteChannelMutation.mutate(id, {
+                        onSuccess: () => toast.success("Channel deleted successfully"),
+                        onError: (err) => toast.error(`Failed to delete channel: ${getErrorMessage(err)}`)
+                    });
+                }
+            }
         });
     };
 
@@ -71,7 +78,7 @@ export default function NotificationSettings() {
 
     const handleTest = async (id: number) => {
         toast.promise(testChannelMutation.mutateAsync(id), {
-            loading: 'Sending test notification...',
+            loading: 'Sending test notification…',
             success: 'Test notification sent!',
             error: (err) => `Test failed: ${getErrorMessage(err)}`
         });
@@ -91,8 +98,9 @@ export default function NotificationSettings() {
                         </div>
                     </div>
                     <button
+                        type="button"
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1.5 bg-accent text-accent-foreground px-3.5 py-1.5 rounded-[7px] hover:opacity-90 transition-opacity text-xs font-mono font-medium shadow-sm"
+                        className="flex items-center gap-1.5 bg-accent text-accent-foreground px-3.5 py-1.5 rounded-[7px] hover:opacity-90 transition-opacity text-xs font-mono font-medium shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                     >
                         <Plus className="w-4 h-4" /> Add Channel
                     </button>
@@ -129,31 +137,39 @@ export default function NotificationSettings() {
 
                                     <div className="flex items-center gap-1.5">
                                         <button
+                                            type="button"
                                             onClick={() => handleToggleEnable(channel)}
-                                            className="p-1.5 text-text-soft hover:text-text bg-panel hover:bg-line-strong rounded-[7px] border border-line transition-colors"
+                                            className="p-1.5 text-text-soft hover:text-text bg-panel hover:bg-line-strong rounded-[7px] border border-line transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                             title={channel.is_enabled ? "Disable Channel" : "Enable Channel"}
+                                            aria-label={channel.is_enabled ? "Disable Channel" : "Enable Channel"}
                                         >
                                             <Settings2 className="w-3.5 h-3.5" />
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={() => handleTest(channel.id)}
-                                            className="p-1.5 text-accent bg-accent-soft hover:opacity-80 rounded-[7px] transition-opacity"
+                                            className="p-1.5 text-accent bg-accent-soft hover:opacity-80 rounded-[7px] transition-opacity focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                             title="Test Channel"
+                                            aria-label="Test Channel"
                                         >
                                             <Play className="w-3.5 h-3.5" />
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={() => setEditingChannel(channel)}
-                                            className="p-1.5 text-accent bg-accent-soft hover:opacity-80 rounded-[7px] transition-opacity"
+                                            className="p-1.5 text-accent bg-accent-soft hover:opacity-80 rounded-[7px] transition-opacity focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                             title="Edit Channel"
+                                            aria-label="Edit Channel"
                                             disabled
                                         >
                                             <Settings2 className="w-3.5 h-3.5" />
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={() => handleDelete(channel.id)}
-                                            className="p-1.5 text-danger bg-danger/10 hover:bg-danger/20 rounded-[7px] transition-colors"
+                                            className="p-1.5 text-danger bg-danger/10 hover:bg-danger/20 rounded-[7px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                             title="Delete Channel"
+                                            aria-label="Delete Channel"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
                                         </button>
@@ -180,11 +196,15 @@ export default function NotificationSettings() {
                 <div className="flex items-center gap-3">
                     {isPushLoading && <Loader2 className="w-4 h-4 animate-spin text-accent" />}
                     <button
+                        type="button"
+                        role="switch"
+                        aria-checked={pushStatus === 'granted'}
+                        aria-label="Toggle browser push notifications"
                         disabled={pushStatus === 'unsupported' || isPushLoading}
                         onClick={handlePushToggle}
-                        className={`w-11 h-6 rounded-full relative transition-colors duration-200 border border-line ${pushStatus === 'granted' ? 'bg-accent' : 'bg-raised'}`}
+                        className={`w-11 h-6 rounded-full relative transition-colors duration-200 border border-line focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${pushStatus === 'granted' ? 'bg-accent' : 'bg-raised'}`}
                     >
-                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 shadow-sm ${pushStatus === 'granted' ? 'left-6' : 'left-1'}`} />
+                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-[left] duration-200 shadow-sm ${pushStatus === 'granted' ? 'left-6' : 'left-1'}`} />
                     </button>
                 </div>
             </div>
@@ -267,27 +287,29 @@ function ChannelModal({ isOpen, onClose, existingChannel, onSave }: { isOpen: bo
             <div className="panel bg-panel border border-line rounded-[var(--r-panel)] w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
                 <div className="p-4 md:p-5 border-b border-line flex justify-between items-center">
                     <h3 className="text-sm font-semibold text-text font-mono">{existingChannel ? 'Edit Channel' : 'Add Channel'}</h3>
-                    <button onClick={onClose} aria-label="Close" className="text-faint hover:text-text p-1 rounded-[5px] hover:bg-panel transition-colors">
+                    <button type="button" onClick={onClose} aria-label="Close" className="text-faint hover:text-text p-1 rounded-[5px] hover:bg-panel transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent">
                         <X className="w-4 h-4" />
                     </button>
                 </div>
 
                 <div className="p-4 md:p-5 space-y-4 overflow-y-auto">
                     <div className="space-y-1.5">
-                        <label className="text-xs font-mono text-faint">Name</label>
+                        <label htmlFor="channel-name" className="text-xs font-mono text-faint">Name</label>
                         <input
+                            id="channel-name"
                             value={name} onChange={e => setName(e.target.value)}
-                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent"
-                            placeholder="e.g. My Telegram Alerts"
+                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent"
+                            placeholder="e.g. My Telegram Alerts…"
                         />
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-xs font-mono text-faint">Type</label>
+                        <label htmlFor="channel-type" className="text-xs font-mono text-faint">Type</label>
                         <select
+                            id="channel-type"
                             value={type} onChange={e => handleTypeChange(e.target.value as NotificationChannelType)}
                             disabled={!!existingChannel}
-                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent"
+                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent"
                         >
                             <option value="telegram">Telegram</option>
                             <option value="discord">Discord (Webhook)</option>
@@ -298,28 +320,30 @@ function ChannelModal({ isOpen, onClose, existingChannel, onSave }: { isOpen: bo
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-xs font-mono text-faint">Configuration (JSON)</label>
+                        <label htmlFor="channel-config" className="text-xs font-mono text-faint">Configuration (JSON)</label>
                         <p className="text-[10px] text-faint font-mono mb-1">Provide the required keys for the selected provider.</p>
                         <textarea
+                            id="channel-config"
                             value={configStr} onChange={e => setConfigStr(e.target.value)}
                             rows={6}
-                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent"
+                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent"
                         />
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-xs font-mono text-faint">Events</label>
+                        <label htmlFor="channel-events" className="text-xs font-mono text-faint">Events</label>
                         <input
+                            id="channel-events"
                             value={events.join(',')} onChange={e => setEvents(e.target.value.split(',').map(s => s.trim()))}
-                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent"
-                            placeholder="e.g. security.*, system.cpu_high, * for all"
+                            className="w-full bg-raised border border-line rounded-[7px] px-3 py-1.5 font-mono text-xs text-text focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent"
+                            placeholder="e.g. security.*, system.cpu_high, * for all…"
                         />
                     </div>
                 </div>
 
                 <div className="p-4 border-t border-line flex justify-end gap-2 bg-raised rounded-b-[var(--r-panel)]">
-                    <button onClick={onClose} className="px-3 py-1.5 rounded-[7px] text-faint hover:text-text font-mono text-xs transition-colors">Cancel</button>
-                    <button onClick={handleSave} className="bg-accent text-accent-foreground px-4 py-1.5 rounded-[7px] hover:opacity-90 font-mono text-xs font-medium">Save Channel</button>
+                    <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-[7px] text-faint hover:text-text font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent">Cancel</button>
+                    <button type="button" onClick={handleSave} className="bg-accent text-accent-foreground px-4 py-1.5 rounded-[7px] hover:opacity-90 font-mono text-xs font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent">Save Channel</button>
                 </div>
             </div>
         </div>
