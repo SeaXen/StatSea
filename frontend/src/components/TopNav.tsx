@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
     Bell,
     LogOut,
@@ -18,6 +18,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { NotificationCenter } from './NotificationCenter';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useAuth } from '../context/AuthContext';
+import { useInterfaces } from '../hooks/useBandwidth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -34,18 +35,9 @@ interface NetworkEnv {
     id: string;
     name: string;
     interface: string;
-    subnet: string;
-    devices: number;
+    subnet?: string;
     status: 'online' | 'standby';
 }
-
-const NETWORKS: NetworkEnv[] = [
-    { id: 'homelab', name: 'Home lab', interface: 'eth0', subnet: '192.168.1.0/24', devices: 24, status: 'online' },
-    { id: 'officelan', name: 'Office LAN', interface: 'eth1', subnet: '10.0.10.0/24', devices: 42, status: 'online' },
-    { id: 'iotsubnet', name: 'IoT Subnet', interface: 'vlan10', subnet: '172.16.50.0/24', devices: 16, status: 'online' },
-    { id: 'wireguard', name: 'Cloud WireGuard', interface: 'wg0', subnet: '10.8.0.0/24', devices: 8, status: 'standby' },
-    { id: 'docker', name: 'Docker Bridge', interface: 'docker0', subnet: '172.17.0.0/16', devices: 9, status: 'online' },
-];
 
 const EXTENDED_RANGES = [
     { id: '15m', label: '15m', name: '15 Minutes', desc: 'Real-time telemetry buffer' },
@@ -75,7 +67,28 @@ export const TopNav: React.FC<TopNavProps> = ({
     const [isNetworkOpen, setIsNetworkOpen] = useState(false);
     const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-    const [selectedNetwork, setSelectedNetwork] = useState<NetworkEnv>(NETWORKS[0]);
+
+    const { data: rawInterfaces = [] } = useInterfaces();
+    const networkOptions: NetworkEnv[] = useMemo(() => {
+        const defaultOption: NetworkEnv = {
+            id: 'all',
+            name: 'All Interfaces',
+            interface: 'all',
+            subnet: 'Aggregate Subnets',
+            status: isConnected ? 'online' : 'standby',
+        };
+        const dynamicList: NetworkEnv[] = (Array.isArray(rawInterfaces) ? rawInterfaces : []).map(iface => ({
+            id: iface,
+            name: iface.toUpperCase(),
+            interface: iface,
+            subnet: `Active Adapter (${iface})`,
+            status: isConnected ? 'online' : 'standby',
+        }));
+        return [defaultOption, ...dynamicList];
+    }, [rawInterfaces, isConnected]);
+
+    const [selectedNetworkId, setSelectedNetworkId] = useState<string>('all');
+    const selectedNetwork = networkOptions.find(n => n.id === selectedNetworkId) || networkOptions[0];
 
     const networkRef = useRef<HTMLDivElement>(null);
     const timeRef = useRef<HTMLDivElement>(null);
@@ -112,10 +125,10 @@ export const TopNav: React.FC<TopNavProps> = ({
     }, []);
 
     const handleSelectNetwork = (net: NetworkEnv) => {
-        setSelectedNetwork(net);
+        setSelectedNetworkId(net.id);
         setIsNetworkOpen(false);
-        toast.success(`Switched active network to ${net.name} (${net.interface})`, {
-            description: `Subnet: ${net.subnet} • ${net.devices} devices online`
+        toast.success(`Active scope: ${net.name}`, {
+            description: net.id === 'all' ? 'Monitoring aggregate network traffic' : `Filtered to adapter ${net.interface}`
         });
     };
 
@@ -178,7 +191,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                             <Network className="w-3 h-3 text-accent" />
                         </div>
                         <div className="space-y-0.5">
-                            {NETWORKS.map((net) => {
+                            {networkOptions.map((net) => {
                                 const isSelected = selectedNetwork.id === net.id;
                                 return (
                                     <button
@@ -195,7 +208,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                                 <span className="font-medium text-xs text-text">{net.name}</span>
                                                 <span className="text-[10px] text-faint">({net.interface})</span>
                                             </div>
-                                            <span className="text-[10px] text-muted pl-3.5">{net.subnet} • {net.devices} devices</span>
+                                            {net.subnet && <span className="text-[10px] text-muted pl-3.5">{net.subnet}</span>}
                                         </div>
                                         {isSelected && <Check className="w-3.5 h-3.5 text-accent" />}
                                     </button>

@@ -201,8 +201,9 @@ StatSea features 6 built-in themes that synchronize 100% of the UI instantaneous
 Every release passes a strict multi-tier verification pipeline:
 
 ```powershell
-# 1. Run full backend unit and integration test suite
+# 1. Run full backend linting and test suite
 cd backend
+python -m ruff check app/ scripts/ tests/
 python -m pytest
 
 # 2. Run frontend component and unit test suite

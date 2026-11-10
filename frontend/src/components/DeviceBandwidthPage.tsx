@@ -71,8 +71,10 @@ export default function DeviceBandwidthPage({ macAddress, onBack }: DeviceBandwi
             <div className="panel p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <button
+                        type="button"
                         onClick={onBack}
-                        className="p-1.5 rounded-[7px] bg-raised border border-line hover:border-line-strong text-muted hover:text-text transition-colors"
+                        aria-label="Back to Devices"
+                        className="p-1.5 rounded-[7px] bg-raised border border-line hover:border-line-strong text-muted hover:text-text transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                         title="Back to Devices"
                     >
                         <ArrowLeft className="w-4 h-4" />

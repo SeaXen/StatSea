@@ -11,8 +11,8 @@ logger = get_logger("SystemStats")
 # Prime CPU percent measurement so first call is not 0.0
 try:
     psutil.cpu_percent(interval=None)
-except Exception:
-    pass
+except Exception as e:
+    logger.debug("Initial CPU percent priming failed: %s", e)
 
 
 class SystemStats:

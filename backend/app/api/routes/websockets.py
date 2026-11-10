@@ -3,9 +3,9 @@ import logging
 import time
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+
 from ...core.auth_jwt import _extract_user_from_token
 from ...core.collector import global_collector
-from ...core.config import settings
 from ...db.database import SessionLocal
 from ...models import models
 
@@ -54,8 +54,13 @@ def _safe_broadcast(msg: dict):
 global_collector.set_event_callback(_safe_broadcast)
 
 async def authenticate_websocket(websocket: WebSocket, token: str | None = None) -> models.User | None:
-    """Validate token for WebSocket connections via query param or Sec-WebSocket-Protocol header."""
-    if not token:
+    """Validate token for WebSocket connections via Sec-WebSocket-Protocol header or query param."""
+    if token:
+        logger.warning(
+            "DEPRECATION WARNING: Passing JWT token via URL query parameter is insecure and deprecated. "
+            "Migrate to the Sec-WebSocket-Protocol header."
+        )
+    else:
         sec_protocol = websocket.headers.get("sec-websocket-protocol")
         if sec_protocol:
             for p in [x.strip() for x in sec_protocol.split(",")]:
@@ -135,7 +140,6 @@ async def speedtest_websocket(websocket: WebSocket, provider: str = "ookla", tok
 
     await websocket.accept()
     try:
-        from ...api.deps import get_db
         from ...core.speedtest_service import speedtest_service
         
         queue = asyncio.Queue()

@@ -1,6 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TopNav } from '../TopNav';
+
+const renderWithClient = (ui: React.ReactElement) => {
+    const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+    });
+    return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+};
 
 // Mock react-router-dom
 vi.mock('react-router-dom', () => ({
@@ -40,7 +48,7 @@ describe('TopNav Component', () => {
         mockIsConnected = true;
         mockIsSynthetic = false;
 
-        render(<TopNav activeTab="overview" setActiveTab={vi.fn()} setCommandOpen={vi.fn()} onMenuClick={vi.fn()} />);
+        renderWithClient(<TopNav activeTab="overview" setActiveTab={vi.fn()} setCommandOpen={vi.fn()} onMenuClick={vi.fn()} />);
 
         expect(screen.getByText('overview')).toBeInTheDocument();
         expect(screen.getByText('LIVE SNIFFING')).toBeInTheDocument();
@@ -51,7 +59,7 @@ describe('TopNav Component', () => {
         mockIsConnected = true;
         mockIsSynthetic = true;
 
-        render(<TopNav activeTab="devices" setActiveTab={vi.fn()} setCommandOpen={vi.fn()} onMenuClick={vi.fn()} />);
+        renderWithClient(<TopNav activeTab="devices" setActiveTab={vi.fn()} setCommandOpen={vi.fn()} onMenuClick={vi.fn()} />);
 
         expect(screen.getByText('devices')).toBeInTheDocument();
         expect(screen.getByText('SIMULATION MODE')).toBeInTheDocument();
@@ -62,7 +70,7 @@ describe('TopNav Component', () => {
         mockIsConnected = false;
         mockIsSynthetic = false;
 
-        render(<TopNav activeTab="bandwidth" setActiveTab={vi.fn()} setCommandOpen={vi.fn()} onMenuClick={vi.fn()} />);
+        renderWithClient(<TopNav activeTab="bandwidth" setActiveTab={vi.fn()} setCommandOpen={vi.fn()} onMenuClick={vi.fn()} />);
 
         expect(screen.queryByText('LIVE SNIFFING')).not.toBeInTheDocument();
         expect(screen.queryByText('SIMULATION MODE')).not.toBeInTheDocument();

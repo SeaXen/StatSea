@@ -118,6 +118,7 @@ export function NetworkMap() {
     }
 
     const safeNodes = Array.isArray(data?.nodes) ? data.nodes : [];
+    const routerNode = safeNodes.find(n => n.id === 'router');
     const deviceNodes = safeNodes.filter(n => n.id !== 'router');
 
     return (
@@ -208,7 +209,7 @@ export function NetworkMap() {
                     <div className="w-28 h-28 rounded-[9px] bg-bar border border-line-strong flex flex-col items-center justify-center relative shadow-2xl">
                         <Router className="w-7 h-7 text-accent mb-1 relative z-10" />
                         <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-text relative z-10">Gateway</span>
-                        <span className="text-[9px] font-mono text-faint">192.168.1.1</span>
+                        <span className="text-[9px] font-mono text-faint">{routerNode?.ip || 'Default Gateway'}</span>
                         <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-ok" />
                     </div>
                 </motion.div>

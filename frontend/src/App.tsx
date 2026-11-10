@@ -9,6 +9,7 @@ import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import { TopNav } from './components/TopNav';
+import { BottomNav } from './components/BottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAnalyticsSummary } from './hooks/useAnalytics';
@@ -208,6 +209,9 @@ function AppContent() {
                 </span>
                 <span className="end faint">StatSea v1.0</span>
             </footer>
+
+            {/* 5. Mobile Persistent Bottom Navigation */}
+            <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
     );
 }

@@ -149,13 +149,17 @@ const Dashboard: React.FC<DashboardProps> = ({ timeRange = '1h' }) => {
                     </span>
                     <span className="note">{health?.status || 'Active'}</span>
                 </div>
-                <div className="cell cursor-pointer" onClick={() => { setOverlayType('all'); setOverlayOpen(true); }}>
+                <button
+                    type="button"
+                    className="cell cursor-pointer text-left w-full focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                    onClick={() => { setOverlayType('all'); setOverlayOpen(true); }}
+                >
                     <span className="label">System health</span>
                     <span className={`value num ${health?.score != null && health.score < 80 ? 'warn' : ''}`}>
                         {health?.score != null ? `${health.score}%` : (health?.status ? 'Healthy' : '—')}
                     </span>
                     <span className="note ok">{health?.status || 'Operational'}</span>
-                </div>
+                </button>
             </section>
 
             {/* 2. Main Grid: Bandwidth Chart + Live Events */}

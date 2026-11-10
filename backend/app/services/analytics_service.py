@@ -53,13 +53,24 @@ class AnalyticsService:
             return topology_cache[cache_key]
 
         try:
-            devices = db.query(models.Device).filter(models.Device.organization_id == organization_id).all()
+            devices = db.query(models.Device).filter(
+                (models.Device.organization_id == organization_id) | (models.Device.organization_id.is_(None))
+            ).all()
+
+            router_ip = "Gateway"
+            for d in devices:
+                if d.ip_address and "." in d.ip_address:
+                    octets = d.ip_address.split(".")
+                    if len(octets) == 4:
+                        router_ip = f"{octets[0]}.{octets[1]}.{octets[2]}.1"
+                        break
+
             nodes = [
                 {
                     "id": "router",
                     "label": "Main Router",
                     "type": "Router",
-                    "ip": "192.168.1.1",
+                    "ip": router_ip,
                     "group": "core",
                 }
             ]

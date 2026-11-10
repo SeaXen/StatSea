@@ -255,6 +255,14 @@ def run_e2e_tests():
             browser.close()
 
 
+import pytest
+
+
+@pytest.mark.skipif(os.getenv("RUN_E2E") != "1", reason="E2E requires live server (set RUN_E2E=1)")
+def test_statsea_playwright_e2e():
+    run_e2e_tests()
+
+
 if __name__ == "__main__":
     run_e2e_tests()
 

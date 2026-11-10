@@ -1,4 +1,3 @@
-import secrets
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,7 +8,7 @@ class Settings(BaseSettings):
     PROJECT_VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
     PASSWORD_MIN_LENGTH: int = 8
-    HOST: str = "0.0.0.0"
+    HOST: str = "0.0.0.0"  # noqa: S104
     PORT: int = 8001
 
     # Security

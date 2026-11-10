@@ -1,4 +1,5 @@
 import logging
+import re
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
@@ -55,8 +56,6 @@ def get_docker_container_usage(
 ):
     return AnalyticsService.get_docker_usage(db, container_id)
 
-
-import re
 
 _REDACT_REGEX = re.compile(r"(?i)(password|secret|token|api[_-]?key|authorization)\s*[:=]\s*\S+")
 

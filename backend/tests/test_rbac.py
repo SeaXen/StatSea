@@ -5,7 +5,6 @@ RBAC & Security negative tests (P4-3):
 - Password rotation enforcement (must_change_password)
 - Refresh token reuse detection
 """
-from fastapi.testclient import TestClient
 from app.core.auth_jwt import create_access_token
 from app.models.models import Organization, OrganizationMember, RefreshToken, User
 from app.services.auth_service import AuthService
@@ -115,6 +114,7 @@ def test_refresh_token_reuse_detection(client, db_session):
 
     # Re-use the old revoked refresh token -> must detect reuse and raise AuthenticationException
     import pytest
+
     from app.core.exceptions import AuthenticationException
     with pytest.raises(AuthenticationException):
         auth_service.refresh_session(db_session, rt)

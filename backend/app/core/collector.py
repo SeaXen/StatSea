@@ -5,7 +5,7 @@ import ipaddress
 import random
 import threading
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 try:
     from scapy.all import DNS, IP, TCP, UDP, Raw, sniff
@@ -395,8 +395,8 @@ class PacketCollector:
                         self.connection_types["internal"] = self.connection_types.get("internal", 0) + 1
                     else:
                         self.connection_types["external"] = self.connection_types.get("external", 0) + 1
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("Failed to classify connection: %s", e)
 
                 # Active sessions tracking
                 sess_key = f"{src_ip}:{src_port}->{dst_ip}:{dst_port}/{proto}"
@@ -666,7 +666,7 @@ class PacketCollector:
             records = [
                 DnsLog(
                     timestamp=item.get("timestamp", datetime.now(timezone.utc)),
-                    client_ip=item.get("client_ip", "0.0.0.0"),
+                    client_ip=item.get("client_ip", "0.0.0.0"),  # noqa: S104
                     query_domain=item.get("query_domain", ""),
                     record_type=item.get("record_type", "A"),
                 )

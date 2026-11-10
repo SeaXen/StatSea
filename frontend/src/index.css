@@ -18,7 +18,7 @@
     --text: #e7e9ee;
     --text-soft: #b6bcc9;
     --muted: #8b93a3;
-    --faint: #5d6574;
+    --faint: #7d8698;
 
     --accent: #7c8cff;
     --accent-soft: rgba(124, 140, 255, 0.10);
@@ -163,6 +163,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     scroll-margin-top: 60px;
+    text-wrap: balance;
   }
 
   /* Reduced motion enforcement */
