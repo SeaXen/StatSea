@@ -21,6 +21,10 @@ axiosInstance.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+// One shared refresh per token rotation so parallel 401s don't each rotate the
+// refresh token (backend reuse detection would revoke every session).
+let refreshPromise: Promise<string> | null = null;
+
 // Response interceptor: Handle 401 Unauthorized with silent refresh and retry transient errors
 axiosInstance.interceptors.response.use(
     (response) => response,
@@ -35,15 +39,21 @@ axiosInstance.interceptors.response.use(
 
             if (refreshToken) {
                 try {
-                    const response = await axios.post(`${axiosInstance.defaults.baseURL}/auth/refresh`, {
-                        refresh_token: refreshToken
-                    });
-                    const { access_token, refresh_token: newRefreshToken } = response.data;
+                    if (!refreshPromise) {
+                        refreshPromise = axios.post(`${axiosInstance.defaults.baseURL}/auth/refresh`, {
+                            refresh_token: refreshToken
+                        }).then((response) => {
+                            const { access_token, refresh_token: newRefreshToken } = response.data;
+                            localStorage.setItem('statsea_token', access_token);
+                            localStorage.setItem('statsea_refresh_token', newRefreshToken);
+                            return access_token as string;
+                        }).finally(() => {
+                            refreshPromise = null;
+                        });
+                    }
+                    const accessToken = await refreshPromise;
 
-                    localStorage.setItem('statsea_token', access_token);
-                    localStorage.setItem('statsea_refresh_token', newRefreshToken);
-
-                    originalRequest.headers.Authorization = `Bearer ${access_token}`;
+                    originalRequest.headers.Authorization = `Bearer ${accessToken}`;
                     return axiosInstance(originalRequest);
                 } catch (refreshError) {
                     localStorage.removeItem('statsea_token');

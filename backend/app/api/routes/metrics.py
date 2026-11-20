@@ -1,5 +1,6 @@
 import json
 import logging
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -38,10 +39,35 @@ async def report_client_error(
         raise HTTPException(status_code=413, detail="Payload too large (max 4KB)")
     try:
         data = json.loads(body.decode("utf-8"))
+        if not isinstance(data, dict):
+            data = {}
+        # Whitelist: never log the raw client payload. URLs can carry OAuth
+        # codes/reset tokens in query strings and stacks can embed them too.
+        safe: dict = {}
+        for key in ("message", "source"):
+            value = data.get(key)
+            if isinstance(value, str) and value:
+                safe[key] = value[:500]
+        for key in ("lineno", "colno"):
+            value = data.get(key)
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                safe[key] = value
+        raw_url = data.get("url")
+        if isinstance(raw_url, str) and raw_url:
+            parts = urlsplit(raw_url)
+            # Rebuild without netloc: it may carry userinfo (user:secret@host).
+            host = parts.hostname or ""
+            if parts.port:
+                host = f"{host}:{parts.port}"
+            clean_url = f"{parts.scheme}://{host}{parts.path}" if host else parts.path
+            if clean_url:
+                safe["url"] = clean_url[:500]
+        # Record only that a stack was supplied; do not log its contents.
+        safe["has_stack"] = bool(data.get("error") or data.get("reason"))
         logger.error(
             "Frontend Client Error",
             extra={
-                "client_error": data,
+                "client_error": safe,
                 "event_type": "CLIENT_ERROR",
                 "reporter_user": current_user.username,
             }

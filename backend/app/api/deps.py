@@ -14,7 +14,7 @@ def get_current_org_id(
 ) -> int:
     """
     Dependency to get the current user's active organization ID.
-    For now, it returns the first organization found.
+    Returns 403 when the user has no organization membership.
     """
     member = (
         db.query(models.OrganizationMember)

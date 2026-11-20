@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_cache_header
+from app.api.deps import get_cache_header, get_current_org_id
 from app.core.ai_predictor import ai_predictor
 from app.core.auth_jwt import get_current_user
 from app.core.collector import global_collector
@@ -70,8 +70,11 @@ def get_usage_prediction(current_user: models.User = Depends(get_current_user)):
     summary="Get usage anomalies",
     description="Detect network usage anomalies.",
 )
-def get_usage_anomalies(current_user: models.User = Depends(get_current_user)):
-    return ai_predictor.detect_anomalies()
+def get_usage_anomalies(
+    org_id: int = Depends(get_current_org_id),
+    current_user: models.User = Depends(get_current_user),
+):
+    return ai_predictor.detect_anomalies(organization_id=org_id)
 
 
 @router.get(

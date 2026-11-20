@@ -20,6 +20,7 @@ class NetworkMonitor:
     def __init__(self):
         self.targets = ["8.8.8.8", "1.1.1.1"]  # Google, Cloudflare
         self.running = False
+        self._task = None
         self.latency_history = {t: [] for t in self.targets}
         self.HISTORY_SIZE = 10
 
@@ -37,7 +38,12 @@ class NetworkMonitor:
             process = await asyncio.create_subprocess_exec(
                 *command, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
             )
-            await process.wait()
+            try:
+                await asyncio.wait_for(process.wait(), timeout=5.0)
+            except asyncio.TimeoutError:
+                process.kill()
+                await process.wait()
+                return None
             end = time.perf_counter()
 
             if process.returncode == 0:
@@ -140,11 +146,14 @@ class NetworkMonitor:
         if self.running:
             return
         self.running = True
-        asyncio.create_task(self._monitor_loop())
+        self._task = asyncio.create_task(self._monitor_loop())
         logger.info("Network Monitor started.")
 
     def stop(self):
         self.running = False
+        if self._task is not None and not self._task.done():
+            self._task.cancel()
+        self._task = None
         logger.info("Network Monitor stopped.")
 
 

@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_org_id, get_current_user
 from app.db.database import get_db
 from app.models import models
 from app.schemas import agent as schemas
@@ -33,33 +33,39 @@ def get_agents(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
+    organization_id: int = Depends(get_current_org_id),
     current_user: models.User = Depends(get_current_user),
 ):
-    """List all registered agents."""
-    agents = db.query(models.AgentNode).offset(skip).limit(limit).all()
+    """List agents registered to the caller's organization."""
+    agents = (
+        db.query(models.AgentNode)
+        .filter(models.AgentNode.organization_id == organization_id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     return agents
 
 @router.post("/", response_model=schemas.AgentResponse, status_code=status.HTTP_201_CREATED)
 def register_agent(
     agent_in: schemas.AgentCreate,
     db: Session = Depends(get_db),
+    organization_id: int = Depends(get_current_org_id),
     current_user: models.User = Depends(get_current_user),
 ):
     """
-    Register a new agent node. 
+    Register a new agent node.
     Returns the newly generated API key exactly ONCE.
     """
     raw_key = secrets.token_urlsafe(32)
     key_hash = hash_api_key(raw_key)
-    
-    # Optional: associate with organization if applicable
-    # We might use current_user's organization if needed, for MVP we just create it
-    
+
     agent = models.AgentNode(
         id=str(uuid.uuid4()),
         name=agent_in.name,
         api_key_hash=key_hash,
-        status="offline"
+        status="offline",
+        organization_id=organization_id,
     )
     
     db.add(agent)

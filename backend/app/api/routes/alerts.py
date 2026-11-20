@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.auth_jwt import get_current_admin_user
@@ -49,6 +49,26 @@ async def get_alerts(
     alerts = query.order_by(models.SecurityAlert.id.desc()).limit(limit).all()
     next_cursor = alerts[-1].id if len(alerts) == limit else None
     return schemas.CursorPage(items=alerts, next_cursor=next_cursor)
+
+
+@router.patch(
+    "/{alert_id}/resolve",
+    response_model=schemas.SecurityAlert,
+    summary="Resolve a security alert",
+    description="Mark a security alert as resolved.",
+)
+async def resolve_alert(
+    alert_id: int,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    alert = db.query(models.SecurityAlert).filter(models.SecurityAlert.id == alert_id).first()
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    alert.is_resolved = True
+    db.commit()
+    db.refresh(alert)
+    return alert
 
 
 @router.get(

@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Working alert rules**: `SecurityRule` conditions are now evaluated by a safe restricted parser (no `eval`) on a 5-minute schedule; matches create org-scoped `SecurityAlert`s, send notifications and broadcast over WebSocket. Legacy `bytes`/`proto` rule text is aliased to the real traffic fields.
+- **Alert resolution**: `PATCH /api/alerts/{id}/resolve` clears the 404 from the existing "Resolve alert" button.
+- **Anomaly alerting**: hourly job persists detected usage anomalies as alerts (deduped per device/day); the anomalies endpoint is now organization-scoped.
+- **Capture/engine watchdog**: `/api/health` now reports collector/capture/scheduler state, and a 5-minute job alerts on capture failure or a stopped scheduler.
+- **Scheduled email reports**: real settings endpoints (`GET|POST /api/reports/settings`), an hourly sender with frequency dedupe, org-scoped report/export queries, and PDF aliases for the four report card IDs.
+- **Backup restore & download**: `POST /api/system/backups/{id}/restore` (path-traversal guarded) and `GET /api/system/backups/{id}/download`, with matching UI actions in System → Backups.
+- **Data retention settings**: new Settings section exposing all five `retention_days_*` keys.
+- **Mobile navigation parity**: BottomNav "More" sheet exposes the 8 destinations previously reachable only by desktop or the command palette.
+- **Settings export**: `GET /api/settings/export` backs the existing Export Data button.
+
+### Fixed
+- **CI typecheck step**: Added the missing `npm run tsc` script so the frontend CI typecheck gate no longer fails with "missing script".
+- **Frontend test setup**: Configured a jsdom URL and an in-memory `localStorage` shim, fixing 5 tests that crashed on `localStorage.getItem`. All 30 Vitest tests now pass.
+- **Single test config**: Removed the dead `test` block from `vite.config.ts` and deleted `frontend/src/test/setup.ts`; `vitest.config.ts` is now the only test config.
+- **Docker Compose production deploy**: Added a required `JWT_SECRET_KEY` (fails fast if unset) and a backend healthcheck on `/api/health` so the frontend's `service_healthy` dependency can be satisfied.
+- **One-command deploy**: `deploy.sh` now generates a random `JWT_SECRET_KEY` in `.env` on first run.
+- **Documentation drift**: Aligned `.env.example` files and `docs/DEPLOY.md` with code defaults (Python 3.11+, UI `:21080` / API `:21081`, `statsea_saas.db`, 30-minute tokens) and documented all environment variables.
+- **Benchmark honesty**: Removed hardcoded pass-count badges/scorecards from `README.md` and the remediation record; the Playwright script is now labelled an 11-step manual script not run in CI.
+
 ## [1.1.0] - 2026-11-05
 
 ### Security & Authentication

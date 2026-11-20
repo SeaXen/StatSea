@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from ...core.auth_jwt import _extract_user_from_token
 from ...core.collector import global_collector
@@ -16,6 +16,22 @@ router = APIRouter(prefix="/ws", tags=["WebSockets"])
 # Reference to the main event loop, set on first WebSocket connect
 _event_loop: asyncio.AbstractEventLoop | None = None
 
+
+def _token_subprotocol(websocket: WebSocket) -> str | None:
+    """Return the JWT carrying subprotocol offered by the browser client."""
+    sec_protocol = websocket.headers.get("sec-websocket-protocol")
+    if sec_protocol:
+        for p in [x.strip() for x in sec_protocol.split(",")]:
+            if p != "Bearer" and len(p) > 20:
+                return p
+    return None
+
+
+async def _accept(websocket: WebSocket) -> None:
+    """Echo the offered subprotocol; browsers reject a handshake that drops it."""
+    await websocket.accept(subprotocol=_token_subprotocol(websocket))
+
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: dict[str, set[WebSocket]] = {
@@ -23,7 +39,7 @@ class ConnectionManager:
         }
 
     async def connect(self, websocket: WebSocket, channel: str = "events"):
-        await websocket.accept()
+        await _accept(websocket)
         if channel not in self.active_connections:
             self.active_connections[channel] = set()
         self.active_connections[channel].add(websocket)
@@ -53,42 +69,34 @@ def _safe_broadcast(msg: dict):
 # Hook the global collector's event callback to broadcast to "events" channel
 global_collector.set_event_callback(_safe_broadcast)
 
-async def authenticate_websocket(websocket: WebSocket, token: str | None = None) -> models.User | None:
-    """Validate token for WebSocket connections via Sec-WebSocket-Protocol header or query param."""
-    if token:
-        logger.warning(
-            "DEPRECATION WARNING: Passing JWT token via URL query parameter is insecure and deprecated. "
-            "Migrate to the Sec-WebSocket-Protocol header."
-        )
-    else:
-        sec_protocol = websocket.headers.get("sec-websocket-protocol")
-        if sec_protocol:
-            for p in [x.strip() for x in sec_protocol.split(",")]:
-                if p != "Bearer" and len(p) > 20:
-                    token = p
-                    break
+async def authenticate_websocket(websocket: WebSocket) -> models.User | None:
+    """Validate the JWT supplied exclusively via the Sec-WebSocket-Protocol subprotocol."""
+    token = _token_subprotocol(websocket)
     if not token:
         return None
     try:
         with SessionLocal() as db:
             user, _ = _extract_user_from_token(token, db)
+            if user.must_change_password:
+                logger.debug("WebSocket auth rejected: password rotation required for user %s", user.id)
+                return None
             return user
     except Exception as e:
         logger.debug(f"WebSocket auth failed: {e}")
         return None
 
 @router.websocket("/live")
-async def websocket_live(websocket: WebSocket, token: str = Query(None)):
+async def websocket_live(websocket: WebSocket):
     global _event_loop
     if _event_loop is None:
         _event_loop = asyncio.get_running_loop()
 
-    user = await authenticate_websocket(websocket, token)
+    user = await authenticate_websocket(websocket)
     if not user:
         await websocket.close(code=1008, reason="Authentication required")
         return
 
-    await websocket.accept()
+    await _accept(websocket)
     try:
         heartbeat_counter = 0
         while True:
@@ -117,8 +125,8 @@ async def websocket_live(websocket: WebSocket, token: str = Query(None)):
         logger.debug(f"Live stats WebSocket disconnected: {e}")
 
 @router.websocket("/events")
-async def websocket_events(websocket: WebSocket, token: str = Query(None)):
-    user = await authenticate_websocket(websocket, token)
+async def websocket_events(websocket: WebSocket):
+    user = await authenticate_websocket(websocket)
     if not user:
         await websocket.close(code=1008, reason="Authentication required")
         return
@@ -132,13 +140,13 @@ async def websocket_events(websocket: WebSocket, token: str = Query(None)):
         manager.disconnect(websocket, "events")
 
 @router.websocket("/speedtest")
-async def speedtest_websocket(websocket: WebSocket, provider: str = "ookla", token: str = Query(None)):
-    user = await authenticate_websocket(websocket, token)
+async def speedtest_websocket(websocket: WebSocket, provider: str = "ookla"):
+    user = await authenticate_websocket(websocket)
     if not user:
         await websocket.close(code=1008, reason="Authentication required")
         return
 
-    await websocket.accept()
+    await _accept(websocket)
     try:
         from ...core.speedtest_service import speedtest_service
         

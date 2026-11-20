@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth_jwt import get_current_user, get_current_user_allow_must_change
 from app.core.limiter import limiter
+from app.core.password_policy import validate_password_complexity
 from app.db.database import get_db
 from app.models import models
 from app.schemas import defaults as schemas
@@ -73,8 +74,7 @@ def change_password(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user_allow_must_change),
 ):
-    if len(payload.new_password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+    validate_password_complexity(payload.new_password)
     AuthService.change_password(db, current_user, payload.current_password, payload.new_password)
     return {"status": "success", "message": "Password changed successfully"}
 

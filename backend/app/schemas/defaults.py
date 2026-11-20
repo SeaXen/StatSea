@@ -118,7 +118,7 @@ class SecurityRuleBase(BaseModel):
     is_active: bool = True
 
 class SecurityRuleCreate(SecurityRuleBase):
-    pass
+    organization_id: int | None = None
 
 class SecurityRuleUpdate(BaseModel):
     name: str | None = None
@@ -126,6 +126,7 @@ class SecurityRuleUpdate(BaseModel):
     condition: str | None = None
     action: str | None = None
     is_active: bool | None = None
+    organization_id: int | None = None
 
 class SecurityRule(SecurityRuleBase):
     id: int

@@ -17,6 +17,7 @@ interface AuthContextType {
     login: (token: string, refreshToken: string) => Promise<void>;
     logout: () => void;
     isLoading: boolean;
+    authError?: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,16 +27,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [token, setToken] = useState<string | null>(localStorage.getItem('statsea_token'));
     const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem('statsea_refresh_token'));
     const [isLoading, setIsLoading] = useState(true);
+    const [authError, setAuthError] = useState<string | null>(null);
 
     const fetchUser = async () => {
         try {
             const response = await axiosInstance.get('/auth/me');
             setUser(response.data);
+            setAuthError(null);
         } catch (error) {
             console.error('Failed to fetch user:', error);
-            // logout() is called by axiosInstance on 401, 
-            // but we call it here to ensure local state is cleared too
-            logout();
+            const status = (error as { response?: { status?: number } })?.response?.status;
+            if (status === 401) {
+                // Only a real auth failure destroys the session — a transient
+                // 5xx/network error must keep the token and stay retryable.
+                setAuthError(null);
+                logout();
+            } else {
+                setAuthError('Unable to verify your session. Please try again.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -74,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, refreshToken, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, token, refreshToken, login, logout, isLoading, authError }}>
             {children}
         </AuthContext.Provider>
     );

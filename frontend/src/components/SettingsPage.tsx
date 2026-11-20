@@ -14,6 +14,14 @@ import NotificationSettings from './NotificationSettings';
 import { CertMonitor } from './CertMonitor';
 import { cn } from '../lib/utils';
 
+const RETENTION_FIELDS = [
+    { key: 'retention_days_raw', label: 'Raw packet data (days)', description: 'How long captured packet records are kept.', fallback: '7' },
+    { key: 'retention_days_daily', label: 'Daily summaries (days)', description: 'Retention period for rolled-up daily statistics.', fallback: '90' },
+    { key: 'retention_days_events', label: 'Security events (days)', description: 'How long alerts and security events are retained.', fallback: '30' },
+    { key: 'retention_days_dns', label: 'DNS logs (days)', description: 'Retention period for resolved DNS query logs.', fallback: '7' },
+    { key: 'retention_days_traffic', label: 'Traffic logs (days)', description: 'How long detailed traffic flow records are kept.', fallback: '30' },
+];
+
 export default function Settings() {
     const { data: fetchedSettings = {} } = useSettingsQuery();
     const [settings, setSettings] = useState<Record<string, string>>({});
@@ -195,6 +203,7 @@ export default function Settings() {
                         <SidebarItem id="account" icon={User} label="Account" />
                         <SidebarItem id="appearance" icon={Sun} label="Appearance" />
                         <SidebarItem id="monitoring" icon={Activity} label="Monitoring" />
+                        <SidebarItem id="retention" icon={Database} label="Retention" />
                         <SidebarItem id="certificates" icon={ShieldCheck} label="SSL/TLS" />
                         <SidebarItem id="notifications" icon={Bell} label="Notifications" />
                         <SidebarItem id="reports" icon={FileText} label="Reports" />
@@ -206,6 +215,7 @@ export default function Settings() {
                         <SidebarItem id="account" icon={User} label="Account" />
                         <SidebarItem id="appearance" icon={Sun} label="Appearance" />
                         <SidebarItem id="monitoring" icon={Activity} label="Monitoring" />
+                        <SidebarItem id="retention" icon={Database} label="Retention" />
                         <SidebarItem id="certificates" icon={ShieldCheck} label="SSL/TLS" />
                         <SidebarItem id="notifications" icon={Bell} label="Notifications" />
                         <SidebarItem id="reports" icon={FileText} label="Reports" />
@@ -488,6 +498,51 @@ export default function Settings() {
                                 </div>
                             )}
 
+                            {/* Data Retention Section */}
+                            {activeSection === 'retention' && (
+                                <div className="panel p-5 space-y-5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-[7px] bg-raised border border-line flex items-center justify-center text-accent">
+                                            <Database className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-base font-semibold text-text tracking-tight">Data Retention</h2>
+                                            <p className="text-xs text-text-soft font-mono mt-0.5">Configure how long collected telemetry is kept before cleanup</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4 pt-2">
+                                        {RETENTION_FIELDS.map((field, index) => (
+                                            <div key={field.key} className="space-y-1.5">
+                                                {index > 0 && <div className="h-px bg-line mb-4" />}
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <label className="text-xs font-mono text-text">{field.label}</label>
+                                                    <span className="text-[11px] font-mono text-faint text-right">{field.description}</span>
+                                                </div>
+                                                <div className="flex gap-2 max-w-sm">
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        aria-label={field.label}
+                                                        className="bg-raised border border-line rounded-[7px] px-3 py-1.5 text-xs font-mono text-text w-full focus:outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent transition-colors"
+                                                        value={settings[field.key] || field.fallback}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => saveSetting(field.key, settings[field.key] || field.fallback, 'int')}
+                                                        className="bg-accent hover:opacity-90 text-accent-foreground px-3 py-1.5 rounded-[7px] text-xs font-mono font-semibold transition-opacity flex items-center gap-1.5 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                                                    >
+                                                        <Save className="w-3.5 h-3.5" />
+                                                        SAVE
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Certificates Section */}
                             {activeSection === 'certificates' && (
                                 <CertMonitor />
@@ -549,7 +604,7 @@ export default function Settings() {
                                         <div className="p-3 rounded-[7px] bg-warn/10 border border-warn/20 flex gap-2.5 font-mono text-xs text-warn">
                                             <Database className="w-4 h-4 flex-shrink-0 mt-0.5" />
                                             <p className="text-[11px]">
-                                                Note: Importing data is not yet supported in this version. Keep your backups safe.
+                                                To restore a backup, use System &rarr; Backups. Keep your backups safe.
                                             </p>
                                         </div>
                                     </div>

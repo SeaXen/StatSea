@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
@@ -22,3 +22,20 @@ Object.defineProperty(window, 'matchMedia', {
         dispatchEvent: vi.fn(),
     })),
 });
+
+// jsdom exposes no localStorage on its opaque origin; provide an in-memory shim.
+const store = new Map<string, string>();
+const localStorageShim: Storage = {
+    get length() { return store.size; },
+    clear: () => store.clear(),
+    getItem: (key) => store.get(key) ?? null,
+    key: (index) => Array.from(store.keys())[index] ?? null,
+    removeItem: (key) => { store.delete(key); },
+    setItem: (key, value) => { store.set(key, String(value)); },
+};
+Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: localStorageShim,
+});
+
+beforeEach(() => localStorageShim.clear());

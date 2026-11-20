@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Download, Mail,
     CheckCircle2, FileSpreadsheet,
@@ -8,10 +8,73 @@ import { toast } from 'sonner';
 import axiosInstance from '../config/axiosInstance';
 import { PremiumCard } from './ui/PremiumCard';
 
+type Frequency = 'daily' | 'weekly' | 'monthly';
+const FREQUENCIES: Frequency[] = ['daily', 'weekly', 'monthly'];
+
+// Report cards use friendly ids; the export API accepts resource table names.
+const EXPORT_RESOURCE: Record<string, string> = {
+    network_summary: 'traffic_logs',
+    security_audit: 'alerts',
+    traffic: 'traffic_logs',
+    devices: 'devices',
+};
+
 export default function ReportSettings() {
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
     const [emailReports, setEmailReports] = useState(false);
-    const [reportFrequency, setReportFrequency] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+    const [reportFrequency, setReportFrequency] = useState<Frequency>('weekly');
+    const [loadingSettings, setLoadingSettings] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        axiosInstance.get('/reports/settings')
+            .then(({ data }) => {
+                if (cancelled) return;
+                if (typeof data?.reports_email_enabled === 'boolean') {
+                    setEmailReports(data.reports_email_enabled);
+                }
+                if (FREQUENCIES.includes(data?.reports_frequency)) {
+                    setReportFrequency(data.reports_frequency);
+                }
+            })
+            .catch(() => {
+                // Keep sensible defaults when the endpoint is unavailable.
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingSettings(false);
+            });
+        return () => { cancelled = true; };
+    }, []);
+
+    const persistSettings = async (payload: Record<string, unknown>, successDescription: string) => {
+        try {
+            await axiosInstance.post('/reports/settings', payload);
+            toast.success('Settings Updated', { description: successDescription });
+        } catch (error) {
+            console.error('Failed to save report settings:', error);
+            toast.error('Failed to Update Settings', {
+                description: 'Your report preferences could not be saved.'
+            });
+            throw error;
+        }
+    };
+
+    const handleToggleEmail = () => {
+        const next = !emailReports;
+        setEmailReports(next);
+        persistSettings(
+            { reports_email_enabled: next },
+            `Email reports are now ${next ? 'enabled' : 'disabled'}.`
+        ).catch(() => setEmailReports(!next));
+    };
+
+    const handleFrequencyChange = (freq: Frequency) => {
+        if (freq === reportFrequency) return;
+        const previous = reportFrequency;
+        setReportFrequency(freq);
+        persistSettings({ reports_frequency: freq }, `Report frequency set to ${freq}.`)
+            .catch(() => setReportFrequency(previous));
+    };
 
     const handleDownload = async (type: string, format: 'pdf' | 'csv' | 'json' = 'pdf') => {
         setIsGenerating(type);
@@ -20,7 +83,7 @@ export default function ReportSettings() {
             if (format === 'pdf') {
                 endpoint = `/reports/pdf/${type}`;
             } else {
-                endpoint = `/reports/export/${type}?format=${format}`;
+                endpoint = `/reports/export/${EXPORT_RESOURCE[type] ?? type}?format=${format}`;
             }
 
             const response = await axiosInstance.get(endpoint, {
@@ -140,14 +203,15 @@ export default function ReportSettings() {
 
                     <div className="flex items-center gap-4">
                         <div role="tablist" aria-label="Report frequency" className="flex bg-panel p-1 rounded-[7px] border border-line">
-                            {(['daily', 'weekly', 'monthly'] as const).map((freq) => (
+                            {FREQUENCIES.map((freq) => (
                                 <button
                                     key={freq}
                                     type="button"
                                     role="tab"
                                     aria-selected={reportFrequency === freq}
-                                    onClick={() => setReportFrequency(freq)}
-                                    className={`px-3 py-1.5 rounded-[5px] text-xs font-bold transition-colors uppercase tracking-wider focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${reportFrequency === freq
+                                    disabled={loadingSettings}
+                                    onClick={() => handleFrequencyChange(freq)}
+                                    className={`px-3 py-1.5 rounded-[5px] text-xs font-bold transition-colors uppercase tracking-wider focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:opacity-50 ${reportFrequency === freq
                                         ? 'bg-accent text-black shadow-sm'
                                         : 'text-faint hover:text-text'
                                         }`}
@@ -161,14 +225,10 @@ export default function ReportSettings() {
                             type="button"
                             role="switch"
                             aria-checked={emailReports}
-                            onClick={() => {
-                                setEmailReports(!emailReports);
-                                toast.success('Settings Updated', {
-                                    description: `Email reports are now ${!emailReports ? 'enabled' : 'disabled'}.`
-                                });
-                            }}
+                            disabled={loadingSettings}
+                            onClick={handleToggleEmail}
                             aria-label="Toggle scheduled email reports"
-                            className={`w-12 h-6 rounded-full relative transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${emailReports ? 'bg-accent' : 'bg-raised border border-line'
+                            className={`w-12 h-6 rounded-full relative transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 ${emailReports ? 'bg-accent' : 'bg-raised border border-line'
                                 }`}
                         >
                             <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-[left] duration-300 ${emailReports ? 'left-6 shadow-md' : 'left-0.5'

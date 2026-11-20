@@ -1,6 +1,7 @@
 import gzip
 import os
 import shutil
+import tempfile
 from datetime import datetime
 
 from sqlalchemy.orm import Session
@@ -78,3 +79,44 @@ def delete_backup(db: Session, backup_id: int):
         db.commit()
         return True
     return False
+
+
+def restore_backup(db: Session, backup_id: int):
+    """Restore a SQLite backup atomically, returning its BackupRecord."""
+    record = db.query(models.BackupRecord).filter(models.BackupRecord.id == backup_id).first()
+    if not record:
+        raise ValueError("Backup not found")
+
+    # Confine the source to the backup directory (path traversal protection).
+    backup_root = os.path.realpath(BACKUP_DIR)
+    source = os.path.realpath(record.file_path)
+    if os.path.commonpath([backup_root, source]) != backup_root:
+        raise ValueError("Invalid backup path")
+    if not os.path.isfile(source):
+        raise FileNotFoundError("Backup file not found on disk")
+    if record.size_bytes is not None and os.path.getsize(source) != record.size_bytes:
+        raise ValueError("Backup size mismatch")
+
+    # Commit and reload column values before swapping the file, so the returned record
+    # serializes from memory rather than re-querying the replaced database.
+    db.commit()
+    db.refresh(record)
+
+    db_dir = os.path.dirname(os.path.abspath(DB_FILE)) or "."
+    fd, temp_path = tempfile.mkstemp(prefix="statsea_restore_", suffix=".db", dir=db_dir)
+    os.close(fd)
+    try:
+        with gzip.open(source, "rb") as f_in, open(temp_path, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+        for sidecar in (DB_FILE + "-wal", DB_FILE + "-shm"):
+            if os.path.exists(sidecar):
+                os.remove(sidecar)
+        os.replace(temp_path, DB_FILE)
+    except Exception:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise
+
+    # shortcut: no integrity check or vacuum is run on the restored DB; verify out of band.
+    logger.info("Restored database from backup %s", record.filename)
+    return record

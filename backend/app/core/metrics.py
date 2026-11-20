@@ -28,6 +28,14 @@ class MetricsManager:
     def increment_failed_request(self):
         self._state.failed_requests += 1
 
+    # TODO(owner: websockets.py): wire connection gauge at
+    #   backend/app/api/routes/websockets.py :: websocket_events
+    #   - after `await manager.connect(websocket, "events")` (~line 126):
+    #     metrics_manager.increment_connection()
+    #   - in the disconnect handler (~line 132) and in websocket_live's
+    #     finally/except: metrics_manager.decrement_connection()
+    # Re-add "api_active_connections" to get_metrics() once wired; until then
+    # it is omitted rather than reported as a permanent 0.
     def increment_connection(self):
         self._state.active_connections += 1
 
@@ -49,7 +57,6 @@ class MetricsManager:
             "uptime_seconds": uptime,
             "api_total_requests": self._state.total_requests,
             "api_failed_requests": self._state.failed_requests,
-            "api_active_connections": self._state.active_connections,
             "dns_queries_processed": self._state.dns_queries_processed,
             "packets_analyzed": self._state.packets_analyzed,
             "alerts_generated": self._state.alerts_generated,

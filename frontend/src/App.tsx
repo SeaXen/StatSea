@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-r
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './config/queryClient';
 import { Loader2 } from 'lucide-react';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import { CommandPalette } from './components/CommandPalette';
 import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -11,7 +11,7 @@ import LoginPage from './pages/LoginPage';
 import { TopNav } from './components/TopNav';
 import { BottomNav } from './components/BottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { useAnalyticsSummary } from './hooks/useAnalytics';
 
 const OnboardingTour = lazy(() => import('./components/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
@@ -31,24 +31,53 @@ const DeviceBandwidthPage = lazy(() => import('./components/DeviceBandwidthPage'
 const SystemManager = lazy(() => import('./components/SystemManager'));
 const SessionManager = lazy(() => import('./components/SessionManager'));
 
+// Failed queries otherwise just render an empty/"No data" state. One global
+// toast covers every consumer instead of duplicating isError UI in each view.
+queryClient.getQueryCache().subscribe((event) => {
+    if (event.type === 'updated' && event.action.type === 'error') {
+        toast.error('Failed to load data', {
+            description: 'Check your connection and try again.',
+            id: 'query-error',
+        });
+    }
+});
+
 // Only load devtools in development
 const ReactQueryDevtools = import.meta.env.DEV
     ? lazy(() => import('@tanstack/react-query-devtools').then(m => ({ default: m.ReactQueryDevtools })))
     : () => null;
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    const { token, isLoading } = useAuth();
+    const { token, isLoading, user, authError } = useAuth();
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <div role="status" className="min-h-screen bg-background flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" aria-hidden="true" />
+                <span className="sr-only">Loading…</span>
             </div>
         );
     }
 
     if (!token) {
         return <Navigate to="/login" replace />;
+    }
+
+    // A transient /auth/me failure keeps the token but leaves no user. Show a
+    // recovery path instead of rendering role-dependent UI as a null user.
+    if (!user && authError) {
+        return (
+            <div role="alert" className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+                <p className="text-foreground">{authError}</p>
+                <button
+                    type="button"
+                    className="px-4 py-2 rounded-md bg-primary text-primary-foreground"
+                    onClick={() => window.location.reload()}
+                >
+                    Retry
+                </button>
+            </div>
+        );
     }
 
     return <>{children}</>;
@@ -104,6 +133,7 @@ function AppContent() {
     const { user } = useAuth();
     const { isConnected, wsData } = useWebSocket();
     const { data: analyticsData } = useAnalyticsSummary();
+    const { themeConfig } = useTheme();
 
     const tabs = [
         { id: 'dashboard', label: 'Overview' },
@@ -122,7 +152,7 @@ function AppContent() {
 
     return (
         <div className="flex flex-col min-h-screen bg-bg text-text font-sans selection:bg-accent/20">
-            <Toaster richColors position="top-right" theme="dark" />
+            <Toaster richColors position="top-right" theme={themeConfig.mode === 'light' ? 'light' : 'dark'} />
             <CommandPalette open={commandOpen} setOpen={setCommandOpen} changeTab={setActiveTab} />
             <Suspense fallback={null}>
                 <OnboardingTour />
@@ -162,8 +192,9 @@ function AppContent() {
             {/* 3. Main Console Viewport */}
             <main id="main-content" className="page">
                 <Suspense fallback={
-                    <div className="flex items-center justify-center h-[300px]">
-                        <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                    <div role="status" className="flex items-center justify-center h-[300px]">
+                        <Loader2 className="w-8 h-8 text-accent animate-spin" aria-hidden="true" />
+                        <span className="sr-only">Loading…</span>
                     </div>
                 }>
                     <div key={activeTab}>

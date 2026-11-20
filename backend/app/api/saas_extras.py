@@ -15,6 +15,17 @@ from app.services.certificate_service import CertificateMonitor
 from app.services.notification_service import NotificationService
 from app.services.status_page_service import StatusPageService
 
+# Never echo channel credentials back to API clients.
+_SECRET_CONFIG_KEYS = frozenset({"password", "webhook_url", "token", "chat_id"})
+
+
+def _redact_config(config: dict) -> dict:
+    return {
+        key: ("***REDACTED***" if key in _SECRET_CONFIG_KEYS else value)
+        for key, value in config.items()
+    }
+
+
 # Notifications Router
 notifications_router = APIRouter(tags=["Notifications"])
 
@@ -44,7 +55,7 @@ def list_channels(
             "name": c.name, 
             "type": c.type, 
             "enabled": c.is_enabled,
-            "config": json.loads(c.config),
+            "config": _redact_config(json.loads(c.config)),
             "events": json.loads(c.events)
         }
         for c in channels
@@ -60,9 +71,10 @@ def update_channel(
 ):
     try:
         channel = NotificationService.update_channel(
-            db, 
-            channel_id, 
-            name=req.name, 
+            db,
+            organization_id,
+            channel_id,
+            name=req.name,
             config=req.config, 
             events=req.events, 
             is_enabled=req.is_enabled
@@ -78,7 +90,10 @@ def delete_channel(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    NotificationService.delete_channel(db, channel_id)
+    try:
+        NotificationService.delete_channel(db, organization_id, channel_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     return {"status": "deleted"}
 
 @notifications_router.post("/channels/{channel_id}/test")
@@ -89,7 +104,7 @@ def test_channel(
     current_user: models.User = Depends(get_current_user)
 ):
     try:
-        NotificationService.test_channel(db, channel_id)
+        NotificationService.test_channel(db, organization_id, channel_id)
         return {"status": "test_sent"}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e

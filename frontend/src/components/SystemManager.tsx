@@ -15,6 +15,7 @@ import {
     HardDrive,
     Cpu,
     Download,
+    RotateCcw,
     History,
     Shield,
     Clock,
@@ -297,6 +298,59 @@ const BackupsTab = ({ token: _token }: { token: string }) => {
         }
     });
 
+    const [busyId, setBusyId] = useState<number | null>(null);
+
+    const handleDownload = async (backup: BackupItem) => {
+        setBusyId(backup.id);
+        try {
+            const res = await axiosInstance.get(`/system/backups/${backup.id}/download`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const a = document.createElement('a');
+            a.href = url;
+            const contentDisposition = res.headers['content-disposition'];
+            let filename = backup.filename;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                if (filenameMatch && filenameMatch[1]) filename = filenameMatch[1];
+            }
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success('Backup downloaded');
+        } catch (error) {
+            console.error('Backup download failed:', error);
+            toast.error('Failed to download backup');
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const handleRestore = (backup: BackupItem) => {
+        toast.error('Restore this backup?', {
+            description: `Current data will be replaced with ${backup.filename}. This cannot be undone.`,
+            duration: 10000,
+            action: {
+                label: 'Restore',
+                onClick: async () => {
+                    setBusyId(backup.id);
+                    try {
+                        await axiosInstance.post(`/system/backups/${backup.id}/restore`);
+                        toast.success('Backup restored successfully');
+                        queryClient.invalidateQueries({ queryKey: ['system', 'backups'] });
+                    } catch (error) {
+                        console.error('Backup restore failed:', error);
+                        toast.error('Failed to restore backup');
+                    } finally {
+                        setBusyId(null);
+                    }
+                },
+            },
+            cancel: { label: 'Cancel', onClick: () => {} },
+        });
+    };
+
     if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-500" /></div>;
 
     const safeBackups = Array.isArray(backups) ? backups : [];
@@ -342,11 +396,23 @@ const BackupsTab = ({ token: _token }: { token: string }) => {
                         <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                             <button
                                 type="button"
-                                className="p-1.5 hover:bg-raised rounded-[7px] text-faint hover:text-text border border-transparent hover:border-line transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                                onClick={() => handleDownload(b)}
+                                disabled={busyId !== null}
+                                className="p-1.5 hover:bg-raised rounded-[7px] text-faint hover:text-text border border-transparent hover:border-line transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:opacity-50 disabled:pointer-events-none"
                                 aria-label="Download backup"
                                 title="Download backup"
                             >
-                                <Download className="w-3.5 h-3.5" />
+                                {busyId === b.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleRestore(b)}
+                                disabled={busyId !== null}
+                                className="p-1.5 hover:bg-danger/10 rounded-[7px] text-faint hover:text-danger border border-transparent hover:border-danger/20 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:opacity-50 disabled:pointer-events-none"
+                                aria-label="Restore backup"
+                                title="Restore backup"
+                            >
+                                {busyId === b.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
                             </button>
                             <button
                                 type="button"

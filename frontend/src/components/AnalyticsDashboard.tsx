@@ -278,6 +278,8 @@ const AnalyticsDashboard = () => {
     const [flagFilter, setFlagFilter] = useState(''); // New state for flag filter
     const [loading, setLoading] = useState(true);
     const [paused, setPaused] = useState(false);
+    const fetchingRef = useRef(false);
+    const lastCacheWriteRef = useRef(0);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
     const handleGenerateReport = async (reportType: 'network_summary' | 'security_audit') => {
@@ -446,7 +448,8 @@ const AnalyticsDashboard = () => {
         }
 
         const fetchData = async () => {
-            if (paused) return;
+            if (paused || fetchingRef.current) return;
+            fetchingRef.current = true;
             try {
                 const [analyticsRes, netRes, secRes, connRes, heatmapRes] = await Promise.all([
                     axiosInstance.get(API_CONFIG.ENDPOINTS.ANALYTICS.SUMMARY),
@@ -474,18 +477,23 @@ const AnalyticsDashboard = () => {
                 setSecurityEvents(Array.isArray(secRes.data) ? secRes.data : []);
                 setExternalConnections(Array.isArray(connRes.data) ? connRes.data : []);
 
-                // Update cache
-                try {
-                    localStorage.setItem('statsea_cache_analytics', JSON.stringify(analyticsRes.data));
-                    localStorage.setItem('statsea_cache_bandwidth', JSON.stringify(formattedBandwidth));
-                    localStorage.setItem('statsea_cache_security', JSON.stringify(Array.isArray(secRes.data) ? secRes.data : []));
-                    localStorage.setItem('statsea_cache_external', JSON.stringify(Array.isArray(connRes.data) ? connRes.data : []));
-                } catch (e) {
-                    console.warn('Failed to persist analytics cache', e);
+                // Cache writes are synchronous + stringify large payloads; at a
+                // 2s poll that janks the main thread. Persist every 30s instead.
+                if (Date.now() - lastCacheWriteRef.current >= 30000) {
+                    lastCacheWriteRef.current = Date.now();
+                    try {
+                        localStorage.setItem('statsea_cache_analytics', JSON.stringify(analyticsRes.data));
+                        localStorage.setItem('statsea_cache_bandwidth', JSON.stringify(formattedBandwidth));
+                        localStorage.setItem('statsea_cache_security', JSON.stringify(Array.isArray(secRes.data) ? secRes.data : []));
+                        localStorage.setItem('statsea_cache_external', JSON.stringify(Array.isArray(connRes.data) ? connRes.data : []));
+                    } catch (e) {
+                        console.warn('Failed to persist analytics cache', e);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch analytics data", error);
             } finally {
+                fetchingRef.current = false;
                 setLoading(false);
             }
         };

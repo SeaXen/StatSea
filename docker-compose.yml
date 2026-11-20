@@ -31,10 +31,18 @@ services:
       - PORT=21081
       - DOCKER_HOST=tcp://127.0.0.1:2375
       - ENVIRONMENT=production
+      - 'JWT_SECRET_KEY=${JWT_SECRET_KEY:?Set a 32+ char secret: python -c "import secrets;print(secrets.token_urlsafe(48))"}'
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?Set an initial admin password (see deploy.sh / .env.example)}
       - ALLOW_SYNTHETIC_TRAFFIC=false
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:21081/api/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   frontend:
     build:
@@ -46,4 +54,3 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-

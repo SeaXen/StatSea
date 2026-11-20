@@ -45,6 +45,7 @@ class NotificationService:
     @staticmethod
     def update_channel(
         db: Session,
+        organization_id: int,
         channel_id: int,
         name: str | None = None,
         config: dict | None = None,
@@ -52,14 +53,23 @@ class NotificationService:
         is_enabled: bool | None = None
     ) -> models.NotificationChannel:
         """Updates an existing notification channel."""
-        channel = db.query(models.NotificationChannel).filter(models.NotificationChannel.id == channel_id).first()
+        channel = db.query(models.NotificationChannel).filter(
+            models.NotificationChannel.id == channel_id,
+            models.NotificationChannel.organization_id == organization_id
+        ).first()
         if not channel:
             raise ValueError("Channel not found")
         
         if name is not None:
             channel.name = name
         if config is not None:
-            channel.config = json.dumps(config)
+            # The API masks secrets on read; never persist the mask as a credential.
+            existing = json.loads(channel.config) if channel.config else {}
+            merged = {
+                **existing,
+                **{k: v for k, v in config.items() if v != "***REDACTED***"},
+            }
+            channel.config = json.dumps(merged)
         if events is not None:
             channel.events = json.dumps(events)
         if is_enabled is not None:
@@ -70,9 +80,12 @@ class NotificationService:
         return channel
 
     @staticmethod
-    def test_channel(db: Session, channel_id: int):
+    def test_channel(db: Session, organization_id: int, channel_id: int):
         """Sends a test notification through the specified channel."""
-        channel = db.query(models.NotificationChannel).filter(models.NotificationChannel.id == channel_id).first()
+        channel = db.query(models.NotificationChannel).filter(
+            models.NotificationChannel.id == channel_id,
+            models.NotificationChannel.organization_id == organization_id
+        ).first()
         if not channel:
             raise ValueError("Channel not found")
         
@@ -82,12 +95,16 @@ class NotificationService:
         )
 
     @staticmethod
-    def delete_channel(db: Session, channel_id: int):
+    def delete_channel(db: Session, organization_id: int, channel_id: int):
         """Deletes a notification channel."""
-        channel = db.query(models.NotificationChannel).filter(models.NotificationChannel.id == channel_id).first()
-        if channel:
-            db.delete(channel)
-            db.commit()
+        channel = db.query(models.NotificationChannel).filter(
+            models.NotificationChannel.id == channel_id,
+            models.NotificationChannel.organization_id == organization_id
+        ).first()
+        if not channel:
+            raise ValueError("Channel not found")
+        db.delete(channel)
+        db.commit()
 
     @staticmethod
     def send_notification(db: Session, organization_id: int, event_type: str, title: str, message: str):
@@ -104,7 +121,7 @@ class NotificationService:
                     NotificationService.dispatch(channel.type, config, title, message, organization_id, db)
                     logger.info(f"Notification sent via {channel.type}: {title}")
                 except Exception as e:
-                    logger.error(f"Failed to send notification via {channel.type} (ID: {channel.id}): {str(e)}")
+                    logger.error("Failed to send notification via %s (ID: %s): %s", channel.type, channel.id, type(e).__name__)
 
     @staticmethod
     def dispatch(channel_type: str, config: dict, title: str, message: str, organization_id: int, db: Session):
@@ -123,7 +140,7 @@ class NotificationService:
             try:
                 provider(config, title, message)
             except Exception as e:
-                logger.error(f"Failed to dispatch to {channel_type}: {e}")
+                logger.error("Failed to dispatch to %s: %s", channel_type, type(e).__name__)
         else:
             logger.warning(f"No provider found for channel type: {channel_type}")
 
@@ -226,7 +243,7 @@ class NotificationService:
                             payload
                         )
                     except Exception as e:
-                        logger.warning(f"Failed to send push to user {user.id}: {str(e)}")
+                        logger.warning("Failed to send push to user %s: %s", user.id, type(e).__name__)
 
     @staticmethod
     def send_speedtest_alert(db: Session, organization_id: int, result: dict):

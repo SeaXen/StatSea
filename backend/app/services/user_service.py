@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from ..core import sanitization
 from ..core.exceptions import UserNotFoundException, ValidationException
 from ..core.logging import get_logger
+from ..core.password_policy import validate_password_complexity
 from ..models import models
 from ..schemas import defaults as schemas
 from .audit_service import AuditService
@@ -40,6 +41,7 @@ class UserService:
         Creates a new user with sanitized inputs.
         Checks for existing username or email before creation.
         """
+        validate_password_complexity(user_data.password)
         sanitized_username = sanitization.sanitize_username(user_data.username)
         sanitized_email = sanitization.sanitize_email(user_data.email)
 
@@ -70,6 +72,13 @@ class UserService:
             db.add(new_user)
             db.commit()
             db.refresh(new_user)
+            # Every user needs a membership or all org-scoped endpoints 403 for them.
+            org = db.query(models.Organization).order_by(models.Organization.id.asc()).first()
+            if org:
+                db.add(models.OrganizationMember(
+                    user_id=new_user.id, organization_id=org.id, role="member"
+                ))
+                db.commit()
             logger.info(f"User created: {sanitized_username}")
             
             AuditService.log_action(
@@ -106,19 +115,26 @@ class UserService:
             if update_data.is_admin is not None:
                 db_user.is_admin = update_data.is_admin
             if update_data.password is not None:
+                validate_password_complexity(update_data.password)
                 db_user.hashed_password = models.User.get_password_hash(update_data.password)
 
             db.commit()
             db.refresh(db_user)
             logger.info(f"User updated: {db_user.username}")
             
+            # Password must never be persisted in audit details.
+            updates = {
+                k: v
+                for k, v in update_data.model_dump(exclude_unset=True).items()
+                if k != "password"
+            }
             AuditService.log_action(
                 db=db,
                 actor_id=actor_id,
                 action="UPDATE",
                 resource_type="USER",
                 resource_id=str(db_user.id),
-                details={"updates": update_data.model_dump(exclude_unset=True)}
+                details={"updates": updates}
             )
             return db_user
         except sqlalchemy.exc.SQLAlchemyError as e:

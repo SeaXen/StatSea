@@ -90,9 +90,10 @@ const SpeedtestPage = () => {
         // and the correct host in production.
         const token = localStorage.getItem('statsea_token');
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/api/ws/speedtest?provider=${provider}&token=${token}`;
+        const wsUrl = `${protocol}//${window.location.host}/api/ws/speedtest?provider=${provider}`;
 
-        const socket = new WebSocket(wsUrl);
+        // Auth travels in the subprotocol, never in the URL (proxies log it).
+        const socket = new WebSocket(wsUrl, token ? ['Bearer', token] : []);
 
         socket.onopen = () => {
         };

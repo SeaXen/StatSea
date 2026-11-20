@@ -36,7 +36,7 @@ interface NetworkEnv {
     name: string;
     interface: string;
     subnet?: string;
-    status: 'online' | 'standby';
+    status: 'online' | 'offline';
 }
 
 const EXTENDED_RANGES = [
@@ -75,14 +75,14 @@ export const TopNav: React.FC<TopNavProps> = ({
             name: 'All Interfaces',
             interface: 'all',
             subnet: 'Aggregate Subnets',
-            status: isConnected ? 'online' : 'standby',
+            status: isConnected ? 'online' : 'offline',
         };
         const dynamicList: NetworkEnv[] = (Array.isArray(rawInterfaces) ? rawInterfaces : []).map(iface => ({
             id: iface,
             name: iface.toUpperCase(),
             interface: iface,
             subnet: `Active Adapter (${iface})`,
-            status: isConnected ? 'online' : 'standby',
+            status: isConnected ? 'online' : 'offline',
         }));
         return [defaultOption, ...dynamicList];
     }, [rawInterfaces, isConnected]);
@@ -204,7 +204,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                     >
                                         <div className="flex flex-col">
                                             <div className="flex items-center gap-2">
-                                                <span className={`w-1.5 h-1.5 rounded-full ${net.status === 'online' ? 'bg-ok' : 'bg-warn'}`} />
+                                                <span className={`w-1.5 h-1.5 rounded-full ${net.status === 'online' ? 'bg-ok' : 'bg-danger'}`} />
                                                 <span className="font-medium text-xs text-text">{net.name}</span>
                                                 <span className="text-[10px] text-faint">({net.interface})</span>
                                             </div>
@@ -219,10 +219,14 @@ export const TopNav: React.FC<TopNavProps> = ({
                 )}
             </div>
 
-            {/* Real-time Sniffer Mode */}
-            {isConnected && (
+            {/* Real-time Sniffer Mode / connection state */}
+            {isConnected ? (
                 <span className={`status text-[11px] font-semibold uppercase tracking-wider hidden sm:inline-flex ${isSynthetic ? 'warn' : 'live'}`}>
                     {isSynthetic ? 'SIMULATION MODE' : 'LIVE SNIFFING'}
+                </span>
+            ) : (
+                <span role="status" className="status text-[11px] font-semibold uppercase tracking-wider hidden sm:inline-flex text-danger">
+                    Connection lost — reconnecting…
                 </span>
             )}
 

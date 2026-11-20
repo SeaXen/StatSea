@@ -39,7 +39,11 @@ const DnsQueryLog: React.FC = () => {
     }, [devices]);
 
     if (loading && !logs.length && !topDomains.length) {
-        return <div className="animate-pulse h-64 bg-raised rounded-[var(--r-panel)] border border-line" />;
+        return (
+            <div role="status" className="animate-pulse h-64 bg-raised rounded-[var(--r-panel)] border border-line">
+                <span className="sr-only">Loading…</span>
+            </div>
+        );
     }
 
     return (

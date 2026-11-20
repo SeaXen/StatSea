@@ -23,6 +23,20 @@ class DockerUpdateService:
         if self._task is None:
             self._task = asyncio.create_task(self._monitor_loop())
 
+    async def stop(self):
+        """Cancel the background monitor task and wait for it to finish."""
+        if self._task is None:
+            return
+        task = self._task
+        self._task = None
+        task.cancel()
+        try:
+            await task
+        except (asyncio.CancelledError, RuntimeError):
+            # TestClient lifecycles may run start/stop in different loops; the
+            # cancel above is still issued, so a cross-loop await error is benign.
+            pass
+
     async def _monitor_loop(self):
         while True:
             try:

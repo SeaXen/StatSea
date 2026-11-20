@@ -61,7 +61,10 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         let reconnectTimeout: NodeJS.Timeout;
         let isMounted = true;
         let reconnectAttempt = 0;
+        let connectionLost = false;
+        let lastMessageAt = Date.now();
         const MAX_RECONNECT_DELAY = 30000;
+        const LIVENESS_MS = 60000;
 
         if (!token) return;
 
@@ -77,47 +80,73 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
             reconnectTimeout = setTimeout(connect, delay);
         };
 
+        const markConnectionLost = () => {
+            if (!isMounted || connectionLost) return;
+            connectionLost = true;
+            setIsConnected(false);
+            toast.warning('Connection lost — reconnecting…', {
+                id: 'ws-connection-status',
+                duration: 4000,
+            });
+        };
+
+        const closeStale = (sock: WebSocket | null) => {
+            if (!sock) return;
+            sock.onopen = sock.onclose = sock.onerror = sock.onmessage = null;
+            sock.close();
+        };
+
         const connect = () => {
             if (!isMounted) return;
 
-            try {
-                const wsUrl = `${getWsUrl('/ws/live')}?token=${token}`;
-                const eventWsUrl = `${getWsUrl('/ws/events')}?token=${token}`;
+            // Replace stale sockets before reconnecting so we never keep a
+            // second live/events socket around (that duplicates broadcasts).
+            closeStale(ws);
+            closeStale(eventWs);
 
-                ws = new WebSocket(wsUrl);
-                eventWs = new WebSocket(eventWsUrl);
+            try {
+                // Auth goes in the Sec-WebSocket-Protocol header, not the URL.
+                // The backend skips "Bearer" and reads the long token value.
+                const protocols = ['Bearer', token];
+                ws = new WebSocket(getWsUrl('/ws/live'), protocols);
+                eventWs = new WebSocket(getWsUrl('/ws/events'), protocols);
+                lastMessageAt = Date.now();
 
                 ws.onopen = () => {
-                    if (isMounted) {
-                        setIsConnected(true);
-                        reconnectAttempt = 0;
-                        toast.success('Connected to Live Server');
+                    if (!isMounted) return;
+                    setIsConnected(true);
+                    reconnectAttempt = 0;
+                    lastMessageAt = Date.now();
+                    if (connectionLost) {
+                        toast.success('Connected to Live Server', { id: 'ws-connection-status' });
                     }
+                    connectionLost = false;
                 };
 
-                ws.onclose = () => {
-                    if (isMounted) {
-                        setIsConnected(false);
-                        scheduleReconnect();
-                    }
+                ws.onclose = (event) => {
+                    if (!isMounted) return;
+                    markConnectionLost();
+                    // 1008 policy violation / 4001 auth failure: retrying won't help.
+                    if (event.code === 1008 || event.code === 4001) return;
+                    scheduleReconnect();
                 };
 
                 ws.onerror = () => {
-                    if (isMounted) {
-                        setIsConnected(false);
-                    }
+                    if (isMounted) markConnectionLost();
                 };
 
-                eventWs.onclose = () => {
-                    if (isMounted) {
-                        scheduleReconnect();
-                    }
+                eventWs.onclose = (event) => {
+                    if (!isMounted) return;
+                    markConnectionLost();
+                    if (event.code === 1008 || event.code === 4001) return;
+                    scheduleReconnect();
                 };
 
                 let lastUpdate = 0;
                 const THROTTLE_MS = 500;
 
                 ws.onmessage = (event) => {
+                    lastMessageAt = Date.now();
                     const now = Date.now();
                     if (now - lastUpdate < THROTTLE_MS) return;
                     lastUpdate = now;
@@ -171,7 +200,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
                                     data.type === 'success' ? 'success' : 'info'
                         };
 
-                        setNotifications(prev => [newNotification, ...prev]);
+                        setNotifications(prev => [newNotification, ...prev].slice(0, 100));
 
                         if (data.type === 'NEW_DEVICE' || data.type === 'security_alert') {
                             toast.warning(data.title, {
@@ -194,11 +223,20 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
             }
         };
 
+        // Detect a dead-but-open socket: the server sends heartbeats, so no
+        // traffic for LIVENESS_MS means the connection silently stalled.
+        const livenessInterval = setInterval(() => {
+            if (isMounted && ws && ws.readyState === WebSocket.OPEN && Date.now() - lastMessageAt > LIVENESS_MS) {
+                ws.close(); // onclose schedules the reconnect
+            }
+        }, LIVENESS_MS);
+
         connect();
 
         return () => {
             isMounted = false;
             clearTimeout(reconnectTimeout);
+            clearInterval(livenessInterval);
             if (ws) {
                 ws.onopen = null;
                 ws.onclose = null;

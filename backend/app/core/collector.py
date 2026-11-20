@@ -17,6 +17,7 @@ except ImportError:
 import requests
 import sqlalchemy.exc
 from mac_vendor_lookup import MacLookup
+from sqlalchemy import func
 
 from ..core.config import settings as app_settings
 from ..core.logging import get_logger
@@ -32,6 +33,7 @@ from ..models.models import (
     TrafficLog,
 )
 from ..services.notification_service import NotificationService
+from .metrics import metrics_manager
 
 # Initialize MacLookup (this loads the local OUI list)
 mac_lookup = MacLookup()
@@ -113,6 +115,7 @@ class PacketCollector:
         self.stats_lock = threading.Lock()
         self.running = False
         self.is_synthetic = False
+        self.capture_failed = False
         self.interface = None
         self.upload_acc = 0
         self.download_acc = 0
@@ -120,9 +123,16 @@ class PacketCollector:
         self.total_download_bytes = 0
         self.interval_upload = 0
         self.interval_download = 0
-        self._last_rate_ts = time.time()
         self.current_upload_rate = 0.0
         self.current_download_rate = 0.0
+        # Non-destructive rate snapshot (see get_current_stats): recomputed at
+        # most once per second so concurrent readers see the same values.
+        self.RATE_REFRESH_INTERVAL = 1.0
+        self._rate_snapshot_up = 0
+        self._rate_snapshot_down = 0
+        self._rate_snapshot_ts = time.time() - self.RATE_REFRESH_INTERVAL
+        self._cached_interval_upload = 0
+        self._cached_interval_download = 0
         self._geoip_executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
         self._last_persist_upload = 0
         self._last_persist_download = 0
@@ -197,6 +207,10 @@ class PacketCollector:
         self._persistence_thread.start()
 
         logger.info(f"Collector started on interface: {self.interface or 'default'}")
+
+    def is_capture_failed(self) -> bool:
+        """Read accessor for the last known packet-capture health state."""
+        return bool(self.capture_failed)
 
     def stop(self):
         """Stops sniffing and persistence threads and cleans up resources."""
@@ -364,6 +378,7 @@ class PacketCollector:
                         self.app_traffic_buffer[dst_mac][app_category]["download"] += packet_len
 
                 self.total_packets += 1
+                metrics_manager.increment_packet()
                 self.total_bytes += packet_len
                 self._pps_packet_count += 1
 
@@ -386,6 +401,7 @@ class PacketCollector:
                     self.http_requests += 1
                 elif proto == "DNS":
                     self.dns_queries += 1
+                    metrics_manager.increment_dns_query()
 
                 # Internal vs external connection classification
                 try:
@@ -438,6 +454,7 @@ class PacketCollector:
     def _run(self):
         """Resilient sniffer supervisor loop with automatic fallback."""
         if not SCAPY_AVAILABLE:
+            self.capture_failed = True
             if getattr(app_settings, "ALLOW_SYNTHETIC_TRAFFIC", False):
                 logger.warning("Scapy is not available. Falling back to autonomous telemetry generator.")
                 self._run_synthetic_loop()
@@ -446,6 +463,8 @@ class PacketCollector:
             return
 
         consecutive_failures = 0
+        backoff = 1.0
+        max_backoff = 60.0
         while self.running:
             try:
                 # Attempt to sniff on interface
@@ -457,37 +476,47 @@ class PacketCollector:
                     store=0,
                 )
                 consecutive_failures = 0
+                backoff = 1.0
+                self.capture_failed = False
             except PermissionError:
+                self.capture_failed = True
                 if getattr(app_settings, "ALLOW_SYNTHETIC_TRAFFIC", False):
                     logger.warning(
                         "Administrative/root permissions missing for packet sniffing. Switching to autonomous telemetry generator."
                     )
                     self._run_synthetic_loop()
-                else:
-                    logger.error(
-                        "Administrative/root permissions missing for packet sniffing (NET_RAW capability required). "
-                        "Synthetic fallback disabled; paused."
-                    )
-                    time.sleep(10)
-                break
+                    break
+                # Production: keep retrying with bounded exponential backoff
+                # instead of giving up permanently on a transient permission issue.
+                logger.error(
+                    "Administrative/root permissions missing for packet sniffing (NET_RAW capability required). "
+                    f"Synthetic fallback disabled; retrying in {backoff:.0f}s."
+                )
+                time.sleep(backoff)
+                backoff = min(backoff * 2, max_backoff)
             except Exception as e:
                 consecutive_failures += 1
                 logger.warning(
                     f"Sniffer error on interface ({e}). Consecutive failures: {consecutive_failures}."
                 )
                 if consecutive_failures >= 2:
+                    self.capture_failed = True
                     if getattr(app_settings, "ALLOW_SYNTHETIC_TRAFFIC", False):
                         logger.warning(
                             "Sniffer driver unavailable (e.g. WinPcap/Npcap missing). Switching to autonomous telemetry generator."
                         )
                         self._run_synthetic_loop()
-                    else:
-                        logger.error(
-                            "Sniffer driver unavailable. Synthetic traffic fallback is disabled; sniffer paused."
-                        )
-                        time.sleep(10)
-                    break
-                time.sleep(1)
+                        break
+                    # Production: bounded exponential backoff, keep retrying.
+                    logger.error(
+                        "Sniffer driver unavailable. Synthetic traffic fallback is disabled; "
+                        f"retrying in {backoff:.0f}s."
+                    )
+                    time.sleep(backoff)
+                    backoff = min(backoff * 2, max_backoff)
+                    consecutive_failures = 0
+                else:
+                    time.sleep(1)
 
     def _run_synthetic_loop(self):
         """Generates realistic telemetry when packet capture drivers are unavailable."""
@@ -534,29 +563,31 @@ class PacketCollector:
                 time.sleep(1)
 
     def get_current_stats(self):
-        """Returns interval bitrates and calculates rate per second without zeroing lifetime counters."""
+        """Returns interval bitrates without zeroing cumulative counters.
+
+        Rates are derived from cumulative deltas and refreshed at most once per
+        RATE_REFRESH_INTERVAL. Multiple readers within that window observe the
+        same cached snapshot, so a second /ws/live client no longer reads ~0.
+        """
         with self.stats_lock:
             now = time.time()
-            elapsed = max(now - self._last_rate_ts, 0.001)
-            
-            rate_up = self.interval_upload / elapsed
-            rate_down = self.interval_download / elapsed
-            self.current_upload_rate = rate_up
-            self.current_download_rate = rate_down
-
-            stats = {
-                "u": self.interval_upload,
-                "d": self.interval_download,
-                "upload_rate": rate_up,
-                "download_rate": rate_down,
+            if now - self._rate_snapshot_ts >= self.RATE_REFRESH_INTERVAL:
+                elapsed = max(now - self._rate_snapshot_ts, 0.001)
+                self._cached_interval_upload = max(self.interval_upload - self._rate_snapshot_up, 0)
+                self._cached_interval_download = max(self.interval_download - self._rate_snapshot_down, 0)
+                self.current_upload_rate = self._cached_interval_upload / elapsed
+                self.current_download_rate = self._cached_interval_download / elapsed
+                self._rate_snapshot_up = self.interval_upload
+                self._rate_snapshot_down = self.interval_download
+                self._rate_snapshot_ts = now
+            return {
+                "u": self._cached_interval_upload,
+                "d": self._cached_interval_download,
+                "upload_rate": self.current_upload_rate,
+                "download_rate": self.current_download_rate,
                 "active_device_count": len(self.active_devices),
                 "is_synthetic": self.is_synthetic,
             }
-            # Only reset the interval accumulators, NEVER the lifetime totals
-            self.interval_upload = 0
-            self.interval_download = 0
-            self._last_rate_ts = now
-            return stats
 
     def _persistence_loop(self):
         """Periodically flushes active devices and telemetry to the database."""
@@ -810,6 +841,7 @@ class PacketCollector:
                     )
                     thread_db.add(alert)
                     thread_db.commit()
+                    metrics_manager.increment_alert()
 
                     NotificationService.send_alert(
                         db=thread_db,
@@ -832,22 +864,9 @@ class PacketCollector:
                 "mac": mac,
                 "ip": ip,
             }
+            # _safe_broadcast is itself thread-safe (run_coroutine_threadsafe),
+            # so this single direct call is the only dispatch needed.
             self.event_callback(event_data)
-
-        if self.event_callback and self._loop:
-            event_data = {
-                "type": "NEW_DEVICE",
-                "severity": "info",
-                "title": "New Device Detected",
-                "description": f"New device {mac} discovered.",
-                "mac": mac,
-                "ip": ip,
-                "timestamp": time.time(),
-            }
-            # Call async callback from sync thread
-            self._loop.call_soon_threadsafe(
-                lambda: asyncio.ensure_future(self.event_callback(event_data))
-            )
 
     def _is_private_ip(self, ip_str: str) -> bool:
         """Checks if an IP address is internal/private."""
@@ -998,23 +1017,37 @@ class PacketCollector:
             return list(filtered[-limit:])
 
     def get_analytics_heatmap(self) -> list[dict]:
-        """Returns 7x24 matrix aggregated from the last 7 days of BandwidthHistory."""
+        """Returns 7x24 matrix aggregated from the last 7 days of BandwidthHistory.
+
+        Aggregation happens in SQL (GROUP BY day/hour) instead of loading every
+        history row into Python; only ~168 grouped rows are returned.
+        """
         days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        # SQLite strftime('%w') maps Sunday=0 .. Saturday=6.
+        dow_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
         matrix = {(day, hour): 0 for day in days for hour in range(24)}
         try:
+            since = datetime.now(timezone.utc) - timedelta(days=7)
             with SessionLocal() as db:
-                since = datetime.now(timezone.utc) - timedelta(days=7)
+                dow = func.strftime("%w", BandwidthHistory.timestamp)
+                hour = func.strftime("%H", BandwidthHistory.timestamp)
+                total = func.coalesce(func.sum(BandwidthHistory.upload_bytes), 0) + func.coalesce(
+                    func.sum(BandwidthHistory.download_bytes), 0
+                )
                 rows = (
-                    db.query(BandwidthHistory)
+                    db.query(dow.label("dow"), hour.label("hour"), total.label("total"))
                     .filter(BandwidthHistory.timestamp >= since)
+                    .group_by(dow, hour)
                     .all()
                 )
-                for r in rows:
-                    if r.timestamp:
-                        ts = r.timestamp if r.timestamp.tzinfo else r.timestamp.replace(tzinfo=timezone.utc)
-                        day_name = days[ts.weekday()]
-                        hour = ts.hour
-                        matrix[(day_name, hour)] += (r.upload_bytes or 0) + (r.download_bytes or 0)
+            for row in rows:
+                try:
+                    day_name = dow_names[int(row.dow)]
+                    h = int(row.hour)
+                except (TypeError, ValueError):
+                    continue
+                if day_name in matrix and 0 <= h <= 23:
+                    matrix[(day_name, h)] = int(row.total or 0)
         except Exception as e:
             logger.error(f"Error computing analytics heatmap: {e}")
 

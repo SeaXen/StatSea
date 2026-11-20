@@ -8,9 +8,9 @@
 [![FastAPI: 0.115](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python: 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![Docker: Ready](https://img.shields.io/badge/Docker-Port%2021080-2496ED?logo=docker&logoColor=white)](./docker-compose.yml)
-[![Pytest: 65/65 Passing](https://img.shields.io/badge/Pytest-65%2F65%20Passing-brightgreen?logo=pytest&logoColor=white)](./backend/tests)
-[![Vitest: 30/30 Passing](https://img.shields.io/badge/Vitest-30%2F30%20Passing-brightgreen?logo=vitest&logoColor=white)](./frontend)
-[![Playwright E2E: 11/11 Verified](https://img.shields.io/badge/Playwright%20E2E-11%2F11%20Verified-brightgreen?logo=playwright&logoColor=white)](./tests/test_statsea_e2e_playwright.py)
+[![Pytest: backend suite](https://img.shields.io/badge/Pytest-backend%20suite-blue?logo=pytest&logoColor=white)](./backend/tests)
+[![Vitest: frontend suite](https://img.shields.io/badge/Vitest-frontend%20suite-blue?logo=vitest&logoColor=white)](./frontend)
+[![Playwright E2E: 11-step manual script (not in CI)](https://img.shields.io/badge/Playwright%20E2E-11--step%20manual%20script-lightgrey?logo=playwright&logoColor=white)](./tests/test_statsea_e2e_playwright.py)
 [![PWA: Offline Ready](https://img.shields.io/badge/PWA-Workbox%20v0.19-purple?logo=pwa&logoColor=white)](./frontend/src/sw.ts)
 [![Data Optimization: Gzip](https://img.shields.io/badge/API-GZip%20Compressed-success)](./backend/app/main.py)
 
@@ -159,6 +159,11 @@ StatSea is engineered for one-click deployment on **Linux Mint, Ubuntu Server, C
 git clone https://github.com/SeaXen/StatSea.git
 cd StatSea
 
+# Configure environment (the root .env drives Docker Compose)
+cp .env.example .env
+# Generate a production JWT secret (deploy.sh does this automatically if missing)
+echo "JWT_SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" >> .env
+
 # Deploy using the automated script
 chmod +x deploy.sh
 ./deploy.sh
@@ -198,7 +203,7 @@ StatSea features 6 built-in themes that synchronize 100% of the UI instantaneous
 
 ## 🔬 Verification & Quality Benchmarks
 
-Every release passes a strict multi-tier verification pipeline:
+CI enforces the automated tiers below; run them locally with:
 
 ```powershell
 # 1. Run full backend linting and test suite
@@ -219,22 +224,23 @@ npm run lint
 # 5. Compile optimized production PWA bundle
 npm run build
 
-# 6. Execute 11-phase Playwright E2E browser test suite
+# 6. Optional: 11-step manual Playwright E2E script (not run in CI; needs live frontend + backend)
 cd ..
 python tests/test_statsea_e2e_playwright.py
 ```
 
-### Verified Benchmark Scorecard
-| Test Tier | Metric | Status | Result |
-| :--- | :--- | :--- | :--- |
-| **Pytest Unit & Integration** | 65 Test Cases | **PASS** | 65 passed in 14.81s (100%) |
-| **Vitest Component Tests** | 12 Suites (30 Tests) | **PASS** | 30 passed in 27.95s (100%) |
-| **TypeScript Typecheck** | Strict Mode | **PASS** | 0 errors |
-| **ESLint Quality Standard** | Unused directives reported | **PASS** | 0 errors / 0 warnings |
-| **Production Bundle** | Vite Build + Workbox PWA | **PASS** | Built cleanly with 33 precache entries |
-| **Playwright E2E Suite** | 11 Verification Phases | **PASS** | 11/11 phases verified (full desktop screenshots captured) |
-| **API Compression** | Gzip Middleware | **ACTIVE** | Responses >1KB compressed |
-| **Security Integrity** | Production Mock Data | **CLEAN** | 0 mock/synthetic fallback in prod; `token_version` session revocation |
+### Verification Scorecard
+| Test Tier | How to run | Enforced |
+| :--- | :--- | :--- |
+| **Pytest Unit & Integration** | `cd backend && python -m pytest tests/ -v` | Yes (CI) |
+| **Root Integration Pytest** | `python -m pytest tests/ -v` | Yes (CI) |
+| **Vitest Component Tests** | `cd frontend && npm test -- --run` | Yes (CI) |
+| **TypeScript Typecheck** | `cd frontend && npm run tsc` | Yes (CI) |
+| **ESLint Quality Standard** | `cd frontend && npm run lint` | Yes (CI) |
+| **Production Bundle** | `cd frontend && npm run build` | Yes (CI) |
+| **Playwright E2E** | `python tests/test_statsea_e2e_playwright.py` | No — 11-step manual script, not in CI |
+| **API Compression** | Gzip middleware | Active for responses >1KB |
+| **Security Integrity** | `ALLOW_SYNTHETIC_TRAFFIC=false` in production | No mock/synthetic fallback in prod |
 
 ---
 

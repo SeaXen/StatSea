@@ -5,6 +5,7 @@ import time
 
 import psutil
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from ...core.auth_jwt import get_current_user
@@ -151,6 +152,41 @@ def delete_backup(
     if not success:
         raise HTTPException(status_code=404, detail="Backup not found")
     return {"status": "success"}
+
+
+@router.post("/backups/{backup_id}/restore", response_model=defaults.BackupRecord)
+def restore_backup(
+    backup_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(check_admin)
+):
+    """Restore the database from a previously created backup."""
+    try:
+        return backup_service_lib.restore_backup(db, backup_id)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except ValueError as e:
+        status = 404 if str(e) == "Backup not found" else 400
+        raise HTTPException(status_code=status, detail=str(e)) from e
+
+
+@router.get("/backups/{backup_id}/download")
+def download_backup(
+    backup_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(check_admin)
+):
+    """Download the compressed backup file."""
+    record = db.query(models.BackupRecord).filter(models.BackupRecord.id == backup_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Backup not found")
+
+    backup_root = os.path.realpath(backup_service_lib.BACKUP_DIR)
+    source = os.path.realpath(record.file_path)
+    if os.path.commonpath([backup_root, source]) != backup_root or not os.path.isfile(source):
+        raise HTTPException(status_code=404, detail="Backup file not found on disk")
+
+    return FileResponse(source, filename=record.filename, media_type="application/gzip")
 
 # --- Health Checks ---
 

@@ -1,9 +1,11 @@
+import json
 import logging
+from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
-from app.core.auth_jwt import get_current_admin_user, get_current_user
+from app.core.auth_jwt import get_current_admin_user
 from app.core.scheduler import scheduler
 from app.db.database import get_db
 from app.models import models
@@ -20,9 +22,35 @@ router = APIRouter(prefix="/settings", tags=["Settings"])
     description="Retrieve all system settings.",
 )
 def get_settings(
-    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)
 ):
     return db.query(models.SystemSettings).all()
+
+
+@router.get(
+    "/export",
+    summary="Export settings",
+    description="Download all system settings as a JSON snapshot.",
+)
+def export_settings(
+    db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)
+):
+    settings = db.query(models.SystemSettings).order_by(models.SystemSettings.key).all()
+    payload = [
+        {
+            "key": s.key,
+            "value": s.value,
+            "type": s.type,
+            "description": s.description,
+        }
+        for s in settings
+    ]
+    filename = f"statsea_settings_{datetime.now().strftime('%Y%m%d')}.json"
+    return Response(
+        content=json.dumps(payload, indent=2, default=str),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @router.post(

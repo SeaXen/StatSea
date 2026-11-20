@@ -1,4 +1,6 @@
+import inspect
 import logging
+import os
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -43,7 +45,13 @@ from .core.limiter import limiter
 from .core.logging import get_logger, set_request_id, setup_logging
 from .core.metrics import metrics_manager
 from .core.monitor import monitor
-from .core.scheduler import scheduler
+from .core.scheduler import (
+    scheduler,
+    start_alert_evaluation,
+    start_anomaly_detection,
+    start_health_watchdog,
+)
+from .services.report_service import start_scheduled_reports
 from .core.system_monitor import system_monitor
 from .db.database import Base, SessionLocal, engine
 from .models import models
@@ -71,10 +79,19 @@ def seed_initial_data():
         admin_user = db.query(models.User).filter(models.User.username == "admin").first()
         is_dev = app_settings.ENVIRONMENT.lower() in ("development", "dev", "local", "test")
         if not admin_user:
+            if is_dev:
+                admin_password = "admin123"
+            else:
+                admin_password = os.getenv("ADMIN_PASSWORD")
+                if not admin_password:
+                    raise RuntimeError(
+                        "ADMIN_PASSWORD must be set in production. Generate one with "
+                        "`python -c \"import secrets; print(secrets.token_urlsafe(32))\"`."
+                    )
             admin_user = models.User(
                 username="admin",
                 email="admin@statsea.local",
-                hashed_password=models.User.get_password_hash("admin123"),
+                hashed_password=models.User.get_password_hash(admin_password),
                 full_name="StatSea Admin",
                 is_admin=True,
                 must_change_password=False if is_dev else True,
@@ -129,15 +146,14 @@ def _validate_jwt_secret(secret: str | None, environment: str) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables at startup (gated for development/testing)
-    if app_settings.ENVIRONMENT.lower() in ("development", "dev", "local", "test"):
-        Base.metadata.create_all(bind=engine)
-    
+    # Security check: fail fast before any DB access or seeding.
+    _validate_jwt_secret(app_settings.JWT_SECRET_KEY, app_settings.ENVIRONMENT)
+
+    # Idempotent; required on a fresh production DB before seed_initial_data runs.
+    Base.metadata.create_all(bind=engine)
+
     # Seed data after tables are verified
     seed_initial_data()
-    
-    # Security check: Validate JWT secret fails closed in production
-    _validate_jwt_secret(app_settings.JWT_SECRET_KEY, app_settings.ENVIRONMENT)
 
     # Start services
     global_collector.start()
@@ -146,6 +162,10 @@ async def lifespan(app: FastAPI):
     await monitor.start()
     system_monitor.start()
     scheduler.update_scheduler_from_db()
+    start_alert_evaluation()
+    start_anomaly_detection()
+    start_health_watchdog()
+    start_scheduled_reports()
 
     yield
 
@@ -155,6 +175,11 @@ async def lifespan(app: FastAPI):
     monitor.stop()
     system_monitor.stop()
     scheduler.scheduler.shutdown()
+    stop_update = getattr(docker_update_service, "stop", None)
+    if callable(stop_update):
+        result = stop_update()
+        if inspect.isawaitable(result):
+            await result
 
 
 _is_dev = app_settings.ENVIRONMENT.lower() in ("development", "dev", "local", "test")

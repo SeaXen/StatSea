@@ -3,9 +3,10 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_org_id, get_current_user
 from app.db.database import get_db
 from app.main import app
+from app.models.models import Organization
 
 
 class MockUser:
@@ -24,8 +25,18 @@ def agent_client(db_session):
     def override_get_current_user():
         return MockUser()
 
+    def override_get_current_org_id():
+        return org.id
+
+    # Agent routes are organization-scoped; the mocked user has no DB membership.
+    org = Organization(name="Agent Test Org", plan_tier="pro", default_language="en")
+    db_session.add(org)
+    db_session.commit()
+    db_session.refresh(org)
+
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_current_org_id] = override_get_current_org_id
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
@@ -82,6 +93,36 @@ def test_submit_metrics(agent_client):
     get_response = agent_client.get("/api/agents/")
     updated_agent = next(a for a in get_response.json() if a["id"] == agent_id)
     assert updated_agent["status"] == "online"
+
+
+def test_get_agents_is_org_scoped(agent_client, db_session):
+    """A caller must never see another organization's agents."""
+    from app.models.models import AgentNode
+
+    other_org = Organization(name="Other Org", plan_tier="pro", default_language="en")
+    db_session.add(other_org)
+    db_session.commit()
+    db_session.refresh(other_org)
+
+    db_session.add(AgentNode(
+        id=str(uuid.uuid4()),
+        name="Other Org Agent",
+        api_key_hash="x",
+        organization_id=other_org.id,
+        status="offline",
+    ))
+    db_session.commit()
+    agent_client.post("/api/agents/", json={"name": "My Agent"})
+
+    names = [a["name"] for a in agent_client.get("/api/agents/").json()]
+    assert "My Agent" in names
+    assert "Other Org Agent" not in names
+
+
+def test_get_agents_without_membership_is_403(agent_client):
+    """The real org dependency rejects users with no OrganizationMember."""
+    app.dependency_overrides.pop(get_current_org_id)
+    assert agent_client.get("/api/agents/").status_code == 403
 
 
 def test_submit_metrics_invalid_auth(agent_client):

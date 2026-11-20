@@ -35,7 +35,7 @@ const LoginPage: React.FC = () => {
         } catch (err: unknown) {
             const axiosErr = err as { response?: { data?: { detail?: string } }; code?: string; message?: string };
             if (!axiosErr.response) {
-                setError('Cannot connect to backend server. Please ensure the backend is running on port 8001.');
+                setError('Unable to connect to the server. Please check your connection and try again.');
             } else {
                 setError(axiosErr.response?.data?.detail || 'Invalid username or password');
             }
@@ -165,10 +165,15 @@ const LoginPage: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isLoading}
+                            aria-label={isLoading ? 'Authenticating…' : undefined}
+                            aria-busy={isLoading}
                             className="w-full bg-accent hover:opacity-90 disabled:opacity-50 text-[#0f1115] font-mono font-semibold text-xs tracking-wider uppercase py-2.5 rounded-[7px] flex items-center justify-center gap-2 transition-opacity"
                         >
                             {isLoading ? (
-                                <Loader2 className="w-4 h-4 animate-spin text-[#0f1115]" />
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin text-[#0f1115]" aria-hidden="true" />
+                                    <span className="sr-only">Authenticating…</span>
+                                </>
                             ) : (
                                 <>
                                     AUTHENTICATE SESSION

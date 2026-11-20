@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Command } from 'cmdk';
 import { Search, LayoutDashboard, Server, Shield, Settings, Activity, Network } from 'lucide-react';
 import axiosInstance from '../config/axiosInstance';
+import { toast } from 'sonner';
 
 
 export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, setOpen: (open: boolean | ((prev: boolean) => boolean)) => void, changeTab: (tab: string) => void }) {
@@ -84,8 +85,10 @@ export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, se
                             try {
                                 await axiosInstance.post('/speedtest');
                                 window.dispatchEvent(new Event('speedtest-update'));
+                                toast.success('Speed test started');
                             } catch (e) {
                                 console.error('Speedtest failed', e);
+                                toast.error('Could not start speed test. Please try again.');
                             }
                         }}
                     >
