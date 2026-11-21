@@ -74,6 +74,13 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     needs: [backend, frontend]
+    env:
+      # CI-only dummy values: static is fine here, they never leave this job.
+      # JWT key is >=32 chars and avoids the backend's placeholder patterns.
+      JWT_SECRET_KEY: ci-smoke-jwt-9f2b8c1d4e6a7b0c3d5e8f1a2b4c6d8e
+      ADMIN_PASSWORD: ci-smoke-admin-pass
+      # Must be valid JSON: compose passes this to a pydantic list[str] field.
+      CORS_ORIGINS: '["http://localhost:21080"]'
     steps:
     - uses: actions/checkout@v4
     
@@ -93,3 +100,28 @@ jobs:
         context: ./frontend
         push: false
         tags: statsea-frontend:latest
+
+    # Verifies the P0 fix: frontend shares backend's host network, so nginx's
+    # proxy_pass to 127.0.0.1:21081 reaches the backend instead of its own loopback.
+    - name: Smoke test API through nginx
+      run: |
+        set -e
+        docker compose up -d
+        echo "Waiting for http://localhost:21080/api/health ..."
+        for i in $(seq 1 60); do
+          if curl -fsS http://localhost:21080/api/health; then
+            echo ""
+            echo "Smoke test passed"
+            exit 0
+          fi
+          echo "attempt $i/60 failed; retrying in 2s"
+          sleep 2
+        done
+        echo "Smoke test FAILED: /api/health never returned 200"
+        docker compose ps
+        docker compose logs --no-color --tail=100
+        exit 1
+
+    - name: Tear down stack
+      if: always()
+      run: docker compose down -v

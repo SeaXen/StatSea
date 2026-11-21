@@ -84,7 +84,8 @@ def test_check_all_certificates_error_trigger(db_session, test_cert, test_org):
         # Verify alert was sent for new error
         mock_send_alert.assert_called_once()
         args, kwargs = mock_send_alert.call_args
-        assert args[0] == "Certificate Check Failed"
+        # send_alert(db, organization_id, title, description, severity)
+        assert args[2] == "Certificate Check Failed"
 
 def test_api_create_certificate(auth_client):
     response = auth_client.post(

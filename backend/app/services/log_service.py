@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from ..core.logging import get_logger
@@ -15,7 +17,7 @@ class LogService:
         query: str | None = None,
         cursor: int | None = None, 
         limit: int = 100
-    ) -> schemas.CursorPage[schemas.DnsLog]:
+    ) -> schemas.CursorPage[Any]:
         db_query = db.query(models.DnsLog)
 
         if device_id is not None:
@@ -29,7 +31,7 @@ class LogService:
 
         logs = db_query.order_by(models.DnsLog.id.desc()).limit(limit).all()
         next_cursor = logs[-1].id if len(logs) == limit else None
-        return schemas.CursorPage(items=logs, next_cursor=next_cursor)
+        return schemas.CursorPage[Any](items=logs, next_cursor=next_cursor)
 
     @staticmethod
     def get_top_dns_domains(db: Session, limit: int = 10) -> list[dict]:
@@ -81,7 +83,7 @@ class LogService:
         ]
 
     @staticmethod
-    def get_device_logs(db: Session, device_id: int = None, cursor: int | None = None, limit: int = 100) -> schemas.CursorPage[schemas.DeviceStatusLog]:
+    def get_device_logs(db: Session, device_id: int | None = None, cursor: int | None = None, limit: int = 100) -> schemas.CursorPage[Any]:
         query = db.query(models.DeviceStatusLog)
         if device_id:
             query = query.filter(models.DeviceStatusLog.device_id == device_id)
@@ -91,4 +93,4 @@ class LogService:
             
         logs = query.order_by(models.DeviceStatusLog.id.desc()).limit(limit).all()
         next_cursor = logs[-1].id if len(logs) == limit else None
-        return schemas.CursorPage(items=logs, next_cursor=next_cursor)
+        return schemas.CursorPage[Any](items=logs, next_cursor=next_cursor)

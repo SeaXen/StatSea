@@ -48,7 +48,7 @@
     --muted-hsl: 220 18% 12%;
     --muted-foreground: 220 10% 59%; /* #8b93a3 */
     --accent-hsl: 233 100% 74%;
-    --accent-foreground: 220 18% 7%;
+    --accent-foreground: #0f1115;
     --destructive: 5 88% 63%;         /* #f5604f */
     --destructive-foreground: 220 15% 93%;
     --border: 220 17% 17%;           /* #242933 */
@@ -94,7 +94,7 @@
     --muted-hsl: 230 18% 95%;
     --muted-foreground: 230 15% 49%; /* #6b7391 */
     --accent-hsl: 235 77% 61%;
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: #ffffff;
     --destructive: 5 88% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 230 23% 91%;           /* #e3e6ef */
@@ -328,6 +328,12 @@
   align-content: start;
 }
 
+/* Grid children default to min-content width; let them shrink so inner tables/charts scroll instead */
+.page > * { min-width: 0; }
+/* Utilities used by mobile nav / tabs */
+.scrollbar-hide { scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0); }
 /* Panel surface */
 .panel {
   background: var(--panel);
@@ -502,3 +508,7 @@ th.right, td.right { text-align: right; }
     font-size: 16px !important;
   }
 }
+
+/* `bg-muted` is the surface token (hsl(--muted-hsl)); `text-muted` must stay
+   readable, so point it at the console's hex muted-text token. */
+.text-muted { color: var(--muted); }

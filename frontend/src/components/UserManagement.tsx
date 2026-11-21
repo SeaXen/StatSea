@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import axios from 'axios';
 import {
     Users,
@@ -38,7 +38,8 @@ export const UserManagement: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const modalRef = useModalA11y<HTMLDivElement>({ isOpen: isModalOpen, onClose: () => setIsModalOpen(false) });
+    const closeModal = useCallback(() => setIsModalOpen(false), [setIsModalOpen]);
+    const modalRef = useModalA11y<HTMLDivElement>({ isOpen: isModalOpen, onClose: closeModal });
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [formData, setFormData] = useState({

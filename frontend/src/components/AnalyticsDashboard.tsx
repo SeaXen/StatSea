@@ -174,7 +174,7 @@ const CircularGauge = ({ percentage, rate, label, color, dotColor }: {
         <div className="flex flex-col items-center gap-1">
             <div className="relative w-24 h-24">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r={radius} stroke="#1f2937" strokeWidth="6" fill="none" />
+                    <circle cx="50" cy="50" r={radius} stroke="var(--line-strong)" strokeWidth="6" fill="none" />
                     <circle
                         cx="50" cy="50" r={radius} stroke={color} strokeWidth="6" fill="none"
                         strokeDasharray={circumference} strokeDashoffset={offset}
@@ -760,14 +760,14 @@ const AnalyticsDashboard = () => {
             {/* ─── Stats Row (8 cards) ─── */}
             {dashboardConfig.showStatsRow && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-                    <StatCard label="Packets" value={formatNumber(analyticsData.total_packets)} icon={Zap} color="#22d3ee" sub="total captured" />
-                    <StatCard label="Data" value={formatBytes(analyticsData.total_bytes)} icon={Database} color="#34d399" sub="transferred" />
-                    <StatCard label="PPS" value={`${analyticsData.packets_per_sec}`} icon={Activity} color="#06b6d4" sub="packets/sec" trend="up" />
-                    <StatCard label="Suspicious" value={analyticsData.suspicious} icon={AlertTriangle} color={analyticsData.suspicious > 0 ? '#f43f5e' : '#6b7280'} sub="flagged" trend={analyticsData.suspicious > 0 ? 'up' : 'neutral'} />
-                    <StatCard label="DNS" value={formatNumber(analyticsData.dns_queries)} icon={Globe} color="#eab308" sub="queries" />
-                    <StatCard label="HTTP" value={formatNumber(analyticsData.http_requests)} icon={Network} color="#f97316" sub="requests" />
-                    <StatCard label="Sessions" value={analyticsData.active_sessions} icon={Radio} color="#14b8a6" sub="active" trend="up" />
-                    <StatCard label="Devices" value={analyticsData.active_device_count} icon={Monitor} color="#0284c7" sub="online" />
+                    <StatCard label="Packets" value={formatNumber(analyticsData.total_packets)} icon={Zap} color="var(--upload)" sub="total captured" />
+                    <StatCard label="Data" value={formatBytes(analyticsData.total_bytes)} icon={Database} color="var(--ok)" sub="transferred" />
+                    <StatCard label="PPS" value={`${analyticsData.packets_per_sec}`} icon={Activity} color="var(--upload)" sub="packets/sec" trend="up" />
+                    <StatCard label="Suspicious" value={analyticsData.suspicious} icon={AlertTriangle} color={analyticsData.suspicious > 0 ? 'var(--danger)' : 'var(--faint)'} sub="flagged" trend={analyticsData.suspicious > 0 ? 'up' : 'neutral'} />
+                    <StatCard label="DNS" value={formatNumber(analyticsData.dns_queries)} icon={Globe} color="var(--warn)" sub="queries" />
+                    <StatCard label="HTTP" value={formatNumber(analyticsData.http_requests)} icon={Network} color="var(--warn)" sub="requests" />
+                    <StatCard label="Sessions" value={analyticsData.active_sessions} icon={Radio} color="var(--ok)" sub="active" trend="up" />
+                    <StatCard label="Devices" value={analyticsData.active_device_count} icon={Monitor} color="var(--upload)" sub="online" />
                 </div>
             )}
 
@@ -844,7 +844,7 @@ const AnalyticsDashboard = () => {
             </div>
 
             {/* ─── Tab Navigation ─── */}
-            <div className="flex gap-1 border-b border-line">
+            <div className="flex gap-1 border-b border-line overflow-x-auto custom-scrollbar">
                 {(['interfaces', 'live', 'statistics', 'topology', 'connections', 'security', 'history', 'dns', 'comparison'] as const).map(tab => (
                     <button
                         type="button"
@@ -978,7 +978,7 @@ const AnalyticsDashboard = () => {
 
                     {/* Live Packet Table */}
                     <div className="panel p-0 rounded-[var(--r-panel)] border border-line bg-panel overflow-hidden">
-                        <div ref={logRef} className="h-[400px] overflow-y-auto custom-scrollbar">
+                        <div ref={logRef} className="h-[400px] overflow-y-auto overflow-x-auto custom-scrollbar">
                             <table className="w-full text-sm">
                                 <thead className="sticky top-0 bg-raised/90 backdrop-blur-xs border-b border-line z-10">
                                     <tr>
@@ -1343,7 +1343,7 @@ const AnalyticsDashboard = () => {
                                 <FileSpreadsheet className="w-3.5 h-3.5 text-ok" /> Export CSV
                             </button>
                         </div>
-                        <div className="h-[400px] overflow-y-auto custom-scrollbar">
+                        <div className="h-[400px] overflow-y-auto overflow-x-auto custom-scrollbar">
                             <table className="w-full text-sm">
                                 <thead className="sticky top-0 bg-raised/95 border-b border-line">
                                     <tr>
@@ -1392,7 +1392,7 @@ const AnalyticsDashboard = () => {
                             <Settings className="w-3 h-3" /> Configure Rules
                         </button>
                     </div>
-                    <div className="h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="h-[400px] overflow-y-auto overflow-x-auto pr-2 custom-scrollbar">
                         {securityEvents.length === 0 ? (
                             <div className="text-center text-faint py-8 flex flex-col items-center gap-2 font-mono text-xs">
                                 <Shield className="w-8 h-8 text-ok opacity-60" />

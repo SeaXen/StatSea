@@ -51,11 +51,11 @@ from .core.scheduler import (
     start_anomaly_detection,
     start_health_watchdog,
 )
-from .services.report_service import start_scheduled_reports
 from .core.system_monitor import system_monitor
 from .db.database import Base, SessionLocal, engine
 from .models import models
 from .services.docker_update_service import docker_update_service
+from .services.report_service import start_scheduled_reports
 
 # Initialize structured logging
 setup_logging(level=logging.DEBUG if app_settings.ENVIRONMENT == "development" else logging.INFO)
@@ -80,7 +80,7 @@ def seed_initial_data():
         is_dev = app_settings.ENVIRONMENT.lower() in ("development", "dev", "local", "test")
         if not admin_user:
             if is_dev:
-                admin_password = "admin123"
+                admin_password = "admin123"  # noqa: S105 - dev-only bootstrap default; prod requires ADMIN_PASSWORD
             else:
                 admin_password = os.getenv("ADMIN_PASSWORD")
                 if not admin_password:
@@ -195,7 +195,7 @@ app = FastAPI(
 
 # Limiter setup
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 
 @app.middleware("http")

@@ -14,7 +14,7 @@ export default defineConfig({
             filename: 'sw.ts',
             registerType: 'autoUpdate',
             injectRegister: 'auto',
-            includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+            includeAssets: ['icon-512.png', 'pwa-icon.svg'],
             manifest: {
                 name: 'StatSea Network Monitor',
                 short_name: 'StatSea',

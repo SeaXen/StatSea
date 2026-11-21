@@ -1,9 +1,10 @@
+from datetime import date, datetime
+
 import bcrypt
 from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
-    Column,
     Date,
     DateTime,
     Float,
@@ -12,7 +13,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from ..db.database import Base
@@ -21,18 +22,17 @@ from ..db.database import Base
 class Organization(Base):
     __tablename__ = "organizations"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    plan_tier = Column(String, default="free")  # free, pro, enterprise
-    subscription_status = Column(String, default="active")  # active, past_due, canceled
-    stripe_customer_id = Column(String, nullable=True)
-    logo_url = Column(String, nullable=True)
-    primary_color = Column(String, default="#000000")
-    secondary_color = Column(String, default="#ffffff")
-    custom_domain = Column(String, nullable=True, unique=True)
-    default_language = Column(String, default="en")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, unique=True, index=True)
+    plan_tier: Mapped[str] = mapped_column(String, default="free")  # free, pro, enterprise
+    subscription_status: Mapped[str] = mapped_column(String, default="active")  # active, past_due, canceled
+    stripe_customer_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    logo_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    primary_color: Mapped[str] = mapped_column(String, default="#000000")
+    secondary_color: Mapped[str] = mapped_column(String, default="#ffffff")
+    custom_domain: Mapped[str | None] = mapped_column(String, nullable=True, unique=True)
+    default_language: Mapped[str] = mapped_column(String, default="en")
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     members = relationship("OrganizationMember", back_populates="organization", cascade="all, delete-orphan")
     devices = relationship("Device", back_populates="organization")
     api_keys = relationship("ApiKey", back_populates="organization")
@@ -41,9 +41,9 @@ class Organization(Base):
 class OrganizationMember(Base):
     __tablename__ = "organization_members"
 
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), primary_key=True)
-    role = Column(String, default="member")  # owner, admin, member, viewer
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), primary_key=True)
+    organization_id: Mapped[int] = mapped_column(Integer, ForeignKey("organizations.id"), primary_key=True)
+    role: Mapped[str] = mapped_column(String, default="member")  # owner, admin, member, viewer
 
     user = relationship("User", back_populates="organizations")
     organization = relationship("Organization", back_populates="members")
@@ -52,15 +52,14 @@ class OrganizationMember(Base):
 class ApiKey(Base):
     __tablename__ = "api_keys"
 
-    id = Column(Integer, primary_key=True, index=True)
-    key_hash = Column(String, index=True)
-    name = Column(String)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    organization_id = Column(Integer, ForeignKey("organizations.id"))
-    permissions = Column(String, default="read")  # simple permission string or json
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    last_used = Column(DateTime(timezone=True), nullable=True)
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    key_hash: Mapped[str] = mapped_column(String, index=True)
+    name: Mapped[str] = mapped_column(String)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    organization_id: Mapped[int] = mapped_column(Integer, ForeignKey("organizations.id"))
+    permissions: Mapped[str] = mapped_column(String, default="read")  # simple permission string or json
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_used: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     user = relationship("User")
     organization = relationship("Organization", back_populates="api_keys")
 
@@ -68,25 +67,24 @@ class ApiKey(Base):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    full_name = Column(String, nullable=True)
-    is_active = Column(Boolean, default=True)
-    is_admin = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    last_login = Column(DateTime(timezone=True), nullable=True)
-    preferred_language = Column(String, default="en")
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String, unique=True, index=True)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    hashed_password: Mapped[str] = mapped_column(String)
+    full_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    preferred_language: Mapped[str] = mapped_column(String, default="en")
 
-    failed_login_attempts = Column(Integer, default=0)
-    locked_until = Column(DateTime(timezone=True), nullable=True)
-    must_change_password = Column(Boolean, default=False)
-    token_version = Column(Integer, default=1, nullable=False)
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=False)
+    token_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     
-    is_deleted = Column(Boolean, default=False)
-    deleted_at = Column(DateTime(timezone=True), nullable=True)
-
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     refresh_tokens = relationship(
         "RefreshToken", back_populates="user", cascade="all, delete-orphan"
     )
@@ -104,15 +102,15 @@ class User(Base):
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
-    id = Column(Integer, primary_key=True, index=True)
-    token = Column(String, unique=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    expires_at = Column(DateTime(timezone=True), index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    is_revoked = Column(Boolean, default=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    token: Mapped[str] = mapped_column(String, unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    is_revoked: Mapped[bool] = mapped_column(Boolean, default=False)
     
-    user_agent = Column(String, nullable=True)
-    ip_address = Column(String, nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String, nullable=True)
 
     user = relationship("User", back_populates="refresh_tokens")
 
@@ -120,9 +118,9 @@ class RefreshToken(Base):
 class DeviceGroup(Base):
     __tablename__ = "device_groups"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    color = Column(String, default="#3b82f6")
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, unique=True, index=True)
+    color: Mapped[str] = mapped_column(String, default="#3b82f6")
 
     devices = relationship("Device", back_populates="group")
 
@@ -130,22 +128,21 @@ class DeviceGroup(Base):
 class Device(Base):
     __tablename__ = "devices"
 
-    id = Column(Integer, primary_key=True, index=True)
-    mac_address = Column(String, unique=True, index=True)
-    ip_address = Column(String, nullable=True)
-    hostname = Column(String, nullable=True)
-    vendor = Column(String, nullable=True)
-    type = Column(String, default="Unknown")  # IoT, Mobile, PC
-    first_seen = Column(DateTime(timezone=True), server_default=func.now())
-    last_seen = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    is_online = Column(Boolean, default=False)
-    nickname = Column(String, nullable=True)
-    icon_type = Column(String, nullable=True)
-    notes = Column(String, nullable=True)
-    tags = Column(JSON, nullable=True)  # JSON list of strings
-    group_id = Column(Integer, ForeignKey("device_groups.id"), nullable=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    mac_address: Mapped[str] = mapped_column(String, unique=True, index=True)
+    ip_address: Mapped[str | None] = mapped_column(String, nullable=True)
+    hostname: Mapped[str | None] = mapped_column(String, nullable=True)
+    vendor: Mapped[str | None] = mapped_column(String, nullable=True)
+    type: Mapped[str] = mapped_column(String, default="Unknown")  # IoT, Mobile, PC
+    first_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    is_online: Mapped[bool] = mapped_column(Boolean, default=False)
+    nickname: Mapped[str | None] = mapped_column(String, nullable=True)
+    icon_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    notes: Mapped[str | None] = mapped_column(String, nullable=True)
+    tags: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # JSON list of strings
+    group_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("device_groups.id"), nullable=True)
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     group = relationship("DeviceGroup", back_populates="devices")
     organization = relationship("Organization", back_populates="devices")
     traffic_logs = relationship("TrafficLog", back_populates="device")
@@ -164,24 +161,23 @@ class Device(Base):
 class DevicePort(Base):
     __tablename__ = "device_ports"
 
-    id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(Integer, ForeignKey("devices.id"))
-    port = Column(Integer, index=True)
-    protocol = Column(String, default="TCP") # TCP, UDP
-    service = Column(String, nullable=True) # ssh, http, etc.
-    state = Column(String, default="open") # open, closed, filtered
-    last_discovered = Column(DateTime(timezone=True), server_default=func.now())
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    device_id: Mapped[int] = mapped_column(Integer, ForeignKey("devices.id"))
+    port: Mapped[int] = mapped_column(Integer, index=True)
+    protocol: Mapped[str] = mapped_column(String, default="TCP") # TCP, UDP
+    service: Mapped[str | None] = mapped_column(String, nullable=True) # ssh, http, etc.
+    state: Mapped[str] = mapped_column(String, default="open") # open, closed, filtered
+    last_discovered: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     device = relationship("Device", back_populates="ports")
 
 
 class BandwidthQuota(Base):
     __tablename__ = "bandwidth_quotas"
 
-    id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(Integer, ForeignKey("devices.id"), unique=True)
-    daily_limit_bytes = Column(BigInteger, nullable=True)
-    monthly_limit_bytes = Column(BigInteger, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    device_id: Mapped[int] = mapped_column(Integer, ForeignKey("devices.id"), unique=True)
+    daily_limit_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    monthly_limit_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
     device = relationship("Device", back_populates="quota")
 
@@ -189,11 +185,11 @@ class BandwidthQuota(Base):
 class DeviceDailySummary(Base):
     __tablename__ = "device_daily_summaries"
 
-    id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(Integer, ForeignKey("devices.id"))
-    date = Column(Date, index=True)
-    upload_bytes = Column(BigInteger, default=0)
-    download_bytes = Column(BigInteger, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    device_id: Mapped[int] = mapped_column(Integer, ForeignKey("devices.id"))
+    date: Mapped[date] = mapped_column(Date, index=True)
+    upload_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
+    download_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
 
     device = relationship("Device", back_populates="daily_summaries")
     
@@ -205,45 +201,43 @@ class DeviceDailySummary(Base):
 class BandwidthHistory(Base):
     __tablename__ = "bandwidth_history"
 
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    upload_bytes = Column(BigInteger, default=0)
-    download_bytes = Column(BigInteger, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    upload_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
+    download_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
 
 
 class LatencyLog(Base):
     __tablename__ = "latency_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    target = Column(String, index=True)
-    latency_ms = Column(Float, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    target: Mapped[str] = mapped_column(String, index=True)
+    latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 
 class SecurityEvent(Base):
     __tablename__ = "security_events"
 
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
-    event_type = Column(String, index=True)  # PORT_SCAN, ROGUE_DHCP, NEW_DEVICE
-    severity = Column(String)  # LOW, MEDIUM, HIGH, CRITICAL
-    description = Column(String)
-    source_ip = Column(String, nullable=True)
-    mac_address = Column(String, nullable=True)
-    resolved = Column(Boolean, default=False)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
-
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    event_type: Mapped[str] = mapped_column(String, index=True)  # PORT_SCAN, ROGUE_DHCP, NEW_DEVICE
+    severity: Mapped[str] = mapped_column(String)  # LOW, MEDIUM, HIGH, CRITICAL
+    description: Mapped[str] = mapped_column(String)
+    source_ip: Mapped[str | None] = mapped_column(String, nullable=True)
+    mac_address: Mapped[str | None] = mapped_column(String, nullable=True)
+    resolved: Mapped[bool] = mapped_column(Boolean, default=False)
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 class TrafficLog(Base):
     __tablename__ = "traffic_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(Integer, ForeignKey("devices.id"), index=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    upload_bytes = Column(BigInteger, default=0)
-    download_bytes = Column(BigInteger, default=0)
-    protocol = Column(String, default="TCP")
-    app_category = Column(String, default="Unknown")
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    device_id: Mapped[int] = mapped_column(Integer, ForeignKey("devices.id"), index=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    upload_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
+    download_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
+    protocol: Mapped[str] = mapped_column(String, default="TCP")
+    app_category: Mapped[str] = mapped_column(String, default="Unknown")
 
     device = relationship("Device", back_populates="traffic_logs")
 
@@ -251,87 +245,79 @@ class TrafficLog(Base):
 class Outage(Base):
     __tablename__ = "outages"
 
-    id = Column(Integer, primary_key=True, index=True)
-    start_time = Column(DateTime(timezone=True), server_default=func.now())
-    end_time = Column(DateTime(timezone=True), nullable=True)
-    duration = Column(Integer, nullable=True)  # seconds
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration: Mapped[int | None] = mapped_column(Integer, nullable=True)  # seconds
 
 
 class SecurityAlert(Base):
     __tablename__ = "security_alerts"
 
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    severity = Column(String, default="info")  # info, warning, critical
-    title = Column(String)
-    description = Column(String)
-    device_id = Column(Integer, ForeignKey("devices.id"), nullable=True, index=True)
-    is_resolved = Column(Boolean, default=False)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    severity: Mapped[str] = mapped_column(String, default="info")  # info, warning, critical
+    title: Mapped[str] = mapped_column(String)
+    description: Mapped[str] = mapped_column(String)
+    device_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("devices.id"), nullable=True, index=True)
+    is_resolved: Mapped[bool] = mapped_column(Boolean, default=False)
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     device = relationship("Device")
 
 
 class SecurityRule(Base):
     __tablename__ = "security_rules"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    description = Column(String, nullable=True)
-    condition = Column(String)  # E.g. "bandwidth > 1GB"
-    action = Column(String, default="alert") # alert, block
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
-
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, unique=True, index=True)
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
+    condition: Mapped[str] = mapped_column(String)  # E.g. "bandwidth > 1GB"
+    action: Mapped[str] = mapped_column(String, default="alert") # alert, block
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 class SystemSettings(Base):
     __tablename__ = "system_settings"
 
-    key = Column(String, primary_key=True, index=True)
-    value = Column(String)
-    type = Column(String, default="string")  # string, int, float, bool, json
-    description = Column(String, nullable=True)
+    key: Mapped[str] = mapped_column(String, primary_key=True, index=True)
+    value: Mapped[str] = mapped_column(String)
+    type: Mapped[str] = mapped_column(String, default="string")  # string, int, float, bool, json
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class SpeedtestResult(Base):
     __tablename__ = "speedtest_results"
 
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    ping = Column(Float)  # ms
-    download = Column(Float)  # Mbps
-    upload = Column(Float)  # Mbps
-    server_id = Column(Integer, nullable=True)
-    server_name = Column(String, nullable=True)
-    server_country = Column(String, nullable=True)
-    provider = Column(String, default="ookla")  # ookla, cloudflare
-    isp = Column(String, nullable=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
-
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    ping: Mapped[float] = mapped_column(Float)  # ms
+    download: Mapped[float] = mapped_column(Float)  # Mbps
+    upload: Mapped[float] = mapped_column(Float)  # Mbps
+    server_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    server_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    server_country: Mapped[str | None] = mapped_column(String, nullable=True)
+    provider: Mapped[str] = mapped_column(String, default="ookla")  # ookla, cloudflare
+    isp: Mapped[str | None] = mapped_column(String, nullable=True)
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 class DockerContainerMetric(Base):
     __tablename__ = "docker_metrics"
 
-    id = Column(Integer, primary_key=True, index=True)
-    container_id = Column(String, index=True)
-    container_name = Column(String)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    cpu_pct = Column(Float)
-    mem_usage = Column(Float)  # MB
-    net_rx = Column(BigInteger)
-    net_tx = Column(BigInteger)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
-
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    container_id: Mapped[str] = mapped_column(String, index=True)
+    container_name: Mapped[str] = mapped_column(String)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    cpu_pct: Mapped[float] = mapped_column(Float)
+    mem_usage: Mapped[float] = mapped_column(Float)  # MB
+    net_rx: Mapped[int] = mapped_column(BigInteger)
+    net_tx: Mapped[int] = mapped_column(BigInteger)
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 class DeviceStatusLog(Base):
     __tablename__ = "device_status_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(Integer, ForeignKey("devices.id"))
-    status = Column(String, index=True)  # 'online' or 'offline'
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    device_id: Mapped[int] = mapped_column(Integer, ForeignKey("devices.id"))
+    status: Mapped[str] = mapped_column(String, index=True)  # 'online' or 'offline'
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     device = relationship("Device", back_populates="status_logs")
 
 
@@ -340,13 +326,13 @@ class SystemNetworkHistory(Base):
 
     __tablename__ = "system_network_history"
 
-    id = Column(Integer, primary_key=True, index=True)
-    interface = Column(String, index=True)  # e.g., eth0, wlan0
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    bytes_sent = Column(BigInteger)
-    bytes_recv = Column(BigInteger)
-    packets_sent = Column(BigInteger)
-    packets_recv = Column(BigInteger)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    interface: Mapped[str] = mapped_column(String, index=True)  # e.g., eth0, wlan0
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    bytes_sent: Mapped[int] = mapped_column(BigInteger)
+    bytes_recv: Mapped[int] = mapped_column(BigInteger)
+    packets_sent: Mapped[int] = mapped_column(BigInteger)
+    packets_recv: Mapped[int] = mapped_column(BigInteger)
 
 
 class DnsLog(Base):
@@ -354,14 +340,13 @@ class DnsLog(Base):
 
     __tablename__ = "dns_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    client_ip = Column(String, index=True)
-    device_id = Column(Integer, ForeignKey("devices.id"), nullable=True)
-    query_domain = Column(String, index=True)
-    record_type = Column(String)  # A, AAAA, CNAME, etc.
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    client_ip: Mapped[str] = mapped_column(String, index=True)
+    device_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("devices.id"), nullable=True)
+    query_domain: Mapped[str] = mapped_column(String, index=True)
+    record_type: Mapped[str] = mapped_column(String)  # A, AAAA, CNAME, etc.
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     device = relationship("Device")
 
 
@@ -370,12 +355,12 @@ class SystemDailySummary(Base):
 
     __tablename__ = "system_daily_summaries"
 
-    id = Column(Integer, primary_key=True, index=True)
-    date = Column(Date, index=True, unique=True)
-    bytes_sent = Column(BigInteger, default=0)
-    bytes_recv = Column(BigInteger, default=0)
-    packets_sent = Column(BigInteger, default=0)
-    packets_recv = Column(BigInteger, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    date: Mapped[date] = mapped_column(Date, index=True, unique=True)
+    bytes_sent: Mapped[int] = mapped_column(BigInteger, default=0)
+    bytes_recv: Mapped[int] = mapped_column(BigInteger, default=0)
+    packets_sent: Mapped[int] = mapped_column(BigInteger, default=0)
+    packets_recv: Mapped[int] = mapped_column(BigInteger, default=0)
 
 
 class SystemInterfaceDailySummary(Base):
@@ -383,13 +368,13 @@ class SystemInterfaceDailySummary(Base):
 
     __tablename__ = "system_interface_daily_summaries"
 
-    id = Column(Integer, primary_key=True, index=True)
-    interface = Column(String, index=True)
-    date = Column(Date, index=True)
-    bytes_sent = Column(BigInteger, default=0)
-    bytes_recv = Column(BigInteger, default=0)
-    packets_sent = Column(BigInteger, default=0)
-    packets_recv = Column(BigInteger, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    interface: Mapped[str] = mapped_column(String, index=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    bytes_sent: Mapped[int] = mapped_column(BigInteger, default=0)
+    bytes_recv: Mapped[int] = mapped_column(BigInteger, default=0)
+    packets_sent: Mapped[int] = mapped_column(BigInteger, default=0)
+    packets_recv: Mapped[int] = mapped_column(BigInteger, default=0)
 
 
 class SystemInterfaceMonthlySummary(Base):
@@ -397,11 +382,11 @@ class SystemInterfaceMonthlySummary(Base):
 
     __tablename__ = "system_interface_monthly_summaries"
 
-    id = Column(Integer, primary_key=True, index=True)
-    interface = Column(String, index=True)
-    month = Column(String, index=True)  # YYYY-MM
-    bytes_sent = Column(BigInteger, default=0)
-    bytes_recv = Column(BigInteger, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    interface: Mapped[str] = mapped_column(String, index=True)
+    month: Mapped[str] = mapped_column(String, index=True)  # YYYY-MM
+    bytes_sent: Mapped[int] = mapped_column(BigInteger, default=0)
+    bytes_recv: Mapped[int] = mapped_column(BigInteger, default=0)
 
 
 class SystemMonthlySummary(Base):
@@ -409,10 +394,10 @@ class SystemMonthlySummary(Base):
 
     __tablename__ = "system_monthly_summaries"
 
-    id = Column(Integer, primary_key=True, index=True)
-    month = Column(String, index=True, unique=True)  # YYYY-MM
-    bytes_sent = Column(BigInteger, default=0)
-    bytes_recv = Column(BigInteger, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    month: Mapped[str] = mapped_column(String, index=True, unique=True)  # YYYY-MM
+    bytes_sent: Mapped[int] = mapped_column(BigInteger, default=0)
+    bytes_recv: Mapped[int] = mapped_column(BigInteger, default=0)
 
 
 class SystemYearlySummary(Base):
@@ -420,10 +405,10 @@ class SystemYearlySummary(Base):
 
     __tablename__ = "system_yearly_summaries"
 
-    id = Column(Integer, primary_key=True, index=True)
-    year = Column(Integer, index=True, unique=True)  # YYYY
-    bytes_sent = Column(BigInteger, default=0)
-    bytes_recv = Column(BigInteger, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    year: Mapped[int] = mapped_column(Integer, index=True, unique=True)  # YYYY
+    bytes_sent: Mapped[int] = mapped_column(BigInteger, default=0)
+    bytes_recv: Mapped[int] = mapped_column(BigInteger, default=0)
 
 
 class DeviceMonthlySummary(Base):
@@ -431,11 +416,11 @@ class DeviceMonthlySummary(Base):
 
     __tablename__ = "device_monthly_summaries"
 
-    id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(Integer, ForeignKey("devices.id"))
-    month = Column(String, index=True)  # YYYY-MM
-    upload_bytes = Column(BigInteger, default=0)
-    download_bytes = Column(BigInteger, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    device_id: Mapped[int] = mapped_column(Integer, ForeignKey("devices.id"))
+    month: Mapped[str] = mapped_column(String, index=True)  # YYYY-MM
+    upload_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
+    download_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
 
     device = relationship("Device")
     
@@ -449,11 +434,11 @@ class DeviceYearlySummary(Base):
 
     __tablename__ = "device_yearly_summaries"
 
-    id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(Integer, ForeignKey("devices.id"))
-    year = Column(Integer, index=True)  # YYYY
-    upload_bytes = Column(BigInteger, default=0)
-    download_bytes = Column(BigInteger, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    device_id: Mapped[int] = mapped_column(Integer, ForeignKey("devices.id"))
+    year: Mapped[int] = mapped_column(Integer, index=True)  # YYYY
+    upload_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
+    download_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
 
 
     device = relationship("Device")
@@ -466,15 +451,14 @@ class DeviceYearlySummary(Base):
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    actor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    action = Column(String, index=True)  # CREATE, UPDATE, DELETE, LOGIN
-    resource_type = Column(String, index=True)  # DEVICE, USER, ORG
-    resource_id = Column(String, nullable=True)
-    details = Column(String, nullable=True)  # JSON or text
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    actor_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    action: Mapped[str] = mapped_column(String, index=True)  # CREATE, UPDATE, DELETE, LOGIN
+    resource_type: Mapped[str] = mapped_column(String, index=True)  # DEVICE, USER, ORG
+    resource_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    details: Mapped[str | None] = mapped_column(String, nullable=True)  # JSON or text
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     actor = relationship("User")
     organization = relationship("Organization")
 
@@ -482,29 +466,27 @@ class AuditLog(Base):
 class NotificationChannel(Base):
     __tablename__ = "notification_channels"
     
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    type = Column(String)  # email, slack, discord, webhook
-    config = Column(String)  # JSON: webhook_url, email_address, etc.
-    events = Column(String, default="[]")  # JSON list: trigger events
-    is_enabled = Column(Boolean, default=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String)
+    type: Mapped[str] = mapped_column(String)  # email, slack, discord, webhook
+    config: Mapped[str] = mapped_column(String)  # JSON: webhook_url, email_address, etc.
+    events: Mapped[str] = mapped_column(String, default="[]")  # JSON list: trigger events
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    organization_id: Mapped[int] = mapped_column(Integer, ForeignKey("organizations.id"), index=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     organization = relationship("Organization")
 
 
 class StatusPage(Base):
     __tablename__ = "status_pages"
     
-    id = Column(Integer, primary_key=True, index=True)
-    slug = Column(String, unique=True, index=True)  # public url slug
-    title = Column(String)
-    description = Column(String, nullable=True)
-    is_public = Column(Boolean, default=False)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), unique=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    slug: Mapped[str] = mapped_column(String, unique=True, index=True)  # public url slug
+    title: Mapped[str] = mapped_column(String)
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
+    is_public: Mapped[bool] = mapped_column(Boolean, default=False)
+    organization_id: Mapped[int] = mapped_column(Integer, ForeignKey("organizations.id"), unique=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     organization = relationship("Organization")
 
 
@@ -512,55 +494,53 @@ class PushSubscription(Base):
     """Stores Web Push API subscriptions for PWA notifications"""
     __tablename__ = "push_subscriptions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    endpoint = Column(String, unique=True, index=True)
-    keys = Column(String)  # JSON string {"auth": "...", "p256dh": "..."}
-    user_agent = Column(String, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    endpoint: Mapped[str] = mapped_column(String, unique=True, index=True)
+    keys: Mapped[str] = mapped_column(String)  # JSON string {"auth": "...", "p256dh": "..."}
+    user_agent: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     user = relationship("User", back_populates="push_subscriptions")
 
 
 class OSMetricHistory(Base):
     __tablename__ = "os_metric_history"
 
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    cpu_pct = Column(Float)
-    ram_used_gb = Column(Float)
-    ram_total_gb = Column(Float)
-    disk_used_gb = Column(Float)
-    disk_total_gb = Column(Float)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    cpu_pct: Mapped[float] = mapped_column(Float)
+    ram_used_gb: Mapped[float] = mapped_column(Float)
+    ram_total_gb: Mapped[float] = mapped_column(Float)
+    disk_used_gb: Mapped[float] = mapped_column(Float)
+    disk_total_gb: Mapped[float] = mapped_column(Float)
 
 
 class HealthCheck(Base):
     __tablename__ = "health_checks"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    url = Column(String)
-    method = Column(String, default="GET")  # GET, POST
-    interval_seconds = Column(Integer, default=300) # Default 5 mins
-    is_active = Column(Boolean, default=True)
-    last_status = Column(Integer, nullable=True)
-    last_checked = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String)
+    url: Mapped[str] = mapped_column(String)
+    method: Mapped[str] = mapped_column(String, default="GET")  # GET, POST
+    interval_seconds: Mapped[int] = mapped_column(Integer, default=300) # Default 5 mins
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_status: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    last_checked: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     logs = relationship("HealthCheckLog", back_populates="check", cascade="all, delete-orphan")
 
 
 class HealthCheckLog(Base):
     __tablename__ = "health_check_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    check_id = Column(Integer, ForeignKey("health_checks.id"))
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    status_code = Column(Integer, nullable=True)
-    response_time_ms = Column(Float, nullable=True)
-    is_up = Column(Boolean)
-    error = Column(String, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    check_id: Mapped[int] = mapped_column(Integer, ForeignKey("health_checks.id"))
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    response_time_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_up: Mapped[bool] = mapped_column(Boolean)
+    error: Mapped[str | None] = mapped_column(String, nullable=True)
 
     check = relationship("HealthCheck", back_populates="logs")
 
@@ -568,56 +548,54 @@ class HealthCheckLog(Base):
 class BackupRecord(Base):
     __tablename__ = "backup_records"
 
-    id = Column(Integer, primary_key=True, index=True)
-    filename = Column(String, unique=True)
-    file_path = Column(String)
-    size_bytes = Column(BigInteger)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    is_manual = Column(Boolean, default=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    filename: Mapped[str] = mapped_column(String, unique=True)
+    file_path: Mapped[str] = mapped_column(String)
+    size_bytes: Mapped[int] = mapped_column(BigInteger)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    is_manual: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class MonitoredCertificate(Base):
     __tablename__ = "monitored_certificates"
 
-    id = Column(Integer, primary_key=True, index=True)
-    domain = Column(String, index=True)
-    port = Column(Integer, default=443)
-    is_active = Column(Boolean, default=True)
-    last_checked = Column(DateTime(timezone=True), nullable=True)
-    expiration_date = Column(DateTime(timezone=True), nullable=True)
-    issuer = Column(String, nullable=True)
-    days_until_expiration = Column(Integer, nullable=True)
-    error_message = Column(String, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    domain: Mapped[str] = mapped_column(String, index=True)
+    port: Mapped[int] = mapped_column(Integer, default=443)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_checked: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expiration_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    issuer: Mapped[str | None] = mapped_column(String, nullable=True)
+    days_until_expiration: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
 class AgentNode(Base):
     __tablename__ = "agent_nodes"
 
-    id = Column(String, primary_key=True, index=True)
-    name = Column(String)
-    api_key_hash = Column(String, index=True)
-    ip_address = Column(String, nullable=True)
-    status = Column(String, default="offline") # 'online', 'offline'
-    last_seen = Column(DateTime(timezone=True), nullable=True)
-    system_info = Column(JSON, nullable=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    id: Mapped[str] = mapped_column(String, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String)
+    api_key_hash: Mapped[str] = mapped_column(String, index=True)
+    ip_address: Mapped[str | None] = mapped_column(String, nullable=True)
+    status: Mapped[str] = mapped_column(String, default="offline") # 'online', 'offline'
+    last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    system_info: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     organization = relationship("Organization")
     metrics = relationship("AgentMetric", back_populates="agent", cascade="all, delete-orphan")
 
 class AgentMetric(Base):
     __tablename__ = "agent_metrics"
 
-    id = Column(Integer, primary_key=True, index=True)
-    agent_id = Column(String, ForeignKey("agent_nodes.id"), index=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    cpu_pct = Column(Float)
-    mem_usage = Column(Float) # MB
-    disk_usage = Column(Float) # Percent
-    net_rx = Column(BigInteger, default=0)
-    net_tx = Column(BigInteger, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    agent_id: Mapped[str] = mapped_column(String, ForeignKey("agent_nodes.id"), index=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    cpu_pct: Mapped[float] = mapped_column(Float)
+    mem_usage: Mapped[float] = mapped_column(Float) # MB
+    disk_usage: Mapped[float] = mapped_column(Float) # Percent
+    net_rx: Mapped[int] = mapped_column(BigInteger, default=0)
+    net_tx: Mapped[int] = mapped_column(BigInteger, default=0)
 
     agent = relationship("AgentNode", back_populates="metrics")
 

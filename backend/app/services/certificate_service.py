@@ -29,12 +29,12 @@ class CertificateMonitor:
             issuer_name = "Unknown Issuer"
             for attr in cert.issuer:
                 if attr.oid == x509.NameOID.ORGANIZATION_NAME:
-                    issuer_name = attr.value
+                    issuer_name = str(attr.value)
                     break
             if issuer_name == "Unknown Issuer":
                 for attr in cert.issuer:
                     if attr.oid == x509.NameOID.COMMON_NAME:
-                        issuer_name = attr.value
+                        issuer_name = str(attr.value)
                         break
             
             return {
@@ -71,10 +71,10 @@ class CertificateMonitor:
                 logger.error(f"Failed to check certificate for {cert.domain}: {details['error']}")
                 if not was_error:
                     NotificationService.send_alert(
+                        db,
+                        cert.organization_id,
                         "Certificate Check Failed",
                         f"StatSea failed to check the SSL certificate for {cert.domain}:{cert.port}. Error: {details['error']}",
-                        cert.organization_id,
-                        db
                     )
             else:
                 cert.expiration_date = details["expiration_date"]
@@ -92,10 +92,10 @@ class CertificateMonitor:
                     severity = "Critical" if cert.days_until_expiration <= 0 else "Warning"
                     logger.warning(f"Certificate for {cert.domain} expires in {cert.days_until_expiration} days.")
                     NotificationService.send_alert(
+                        db,
+                        cert.organization_id,
                         f"SSL Certificate Expiry {severity}",
                         f"The SSL certificate for {cert.domain} expires in {cert.days_until_expiration} days (on {cert.expiration_date.strftime('%Y-%m-%d')}). Issuer: {cert.issuer}.",
-                        cert.organization_id,
-                        db
                     )
                     
         db.commit()

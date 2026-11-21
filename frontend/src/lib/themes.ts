@@ -27,10 +27,11 @@ export const presets: Record<ThemeMode, ThemeDefinition> = {
             "--primary-foreground": "220 18% 7%",
             "--secondary": "220 18% 12%",
             "--secondary-foreground": "220 15% 93%",
-            "--muted": "220 18% 12%",
+            "--muted": "#8b93a3",
+            "--muted-hsl": "220 18% 12%",
             "--muted-foreground": "220 10% 59%", // #8b93a3
-            "--accent": "233 100% 74%",
-            "--accent-foreground": "220 18% 7%",
+            "--accent": "#7c8cff",
+            "--accent-foreground": "#0f1115",
             "--destructive": "5 88% 63%",         // #f5604f
             "--destructive-foreground": "220 15% 93%",
             "--border": "220 17% 17%",           // #242933
@@ -71,10 +72,11 @@ export const presets: Record<ThemeMode, ThemeDefinition> = {
             "--primary-foreground": "0 0% 100%",
             "--secondary": "230 18% 95%",        // #edf0f7
             "--secondary-foreground": "230 29% 12%",
-            "--muted": "230 18% 95%",
+            "--muted": "#6b7391",
+            "--muted-hsl": "230 18% 95%",
             "--muted-foreground": "230 15% 49%", // #6b7391
-            "--accent": "235 77% 61%",
-            "--accent-foreground": "0 0% 100%",
+            "--accent": "#4f5ce6",
+            "--accent-foreground": "#ffffff",
             "--destructive": "5 88% 60%",
             "--destructive-foreground": "0 0% 100%",
             "--border": "230 23% 91%",           // #e3e6ef
@@ -115,10 +117,11 @@ export const presets: Record<ThemeMode, ThemeDefinition> = {
             "--primary-foreground": "220 38% 7%",
             "--secondary": "222 41% 16%",
             "--secondary-foreground": "54 95% 77%",
-            "--muted": "222 41% 16%",
+            "--muted": "#94a3b8",
+            "--muted-hsl": "222 41% 16%",
             "--muted-foreground": "215 20% 65%", // #94a3b8
-            "--accent": "48 96% 53%",
-            "--accent-foreground": "220 38% 7%",
+            "--accent": "#facc15",
+            "--accent-foreground": "#0a0e17",
             "--destructive": "0 91% 71%",
             "--destructive-foreground": "220 38% 7%",
             "--border": "221 41% 24%",           // #243356
@@ -159,10 +162,11 @@ export const presets: Record<ThemeMode, ThemeDefinition> = {
             "--primary-foreground": "231 15% 18%",
             "--secondary": "232 15% 24%",
             "--secondary-foreground": "60 30% 96%",
-            "--muted": "232 15% 24%",
+            "--muted": "#6272a4",
+            "--muted-hsl": "232 15% 24%",
             "--muted-foreground": "225 27% 51%", // #6272a4
-            "--accent": "326 100% 74%",
-            "--accent-foreground": "231 15% 18%",
+            "--accent": "#ff79c6",
+            "--accent-foreground": "#282a36",
             "--destructive": "0 100% 67%",       // #ff5555
             "--destructive-foreground": "60 30% 96%",
             "--border": "232 14% 31%",           // #44475a
@@ -203,10 +207,11 @@ export const presets: Record<ThemeMode, ThemeDefinition> = {
             "--primary-foreground": "220 16% 22%",
             "--secondary": "222 16% 28%",
             "--secondary-foreground": "218 27% 94%",
-            "--muted": "222 16% 28%",
+            "--muted": "#9ca3af",
+            "--muted-hsl": "222 16% 28%",
             "--muted-foreground": "220 13% 56%", // #9ca3af
-            "--accent": "193 43% 67%",
-            "--accent-foreground": "220 16% 22%",
+            "--accent": "#88c0d0",
+            "--accent-foreground": "#2e3440",
             "--destructive": "354 42% 56%",      // #bf616a
             "--destructive-foreground": "218 27% 94%",
             "--border": "220 16% 31%",           // #434c5e
@@ -247,10 +252,11 @@ export const presets: Record<ThemeMode, ThemeDefinition> = {
             "--primary-foreground": "224 44% 7%",
             "--secondary": "224 42% 18%",
             "--secondary-foreground": "214 32% 91%",
-            "--muted": "224 42% 18%",
+            "--muted": "#64748b",
+            "--muted-hsl": "224 42% 18%",
             "--muted-foreground": "215 16% 47%", // #64748b
-            "--accent": "199 89% 60%",
-            "--accent-foreground": "224 44% 7%",
+            "--accent": "#38bdf8",
+            "--accent-foreground": "#0a0e1a",
             "--destructive": "0 91% 71%",        // #f87171
             "--destructive-foreground": "214 32% 91%",
             "--border": "223 43% 23%",           // #223054

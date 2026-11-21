@@ -10,12 +10,12 @@ class AuditService:
     @staticmethod
     def log_action(
         db: Session,
-        actor_id: int,
+        actor_id: int | None,
         action: str,
         resource_type: str,
         resource_id: str,
-        details: dict | str = None,
-        organization_id: int = None
+        details: dict | str | None = None,
+        organization_id: int | None = None
     ):
         """
         Logs an audit event.

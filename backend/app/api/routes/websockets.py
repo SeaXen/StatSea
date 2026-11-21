@@ -150,7 +150,7 @@ async def speedtest_websocket(websocket: WebSocket, provider: str = "ookla"):
     try:
         from ...core.speedtest_service import speedtest_service
         
-        queue = asyncio.Queue()
+        queue: asyncio.Queue[dict] = asyncio.Queue()
         main_loop = asyncio.get_running_loop()
 
         def bridge_callback(data):

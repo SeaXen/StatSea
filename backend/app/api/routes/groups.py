@@ -62,7 +62,7 @@ def update_group(
     if not db_group:
         raise HTTPException(status_code=404, detail="Group not found")
     if group_update.name is not None:
-        db_group.name = sanitization.sanitize_string(group_update.name, max_length=100)
+        db_group.name = sanitization.sanitize_string(group_update.name, max_length=100) or ""
     if group_update.color is not None:
         db_group.color = group_update.color
     db.commit()

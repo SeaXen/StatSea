@@ -19,7 +19,7 @@ docker compose up -d
 ```
 
 - **Web UI:** `http://localhost:21080`
-- **Backend API / docs:** `http://localhost:21081` / `http://localhost:21081/docs`
+- **Backend API:** `http://localhost:21081` (Swagger `/docs` is dev-only; disabled in production)
 
 ---
 

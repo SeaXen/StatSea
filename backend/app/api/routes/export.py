@@ -56,14 +56,16 @@ def export_audit_logs(
     format: str = Query("csv", pattern="^(csv|json)$"),
     db: Session = Depends(get_db),
     admin_user: models.User = Depends(get_current_admin_user),
+    organization_id: int = Depends(get_current_org_id),
 ):
-    organization_id = admin_user.organization_id
-    
-    query = db.query(models.AuditLog)
-    if organization_id:
-        query = query.filter(models.AuditLog.organization_id == organization_id)
-        
-    logs = query.order_by(models.AuditLog.timestamp.desc()).limit(10000).all()
+    # User has no organization_id column; resolve tenancy via the membership dep.
+    logs = (
+        db.query(models.AuditLog)
+        .filter(models.AuditLog.organization_id == organization_id)
+        .order_by(models.AuditLog.timestamp.desc())
+        .limit(10000)
+        .all()
+    )
     
     data = []
     for log in logs:

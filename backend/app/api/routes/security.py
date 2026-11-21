@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict
@@ -40,7 +40,7 @@ def get_security_events(
     for alert in alerts:
         events.append(SecurityEvent(
             id=alert.id,
-            timestamp=alert.timestamp,
+            timestamp=alert.timestamp or datetime.now(timezone.utc),
             event_type=alert.title, # Mapping title to event_type
             severity=alert.severity.upper() if alert.severity else 'LOW',
             description=alert.description,

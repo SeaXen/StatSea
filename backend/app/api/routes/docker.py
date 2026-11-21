@@ -25,7 +25,7 @@ router = APIRouter(prefix="/docker", tags=["Docker"])
 def get_docker_containers(current_user: models.User = Depends(get_current_user)):
     stats = docker_monitor.get_stats()
     for container in stats:
-        update_info = docker_update_service.get_update_status(container.get("id"))
+        update_info = docker_update_service.get_update_status(container.get("id") or "")
         container.update(update_info)
     return stats
 

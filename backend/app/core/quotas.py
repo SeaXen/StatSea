@@ -10,7 +10,7 @@ from ..models import models
 logger = logging.getLogger(__name__)
 
 
-def check_quotas(db: Session = None):
+def check_quotas(db: Session | None = None):
     """
     Checks all configured bandwidth quotas against current usage.
     Triggers alerts if limits are exceeded.

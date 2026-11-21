@@ -62,7 +62,7 @@ export function CommandPalette({ open, setOpen, changeTab }: { open: boolean, se
                         <span>Network Map</span>
                     </Command.Item>
                     <Command.Item
-                        onSelect={() => { changeTab('security'); setOpen(false); }}
+                        onSelect={() => { changeTab('analytics'); setOpen(false); }}
                         className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono text-text rounded-[5px] aria-selected:bg-raised aria-selected:text-accent cursor-pointer transition-colors"
                     >
                         <Shield className="w-3.5 h-3.5 text-accent" />

@@ -248,7 +248,7 @@ class SpeedtestService:
             logger.error(f"Ookla speedtest failed: {str(e)}")
             raise e
 
-    async def run_speedtest(self, db: Session, server_id: int = None, provider: str = "ookla", progress_callback=None):
+    async def run_speedtest(self, db: Session, server_id: int | None = None, provider: str = "ookla", progress_callback=None):
         loop = asyncio.get_running_loop()
         try:
             # Helper to run blocking function with callback

@@ -1,3 +1,5 @@
+from typing import Any
+
 import sqlalchemy.exc
 from sqlalchemy.orm import Session, selectinload
 
@@ -13,7 +15,7 @@ logger = get_logger("DeviceService")
 
 class DeviceService:
     @staticmethod
-    def get_devices(db: Session, organization_id: int, cursor: int | None = None, limit: int = 100) -> schemas.CursorPage[schemas.DeviceListItem]:
+    def get_devices(db: Session, organization_id: int, cursor: int | None = None, limit: int = 100) -> schemas.CursorPage[Any]:
         """
         Retrieves devices from the database with cursor pagination for a specific organization,
         including unassigned global devices.
@@ -30,11 +32,11 @@ class DeviceService:
             
             devices = query.order_by(models.Device.id.asc()).limit(limit).all()
             next_cursor = devices[-1].id if len(devices) == limit else None
-            return schemas.CursorPage(items=devices, next_cursor=next_cursor)
+            return schemas.CursorPage[Any](items=devices, next_cursor=next_cursor)
         except sqlalchemy.exc.SQLAlchemyError:
             logger.exception("Database error retrieving/seeding devices")
             db.rollback()
-            return schemas.CursorPage(items=[], next_cursor=None)
+            return schemas.CursorPage[Any](items=[], next_cursor=None)
 
     @staticmethod
     def get_device(db: Session, device_id: int, organization_id: int) -> models.Device:

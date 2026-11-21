@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, Check } from 'lucide-react';
+import { useModalA11y } from '../hooks/useModalA11y';
 
 const TOUR_STEPS = [
     {
@@ -43,10 +44,11 @@ export const OnboardingTour: React.FC = () => {
         }
     }, []);
 
-    const handleComplete = () => {
+    const handleComplete = useCallback(() => {
         setIsVisible(false);
         localStorage.setItem('statsea_onboarding_completed', 'true');
-    };
+    }, []);
+    const modalRef = useModalA11y<HTMLDivElement>({ isOpen: isVisible, onClose: handleComplete });
 
     const handleNext = () => {
         if (currentStep < TOUR_STEPS.length - 1) {
@@ -65,6 +67,11 @@ export const OnboardingTour: React.FC = () => {
         <AnimatePresence>
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
                 <motion.div
+                    ref={modalRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="tour-title"
+                    tabIndex={-1}
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -84,7 +91,7 @@ export const OnboardingTour: React.FC = () => {
                             <span className="inline-block px-2 py-1 mb-3 text-xs font-medium text-blue-400 bg-blue-500/10 rounded-full border border-blue-500/20">
                                 Step {currentStep + 1} of {TOUR_STEPS.length}
                             </span>
-                            <h2 className="text-xl font-bold text-foreground mb-2">{step.title}</h2>
+                            <h2 id="tour-title" className="text-xl font-bold text-foreground mb-2">{step.title}</h2>
                             <p className="text-muted-foreground leading-relaxed">{step.description}</p>
                         </div>
 

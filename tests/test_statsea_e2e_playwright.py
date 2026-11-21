@@ -13,7 +13,11 @@ Tests:
 import os
 import sys
 import time
-from playwright.sync_api import sync_playwright
+import pytest
+
+# E2E is opt-in (RUN_E2E=1) and Playwright is not in requirements.txt; skip the
+# whole module cleanly when it is absent so CI's `pytest tests/` can collect.
+sync_playwright = pytest.importorskip("playwright.sync_api").sync_playwright  # noqa: E402
 
 # Ensure UTF-8 output on Windows
 if hasattr(sys.stdout, "reconfigure"):
@@ -255,7 +259,6 @@ def run_e2e_tests():
             browser.close()
 
 
-import pytest
 
 
 @pytest.mark.skipif(os.getenv("RUN_E2E") != "1", reason="E2E requires live server (set RUN_E2E=1)")

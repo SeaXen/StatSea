@@ -71,9 +71,10 @@ def calculate_forecast(db: Session) -> defaults.SystemForecast:
         )
     
     # Prepare data for regression
-    timestamps = np.array([(h.timestamp.timestamp()) for h in history]).reshape(-1, 1)
-    ram_vals = np.array([h.ram_used_gb for h in history])
-    disk_vals = np.array([h.disk_used_gb for h in history])
+    dated = [h for h in history if h.timestamp is not None]
+    timestamps = np.array([h.timestamp.timestamp() for h in dated if h.timestamp]).reshape(-1, 1)
+    ram_vals = np.array([h.ram_used_gb for h in dated])
+    disk_vals = np.array([h.disk_used_gb for h in dated])
     
     ram_total = history[-1].ram_total_gb
     disk_total = history[-1].disk_total_gb

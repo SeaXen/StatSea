@@ -60,3 +60,6 @@ scratch/
 .playwright/
 test-results/
 .openchamber
+
+# design-taste checker artifacts
+.taste-skill/

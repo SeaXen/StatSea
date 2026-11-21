@@ -24,7 +24,7 @@ class StatusPageService:
         return settings
 
     @staticmethod
-    def update_settings(db: Session, organization_id: int, title: str = None, slug: str = None, is_public: bool = None, description: str = None):
+    def update_settings(db: Session, organization_id: int, title: str | None = None, slug: str | None = None, is_public: bool | None = None, description: str | None = None):
         settings = StatusPageService.get_settings(db, organization_id)
         if title:
             settings.title = title

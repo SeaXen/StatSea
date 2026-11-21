@@ -1,4 +1,5 @@
 import { useState, lazy, Suspense } from 'react';
+import { MotionConfig } from 'framer-motion';
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './config/queryClient';
@@ -151,6 +152,7 @@ function AppContent() {
     ];
 
     return (
+        <MotionConfig reducedMotion="user">
         <div className="flex flex-col min-h-screen bg-bg text-text font-sans selection:bg-accent/20">
             <Toaster richColors position="top-right" theme={themeConfig.mode === 'light' ? 'light' : 'dark'} />
             <CommandPalette open={commandOpen} setOpen={setCommandOpen} changeTab={setActiveTab} />
@@ -244,5 +246,6 @@ function AppContent() {
             {/* 5. Mobile Persistent Bottom Navigation */}
             <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
+        </MotionConfig>
     );
 }

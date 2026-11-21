@@ -45,7 +45,7 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-bg text-text flex items-center justify-center p-4 selection:bg-accent/20">
+        <div id="main-content" tabIndex={-1} className="min-h-screen bg-bg text-text flex items-center justify-center p-4 selection:bg-accent/20">
             <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}

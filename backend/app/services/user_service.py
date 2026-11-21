@@ -1,3 +1,5 @@
+from typing import Any
+
 import sqlalchemy.exc
 from sqlalchemy.orm import Session
 
@@ -26,14 +28,14 @@ class UserService:
         return user
 
     @staticmethod
-    def list_users(db: Session, cursor: int | None = None, limit: int = 100) -> schemas.CursorPage[schemas.User]:
+    def list_users(db: Session, cursor: int | None = None, limit: int = 100) -> schemas.CursorPage[Any]:
         """Returns a cursor-paginated list of all users in the system."""
         query = db.query(models.User)
         if cursor is not None:
              query = query.filter(models.User.id > cursor)
         users = query.order_by(models.User.id.asc()).limit(limit).all()
         next_cursor = users[-1].id if len(users) == limit else None
-        return schemas.CursorPage(items=users, next_cursor=next_cursor)
+        return schemas.CursorPage[Any](items=users, next_cursor=next_cursor)
 
     @staticmethod
     def create_user(db: Session, user_data: schemas.UserCreate, actor_id: int | None = None) -> models.User:
@@ -105,7 +107,7 @@ class UserService:
 
         try:
             if update_data.email is not None:
-                db_user.email = sanitization.sanitize_email(update_data.email)
+                db_user.email = sanitization.sanitize_email(update_data.email) or ""
             if update_data.full_name is not None:
                 db_user.full_name = sanitization.sanitize_string(
                     update_data.full_name, max_length=100
@@ -117,6 +119,11 @@ class UserService:
             if update_data.password is not None:
                 validate_password_complexity(update_data.password)
                 db_user.hashed_password = models.User.get_password_hash(update_data.password)
+                # An admin reset must kill existing sessions, like self-service change_password.
+                db_user.token_version = (db_user.token_version or 1) + 1
+                db.query(models.RefreshToken).filter(
+                    models.RefreshToken.user_id == db_user.id
+                ).update({"is_revoked": True}, synchronize_session=False)
 
             db.commit()
             db.refresh(db_user)

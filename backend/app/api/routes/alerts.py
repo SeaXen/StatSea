@@ -20,8 +20,8 @@ router = APIRouter(prefix="/alerts", tags=["Alerts"])
     description="Retrieve security alerts.",
 )
 async def get_alerts(
-    severity: str = None,
-    timeframe: str = None,
+    severity: str | None = None,
+    timeframe: str | None = None,
     cursor: int | None = None,
     limit: int = 100,
     db: Session = Depends(get_db),

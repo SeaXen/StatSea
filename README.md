@@ -3,9 +3,9 @@
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![TypeScript: 5.8](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](./frontend/tsconfig.json)
+[![TypeScript: 5.8](https://img.shields.io/badge/TypeScript-5.2-3178C6?logo=typescript&logoColor=white)](./frontend/tsconfig.json)
 [![React: 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev)
-[![FastAPI: 0.115](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![FastAPI: 0.115](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python: 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![Docker: Ready](https://img.shields.io/badge/Docker-Port%2021080-2496ED?logo=docker&logoColor=white)](./docker-compose.yml)
 [![Pytest: backend suite](https://img.shields.io/badge/Pytest-backend%20suite-blue?logo=pytest&logoColor=white)](./backend/tests)
@@ -176,7 +176,7 @@ docker compose up -d --build
 
 ### Deployment Topology
 * **Web UI (Nginx):** **`http://<host-ip>:21080`** *(Use this port in CasaOS / Browser)*
-* **API & Swagger Docs:** **`http://<host-ip>:21081/docs`**
+* **API & Swagger Docs (dev only):** **`http://localhost:8001/docs`** — disabled when `ENVIRONMENT=production`.
 * **Network Mode:** `host` *(Essential for Scapy to capture raw gateway traffic and psutil to monitor host network interfaces)*
 * **Volumes:**
   * `./backend/data:/app/data` — Preserves SQLite database and logs across container updates.
@@ -247,8 +247,7 @@ python tests/test_statsea_e2e_playwright.py
 ## 📖 API & WebSocket Reference
 
 ### Interactive Documentation
-* **Swagger UI:** `http://localhost:8001/docs` *(or `http://<host-ip>:21081/docs` in Docker)*
-* **ReDoc:** `http://localhost:8001/redoc`
+* **Swagger UI / ReDoc:** `http://localhost:8001/docs` and `/redoc` — **development only** (disabled in production).
 
 ### Key Endpoints
 * `GET /api/health` — System status, database connectivity, and sniffer state.

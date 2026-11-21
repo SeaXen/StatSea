@@ -19,7 +19,7 @@ class NotificationService:
         name: str, 
         type: str, 
         config: dict, 
-        events: list[str] = None
+        events: list[str] | None = None
     ) -> models.NotificationChannel:
         """Creates a new notification channel."""
         channel = models.NotificationChannel(
@@ -36,7 +36,7 @@ class NotificationService:
         return channel
 
     @staticmethod
-    def list_channels(db: Session, organization_id: int) -> list[models.NotificationChannel]:
+    def list_channels(db: Session, organization_id: int | None) -> list[models.NotificationChannel]:
         """Lists all notification channels for an organization."""
         return db.query(models.NotificationChannel).filter(
             models.NotificationChannel.organization_id == organization_id
@@ -107,7 +107,7 @@ class NotificationService:
         db.commit()
 
     @staticmethod
-    def send_notification(db: Session, organization_id: int, event_type: str, title: str, message: str):
+    def send_notification(db: Session, organization_id: int | None, event_type: str, title: str, message: str):
         """Sends a notification to all enabled channels for the given event type."""
         channels = NotificationService.list_channels(db, organization_id)
         for channel in channels:
@@ -124,7 +124,7 @@ class NotificationService:
                     logger.error("Failed to send notification via %s (ID: %s): %s", channel.type, channel.id, type(e).__name__)
 
     @staticmethod
-    def dispatch(channel_type: str, config: dict, title: str, message: str, organization_id: int, db: Session):
+    def dispatch(channel_type: str, config: dict, title: str, message: str, organization_id: int | None, db: Session):
         """Dispatches notification to the appropriate provider."""
         providers = {
             "email": NotificationService._send_email,
@@ -149,10 +149,10 @@ class NotificationService:
         """Sends an email notification via SMTP."""
         msg = MIMEText(message)
         msg['Subject'] = title
-        msg['From'] = config.get('from_email')
+        msg['From'] = config.get('from_email') or ''
         msg['To'] = ", ".join(config.get('to_emails', []))
         
-        with smtplib.SMTP(config.get('host'), config.get('port', 587)) as server:
+        with smtplib.SMTP(config.get('host') or '', config.get('port', 587)) as server:
             if config.get('port') == 587:
                 server.starttls()
             
@@ -168,7 +168,7 @@ class NotificationService:
         payload = {
             "text": f"*{title}*\n{message}"
         }
-        httpx.post(config.get('webhook_url'), json=payload, timeout=10)
+        httpx.post(config.get('webhook_url') or '', json=payload, timeout=10)
 
     @staticmethod
     def _send_discord(config: dict, title: str, message: str):
@@ -184,7 +184,7 @@ class NotificationService:
         }
         
         payload = {"embeds": [embed]}
-        httpx.post(config.get('webhook_url'), json=payload, timeout=10)
+        httpx.post(config.get('webhook_url') or '', json=payload, timeout=10)
 
     @staticmethod
     def _send_ntfy(config: dict, title: str, message: str):
@@ -215,7 +215,7 @@ class NotificationService:
         httpx.post(url, json=payload, timeout=10)
 
     @staticmethod
-    def _send_push(config: dict, title: str, message: str, organization_id: int, db: Session):
+    def _send_push(config: dict, title: str, message: str, organization_id: int | None, db: Session):
         """Sends a Web Push notification to all subscribers in the organization."""
         # Find all users in this organization
         members = db.query(models.OrganizationMember).filter(
@@ -239,7 +239,7 @@ class NotificationService:
                             "keys": json.loads(sub.keys)
                         }
                         webpush_service.send_push_notification(
-                            subscription_info,
+                            json.dumps(subscription_info),
                             payload
                         )
                     except Exception as e:
@@ -259,6 +259,6 @@ class NotificationService:
         NotificationService.send_notification(db, organization_id, "speedtest", title, message)
 
     @staticmethod
-    def send_alert(db: Session, organization_id: int, title: str, description: str, severity: str = "INFO"):
+    def send_alert(db: Session, organization_id: int | None, title: str, description: str, severity: str = "INFO"):
         """Helper to send a generic alert using the consolidated channel system."""
         NotificationService.send_notification(db, organization_id, "alert", title, description)

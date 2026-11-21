@@ -77,7 +77,7 @@ class AIPredictor:
         finally:
             db.close()
 
-    def detect_anomalies(self, organization_id: int = None) -> list[dict]:
+    def detect_anomalies(self, organization_id: int | None = None) -> list[dict]:
         """
         Detects devices with unusual bandwidth consumption profiles.
         Scoped to the given organization_id to prevent cross-tenant data leakage.

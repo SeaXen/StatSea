@@ -12,6 +12,7 @@ from app.core.collector import global_collector
 from app.db.database import get_db
 from app.models import models
 from app.schemas import defaults as schemas
+from app.services.analytics_service import AnalyticsService
 from app.services.log_service import LogService
 
 logger = logging.getLogger(__name__)
@@ -149,7 +150,7 @@ def get_system_history(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    result = []
+    result: list = []
     if period == "daily":
         start_date = date.today() - timedelta(days=days - 1)
         stats = (
@@ -165,12 +166,12 @@ def get_system_history(
         )
         for stat in stats:
             result.append({
-                "date": stat.date.isoformat(),
+                "date": str(stat.date),
                 "recv": int(stat.rx or 0),
                 "sent": int(stat.tx or 0),
             })
     elif period == "monthly":
-        stats = (
+        monthly_stats = (
             db.query(
                 models.SystemInterfaceMonthlySummary.month,
                 func.sum(models.SystemInterfaceMonthlySummary.bytes_recv).label("rx"),
@@ -181,14 +182,14 @@ def get_system_history(
             .limit(12)
             .all()
         )
-        for stat in stats:
+        for monthly_stat in monthly_stats:
             result.append({
-                "date": stat.month,
-                "recv": int(stat.rx or 0),
-                "sent": int(stat.tx or 0),
+                "date": monthly_stat.month,
+                "recv": int(monthly_stat.rx or 0),
+                "sent": int(monthly_stat.tx or 0),
             })
     elif period == "yearly":
-        stats = (
+        yearly_stats = (
             db.query(
                 func.substr(models.SystemInterfaceMonthlySummary.month, 1, 4).label("year"),
                 func.sum(models.SystemInterfaceMonthlySummary.bytes_recv).label("rx"),
@@ -198,11 +199,11 @@ def get_system_history(
             .order_by("year")
             .all()
         )
-        for stat in stats:
+        for yearly_stat in yearly_stats:
             result.append({
-                "date": stat.year,
-                "recv": int(stat.rx or 0),
-                "sent": int(stat.tx or 0),
+                "date": yearly_stat.year,
+                "recv": int(yearly_stat.rx or 0),
+                "sent": int(yearly_stat.tx or 0),
             })
     return result
 
@@ -213,5 +214,10 @@ def get_system_history(
     description="Retrieve 5-min, hourly, daily, and monthly bandwidth history for a specific device.",
     dependencies=[Depends(get_cache_header(max_age=60))],
 )
-async def get_device_history(mac: str, current_user: models.User = Depends(get_current_user)):
-    return global_collector.get_device_history(mac)
+async def get_device_history(
+    mac: str,
+    db: Session = Depends(get_db),
+    organization_id: int = Depends(get_current_org_id),
+    current_user: models.User = Depends(get_current_user),
+):
+    return AnalyticsService.get_device_history(db, mac, organization_id)

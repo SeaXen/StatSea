@@ -114,7 +114,7 @@ def test_channel(
 class PushSubscriptionCreate(BaseModel):
     endpoint: str
     keys: dict
-    user_agent: str = None
+    user_agent: str | None = None
 
 @notifications_router.post("/push/subscribe", status_code=status.HTTP_201_CREATED)
 def subscribe_push(

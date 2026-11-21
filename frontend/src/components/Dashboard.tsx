@@ -184,14 +184,14 @@ const Dashboard: React.FC<DashboardProps> = ({ timeRange = '1h' }) => {
                             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="consoleDlFill" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#7c8cff" stopOpacity={0.12} />
-                                        <stop offset="100%" stopColor="#7c8cff" stopOpacity={0.02} />
+                                        <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.12} />
+                                        <stop offset="100%" stopColor="var(--accent)" stopOpacity={0.02} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid stroke="#1e232c" vertical={false} />
-                                <XAxis dataKey="time" stroke="#5d6574" fontSize={11} tickLine={false} axisLine={false} dy={6} />
-                                <YAxis stroke="#5d6574" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}`} />
-                                <ReferenceLine y={300} stroke="#f5a524" strokeDasharray="4 4" strokeWidth={1} />
+                                <CartesianGrid stroke="var(--line-soft)" vertical={false} />
+                                <XAxis dataKey="time" stroke="var(--faint)" fontSize={11} tickLine={false} axisLine={false} dy={6} />
+                                <YAxis stroke="var(--faint)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}`} />
+                                <ReferenceLine y={300} stroke="var(--warn)" strokeDasharray="4 4" strokeWidth={1} />
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: 'var(--panel)',
@@ -206,7 +206,7 @@ const Dashboard: React.FC<DashboardProps> = ({ timeRange = '1h' }) => {
                                 <Area
                                     type="monotone"
                                     dataKey="download"
-                                    stroke="#7c8cff"
+                                    stroke="var(--accent)"
                                     strokeWidth={2}
                                     fill="url(#consoleDlFill)"
                                     isAnimationActive={false}
@@ -214,7 +214,7 @@ const Dashboard: React.FC<DashboardProps> = ({ timeRange = '1h' }) => {
                                 <Area
                                     type="monotone"
                                     dataKey="upload"
-                                    stroke="#4fd1e8"
+                                    stroke="var(--upload)"
                                     strokeWidth={1.5}
                                     fill="none"
                                     isAnimationActive={false}

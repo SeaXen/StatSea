@@ -86,8 +86,8 @@ class SecurityEngine:
         event_type: str,
         severity: str,
         description: str,
-        source_ip: str = None,
-        mac_address: str = None,
+        source_ip: str | None = None,
+        mac_address: str | None = None,
         commit: bool = True,
     ):
         """

@@ -341,6 +341,8 @@ def _parse_condition(condition: str) -> list[tuple[str, str, str]]:
 def _matches(parsed: list[tuple[str, str, str]], traffic_log) -> bool:
     """Apply parsed clauses to a TrafficLog row (or None for a safe dry run)."""
     for variable, op, value in parsed:
+        actual_value: float | str
+        expected: float | str
         if variable in _NUMERIC_TRAFFIC_FIELDS:
             actual = getattr(traffic_log, variable, None)
             if actual is None:

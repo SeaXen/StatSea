@@ -979,10 +979,10 @@ class PacketCollector:
     def get_packet_log(
         self,
         limit: int = 100,
-        protocol: str = None,
-        ip: str = None,
-        port: int = None,
-        flags: str = None,
+        protocol: str | None = None,
+        ip: str | None = None,
+        port: int | None = None,
+        flags: str | None = None,
     ) -> list[dict]:
         """Returns filtered packet logs."""
         with self.stats_lock:
